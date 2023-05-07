@@ -1,15 +1,27 @@
 import datetime as dt
+import os
 import time
 import traceback as tb
+import configparser as cp
 import pandas as pd
 from jqdatasdk import *
+
+JK_User = None
+JK_Token = None
+
+All_Stocks_File = None
+Cursor_File = None
+Price_Dir = None
+
+Price_Start_Date = None
+Price_End_Date = None
 
 
 def get_all_stocks_info():
     fp = None
     try:
-        auth("17896008784", "WJnyjdc1983")
-        fp = open("all_stocks_info.txt", 'w')
+        auth(JK_User, JK_Token)
+        fp = open(All_Stocks_File, 'w')
         print("code,cn_name,name,date", file=fp)
         all_stocks = pd.DataFrame(get_all_securities(['stock'], '2023-05-05'))
         for index, row in all_stocks.iterrows():
@@ -29,7 +41,7 @@ def _output_stock_price(code, pi):
     ok = True
     fp = None
     try:
-        fp = open(code.replace(".", "_") + ".txt", 'w')
+        fp = open(Price_Dir + code.replace(".", "_") + ".txt", 'w')
         print('code\topen\tclose\tlow\thigh\tvolume\tmoney\tfactor\thigh_limit\tlow_limit\tavg\tpre_close\tpaused',
               file=fp)
         for index, row in pi.iterrows():
@@ -74,16 +86,15 @@ def get_stock_price():
     fp_cursor = None
 
     formatstr = '%Y-%m-%d %H:%M:%S'
-    end_date = dt.datetime.strptime('2023-05-06 18:00:00', formatstr)
-    start_date = dt.datetime.strptime('2017-01-01 00:00:00', formatstr)
+    end_date = dt.datetime.strptime(Price_End_Date, formatstr)
+    start_date = dt.datetime.strptime(Price_Start_Date, formatstr)
 
-    cursor_file = 'cursor.txt'
-    finished_set = _load_finished(cursor_file)
+    finished_set = _load_finished(Cursor_File)
 
     try:
-        fp = open("all_stocks_info.txt", 'r')
-        fp_cursor = open(cursor_file, 'a+')
-        auth("17896008784", "WJnyjdc1983")
+        fp = open(All_Stocks_File, 'r')
+        fp_cursor = open(Cursor_File, 'a+')
+        auth(JK_User, JK_Token)
         line = fp.readline()
         while line:
             infos = line.strip().split(',')
@@ -116,12 +127,26 @@ def get_stock_price():
 
 
 def _check_spare():
-    auth("17896008784", "WJnyjdc1983")
+    auth(JK_User, JK_Token)
     print(str(get_query_count()))
     logout()
 
 
 if __name__ == '__main__':
+    try:
+        cf = cp.ConfigParser()
+        cf.read("../config.ini")
+        JK_User = cf.get("Fetch", 'JK_User')
+        JK_Token = cf.get("Fetch", 'JK_Token')
+        All_Stocks_File = cf.get("Fetch", 'All_Stocks_File')
+        Cursor_File = cf.get("Fetch", 'Cursor_File')
+        Price_Dir = cf.get("Fetch", 'Price_Dir')
+        Price_Start_Date = cf.get("Fetch", 'Price_Start_Date')
+        Price_End_Date = cf.get("Fetch", 'Price_End_Date')
+    except:
+        tb.print_exc()
+    if not os.path.exists(Price_Dir):
+        os.mkdir(Price_Dir)
+    _check_spare()
     # get_all_stocks_info()
     # get_stock_price()
-    _check_spare()
