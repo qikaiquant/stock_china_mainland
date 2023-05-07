@@ -114,6 +114,7 @@ def get_stock_price():
                 print("Daily Limited Reached.")
                 break
             else:
+                print(get_query_count()['spare'])
                 line = fp.readline()
                 time.sleep(1)
     except:
@@ -147,6 +148,6 @@ if __name__ == '__main__':
         tb.print_exc()
     if not os.path.exists(Price_Dir):
         os.mkdir(Price_Dir)
-    _check_spare()
+    #_check_spare()
     # get_all_stocks_info()
-    # get_stock_price()
+    get_stock_price()
