@@ -1,3 +1,4 @@
+import configparser as cp
 import datetime as dt
 import os
 import time
@@ -104,14 +105,17 @@ def get_stock_price():
             start_date = dt.datetime.strptime(Price_Start_Date, formatstr)
             if start_date < ipo_date:
                 start_date = ipo_date
-            print("**************")
-            print(line.strip())
-            print(start_date, end_date)
+            tdc = len(get_trade_days(start_date, end_date))
             pi = get_price(code, end_date=end_date, start_date=start_date, frequency='daily',
                            fields=['open', 'close', 'low', 'high', 'volume', 'money', 'factor', 'high_limit',
                                    'low_limit', 'avg', 'pre_close', 'paused'])
+            pc = len(pi)
             if _output_stock_price(code, pd.DataFrame(pi)):
-                print("Code " + code + " Finished.", file=fp_cursor)
+                check_flag = 'OK'
+                if pc != tdc:
+                    check_flag = 'WARN'
+                print("Code " + code + " Finished[" + str(pc) + "L," + str(tdc) + "D," + check_flag + "]",
+                      file=fp_cursor)
             if get_query_count()['spare'] < 3000:
                 print("Daily Limited Reached.")
                 break
@@ -150,6 +154,6 @@ if __name__ == '__main__':
         tb.print_exc()
     if not os.path.exists(Price_Dir):
         os.mkdir(Price_Dir)
-    #_check_spare()
+    # _check_spare()
     # get_all_stocks_info()
     get_stock_price()
