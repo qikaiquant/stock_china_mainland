@@ -87,8 +87,6 @@ def get_stock_price():
 
     formatstr = '%Y-%m-%d %H:%M:%S'
     end_date = dt.datetime.strptime(Price_End_Date, formatstr)
-    start_date = dt.datetime.strptime(Price_Start_Date, formatstr)
-
     finished_set = _load_finished(Cursor_File)
 
     try:
@@ -103,8 +101,12 @@ def get_stock_price():
                 line = fp.readline()
                 continue
             ipo_date = dt.datetime.strptime(infos[3], formatstr)
+            start_date = dt.datetime.strptime(Price_Start_Date, formatstr)
             if start_date < ipo_date:
                 start_date = ipo_date
+            print("**************")
+            print(line.strip())
+            print(start_date, end_date)
             pi = get_price(code, end_date=end_date, start_date=start_date, frequency='daily',
                            fields=['open', 'close', 'low', 'high', 'volume', 'money', 'factor', 'high_limit',
                                    'low_limit', 'avg', 'pre_close', 'paused'])
