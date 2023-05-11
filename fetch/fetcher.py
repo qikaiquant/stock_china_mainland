@@ -120,7 +120,6 @@ def get_stock_price():
                 print("Daily Limited Reached.")
                 break
             else:
-                print(get_query_count()['spare'])
                 line = fp.readline()
                 time.sleep(1)
     except:
