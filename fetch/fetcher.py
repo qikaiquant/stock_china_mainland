@@ -1,11 +1,14 @@
-import configparser as cp
 import datetime as dt
-import os
-import time
 import traceback as tb
 import configparser as cp
 import pandas as pd
+
+import os
+import time
+
 from jqdatasdk import *
+from urllib import request
+from urllib.parse import urlencode
 
 JK_User = None
 JK_Token = None
@@ -16,6 +19,8 @@ Price_Dir = None
 
 Price_Start_Date = None
 Price_End_Date = None
+
+Msg_Base_Url = None
 
 
 def get_all_stocks_info():
@@ -90,6 +95,8 @@ def get_stock_price():
     end_date = dt.datetime.strptime(Price_End_Date, formatstr)
     finished_set = _load_finished(Cursor_File)
 
+    msg_dict = {"Su_OK": 0, "Su_WARN": 0, "Success": 0, "Error": 0, "Except": False}
+
     try:
         fp = open(All_Stocks_File, 'r')
         fp_cursor = open(Cursor_File, 'a+')
@@ -110,26 +117,34 @@ def get_stock_price():
                            fields=['open', 'close', 'low', 'high', 'volume', 'money', 'factor', 'high_limit',
                                    'low_limit', 'avg', 'pre_close', 'paused'])
             pc = len(pi)
-            if _output_stock_price(code, pd.DataFrame(pi)):
-                check_flag = 'OK'
-                if pc != tdc:
-                    check_flag = 'WARN'
-                print("Code " + code + " Finished[" + str(pc) + "L," + str(tdc) + "D," + check_flag + "]",
-                      file=fp_cursor)
-            if get_query_count()['spare'] < 3000:
-                print("Daily Limited Reached.")
+            if not _output_stock_price(code, pd.DataFrame(pi)):
+                print("Output Error For Code :", code)
+                msg_dict['Error'] += 1
                 break
+            check_flag = None
+            if pc != tdc:
+                check_flag = 'WARN'
+                msg_dict['Su_WARN'] += 1
             else:
-                print(get_query_count()['spare'])
-                line = fp.readline()
-                time.sleep(1)
-    except:
-        tb.print_exc()
+                check_flag = 'OK'
+                msg_dict["Su_OK"] += 1
+            msg_dict["Success"] += 1
+            print("Code " + code + " Finished[" + str(pc) + "L," + str(tdc) + "D," + check_flag + "]", file=fp_cursor)
+
+            line = fp.readline()
+            time.sleep(1)
+    except Exception as e:
+        if str(e.args).find("您当天的查询条数超过了每日最大查询限制") != -1:
+            print("Reach Daily Limited.")
+        else:
+            tb.print_exc()
+            msg_dict['Except'] = True
     finally:
         if fp is not None:
             fp.close()
         if fp_cursor is not None:
             fp_cursor.close()
+        _send_message("每日行情抓取详情", str(msg_dict))
         logout()
 
 
@@ -137,6 +152,14 @@ def _check_spare():
     auth(JK_User, JK_Token)
     print(str(get_query_count()))
     logout()
+
+
+def _send_message(title, content):
+    # Wechat message
+    http_params = {'title': title, 'content': content}
+    url = Msg_Base_Url + urlencode(http_params)
+    res = request.urlopen(url)
+    print(res.read().decode())
 
 
 if __name__ == '__main__':
@@ -150,10 +173,12 @@ if __name__ == '__main__':
         Price_Dir = cf.get("Fetch", 'Price_Dir')
         Price_Start_Date = cf.get("Fetch", 'Price_Start_Date')
         Price_End_Date = cf.get("Fetch", 'Price_End_Date')
+        Msg_Base_Url = cf.get("MSG", 'Msg_Base_Url')
     except:
         tb.print_exc()
     if not os.path.exists(Price_Dir):
         os.mkdir(Price_Dir)
+    # _send_message("侧Title", "发达Content")
     # _check_spare()
     # get_all_stocks_info()
     get_stock_price()
