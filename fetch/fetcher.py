@@ -74,11 +74,12 @@ def _load_finished(cursor_file):
 
     try:
         fp_cursor = open(cursor_file, 'r')
-        line = fp_cursor.readline()
-        while line:
+        while True:
+            line = fp_cursor.readline()
+            if not line:
+                break
             code = line.strip().split(' ')[1]
             finished_set.add(code)
-            line = fp_cursor.readline()
     except:
         tb.print_exc()
     finally:
@@ -101,14 +102,16 @@ def get_stock_price():
         fp = open(All_Stocks_File, 'r')
         fp_cursor = open(Cursor_File, 'a+')
         auth(JK_User, JK_Token)
-        line = fp.readline()
-        while line:
+        while True:
+            line = fp.readline()
+            if not line:
+                break
             infos = line.strip().split(',')
             code = infos[0]
+            ipo = infos[3]
             if code in finished_set:
-                line = fp.readline()
                 continue
-            ipo_date = dt.datetime.strptime(infos[3], formatstr)
+            ipo_date = dt.datetime.strptime(ipo, formatstr)
             start_date = dt.datetime.strptime(Price_Start_Date, formatstr)
             if start_date < ipo_date:
                 start_date = ipo_date
@@ -130,8 +133,6 @@ def get_stock_price():
                 msg_dict["Su_OK"] += 1
             msg_dict["Success"] += 1
             print("Code " + code + " Finished[" + str(pc) + "L," + str(tdc) + "D," + check_flag + "]", file=fp_cursor)
-
-            line = fp.readline()
             time.sleep(1)
     except Exception as e:
         if str(e.args).find("您当天的查询条数超过了每日最大查询限制") != -1:
