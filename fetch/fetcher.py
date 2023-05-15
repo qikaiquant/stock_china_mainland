@@ -179,7 +179,9 @@ if __name__ == '__main__':
         tb.print_exc()
     if not os.path.exists(Price_Dir):
         os.mkdir(Price_Dir)
+    print("++++++Fetch Start at", dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S++++++"))
     # _send_message("侧Title", "发达Content")
     # _check_spare()
     # get_all_stocks_info()
     get_stock_price()
+    print("++++++Fetch End at", dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S++++++++"))
