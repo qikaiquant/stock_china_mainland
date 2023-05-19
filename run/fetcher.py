@@ -136,7 +136,7 @@ def get_stock_price():
             time.sleep(1)
     except Exception as e:
         if str(e.args).find("您当天的查询条数超过了每日最大查询限制") != -1:
-            print("Reach Daily Limited.")
+            print("Rearch Daily Limited.")
         else:
             tb.print_exc()
             msg_dict['Except'] = True
@@ -166,7 +166,7 @@ def _send_message(title, content):
 if __name__ == '__main__':
     try:
         cf = cp.ConfigParser()
-        cf.read("../config.ini")
+        cf.read("../config/config.ini")
         JK_User = cf.get("Fetch", 'JK_User')
         JK_Token = cf.get("Fetch", 'JK_Token')
         All_Stocks_File = cf.get("Fetch", 'All_Stocks_File')
