@@ -3,44 +3,33 @@ import traceback as tb
 import configparser as cp
 import pandas as pd
 
-import os
+import sys
 import time
+import getopt
+import datetime
+import numpy
+import utils.db_tool
 
 from jqdatasdk import *
-from urllib import request
-from urllib.parse import urlencode
+from utils.misc import *
 
 JK_User = None
 JK_Token = None
 
-All_Stocks_File = None
-Cursor_File = None
-Price_Dir = None
-
-Price_Start_Date = None
-Price_End_Date = None
-
 Msg_Base_Url = None
+Stock_DB_Tool = None
+
+
+def get_stock_trade_days():
+    auth(JK_User, JK_Token)
+    Stock_DB_Tool.insert_trade_days(get_all_trade_days())
+    logout()
 
 
 def get_all_stocks_info():
-    fp = None
-    try:
-        auth(JK_User, JK_Token)
-        fp = open(All_Stocks_File, 'w')
-        print("code,cn_name,name,date", file=fp)
-        all_stocks = pd.DataFrame(get_all_securities(['stock'], '2023-05-05'))
-        for index, row in all_stocks.iterrows():
-            line = str(index) + "," + row['display_name'] + "," + row['name'] + "," + str(row['start_date'])
-            print(line, file=fp)
-        count = get_query_count()
-        print(count)
-    except:
-        tb.print_exc()
-    finally:
-        if fp is not None:
-            fp.close()
-        logout()
+    auth(JK_User, JK_Token)
+    Stock_DB_Tool.insert_stock_info(pd.DataFrame(get_all_securities(['stock'])))
+    logout()
 
 
 def _output_stock_price(code, pi):
@@ -145,7 +134,7 @@ def get_stock_price():
             fp.close()
         if fp_cursor is not None:
             fp_cursor.close()
-        _send_message("每日行情抓取详情", str(msg_dict))
+        send_wechat_message("每日行情抓取详情", str(msg_dict))
         logout()
 
 
@@ -155,33 +144,39 @@ def _check_spare():
     logout()
 
 
-def _send_message(title, content):
-    # Wechat message
-    http_params = {'title': title, 'content': content}
-    url = Msg_Base_Url + urlencode(http_params)
-    res = request.urlopen(url)
-    print(res.read().decode())
-
-
 if __name__ == '__main__':
     try:
         cf = cp.ConfigParser()
         cf.read("../config/config.ini")
-        JK_User = cf.get("Fetch", 'JK_User')
-        JK_Token = cf.get("Fetch", 'JK_Token')
-        All_Stocks_File = cf.get("Fetch", 'All_Stocks_File')
-        Cursor_File = cf.get("Fetch", 'Cursor_File')
-        Price_Dir = cf.get("Fetch", 'Price_Dir')
-        Price_Start_Date = cf.get("Fetch", 'Price_Start_Date')
-        Price_End_Date = cf.get("Fetch", 'Price_End_Date')
-        Msg_Base_Url = cf.get("MSG", 'Msg_Base_Url')
+        # 初始化数据库
+        host = cf.get("Mysql", 'Host')
+        port = int(cf.get("Mysql", 'Port'))
+        user = cf.get("Mysql", 'User')
+        passwd = cf.get("Mysql", 'Passwd')
+        Stock_DB_Tool = utils.db_tool.DBTool(host, port, user, passwd)
+        # 聚宽账号
+        JK_User = cf.get("DataSource", 'JK_User')
+        JK_Token = cf.get("DataSource", 'JK_Token')
+
+        All_Stocks_File = cf.get("DataSource", 'All_Stocks_File')
+        Cursor_File = cf.get("DataSource", 'Cursor_File')
+        Price_Dir = cf.get("DataSource", 'Price_Dir')
+        Price_Start_Date = cf.get("DataSource", 'Price_Start_Date')
+        Price_End_Date = cf.get("DataSource", 'Price_End_Date')
+
+        opts, args = getopt.getopt(sys.argv[1:], "tap:")
+        for opt, v in opts:
+            if opt == '-t':
+                # 获取所有交易日
+                get_stock_trade_days()
+            elif opt == '-a':
+                # 获取所有股票的基本信息
+                get_all_stocks_info()
+            elif opt == '-p':
+                print("Price For", v)
+            else:
+                raise getopt.GetoptError
+    except getopt.GetoptError:
+        tb.print_exc()
     except:
         tb.print_exc()
-    if not os.path.exists(Price_Dir):
-        os.mkdir(Price_Dir)
-    print("++++++Fetch Start at", dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S++++++"))
-    # _send_message("侧Title", "发达Content")
-    # _check_spare()
-    # get_all_stocks_info()
-    get_stock_price()
-    print("++++++Fetch End at", dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S++++++++"))
