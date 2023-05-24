@@ -173,6 +173,7 @@ if __name__ == '__main__':
                 # 获取所有股票的基本信息
                 get_all_stocks_info()
             elif opt == '-p':
+                # 获取行情信息
                 print("Price For", v)
             else:
                 raise getopt.GetoptError

@@ -14,7 +14,15 @@ class DBTool:
         self._cursor.execute(sql)
         self._conn.commit()
 
+    def execute_raw_sql(self, sqls, is_commit):
+        for sql in sqls:
+            self._cursor.execute(sql)
+        if is_commit:
+            self._conn.commit()
+
     def insert_trade_days(self, ds):
+        # 先清空再插入，只支持全量操作
+        self.clear_table("quant_stock.stock_trade_days")
         for day in ds:
             sql = "insert ignore into quant_stock.stock_trade_days values(\'" + str(day) + "\')"
             self._cursor.execute(sql)
