@@ -1,7 +1,7 @@
 from urllib import request
 from urllib.parse import urlencode
 import configparser as cp
-import utils.db_tool
+import db_tool
 from hashlib import md5
 import os
 import time
@@ -24,12 +24,10 @@ def stockid2table(stockid, base):
     return int(hc[-4:], 16) % base
 
 
-'''
-一次性使用，将抓取到的文件内数据灌库。弃用。
-'''
-
-
-def file2db():
+def _file2db():
+    """
+    一次性使用，将抓取到的文件内数据灌库
+    """
     cf = cp.ConfigParser()
     cf.read("../config/config.ini")
     # 初始化数据库
@@ -37,7 +35,7 @@ def file2db():
     port = int(cf.get("Mysql", 'Port'))
     user = cf.get("Mysql", 'User')
     passwd = cf.get("Mysql", 'Passwd')
-    Stock_DB_Tool = utils.db_tool.DBTool(host, port, user, passwd)
+    Stock_DB_Tool = db_tool.DBTool(host, port, user, passwd)
     files = os.listdir("D:\\BaiduNetdiskDownload\\price")
     i = 0
     for file in files:
@@ -77,4 +75,4 @@ def file2db():
 
 
 if __name__ == '__main__':
-    file2db()
+    _file2db()

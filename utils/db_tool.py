@@ -1,11 +1,9 @@
 import pymysql as pms
-import traceback as tb
-import pandas as pd
 
 
 class DBTool:
     def __init__(self, host, port, user, passwd):
-        print("Start Init")
+        print("DB Init")
         self._conn = pms.connect(host=host, port=port, user=user, passwd=passwd)
         self._cursor = self._conn.cursor()
 
