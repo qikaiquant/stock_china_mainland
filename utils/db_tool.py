@@ -12,11 +12,9 @@ class DBTool:
         self._cursor.execute(sql)
         self._conn.commit()
 
-    def execute_raw_sql(self, sqls, is_commit):
-        for sql in sqls:
-            self._cursor.execute(sql)
-        if is_commit:
-            self._conn.commit()
+    def exec_raw_select(self, sql):
+        self._cursor.execute(sql)
+        return self._cursor.fetchall()
 
     def insert_trade_days(self, ds):
         # 先清空再插入，只支持全量操作
@@ -25,6 +23,12 @@ class DBTool:
             sql = "insert ignore into quant_stock.stock_trade_days values(\'" + str(day) + "\')"
             self._cursor.execute(sql)
         self._conn.commit()
+
+    def get_trade_days(self, start_date=None, end_date=None):
+        sql = "select * from quant_stock.stock_trade_days where trade_date > \'" + start_date + "\' and trade_date < \'" + end_date + "\'"
+        self._cursor.execute(sql)
+        res = self._cursor.fetchall()
+        return res
 
     def insert_stock_info(self, all_stock_info):
         # 先清空再插入，只支持全量操作
@@ -41,6 +45,15 @@ class DBTool:
                 self._conn.commit()
                 commit_count = 0
         self._conn.commit()
+
+    def get_stock_info(self, fileds):
+        if fileds is None:
+            print("Fields is NECESSARY.")
+            return
+        sql = "select " + ','.join(fileds) + " from quant_stock.stock_info"
+        self._cursor.execute(sql)
+        res = self._cursor.fetchall()
+        return res
 
     def __del__(self):
         self._cursor.close()
