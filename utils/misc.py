@@ -2,8 +2,6 @@ from urllib import request
 from urllib.parse import urlencode
 from hashlib import md5
 
-import datetime
-
 Msg_Base_Url = 'http://www.pushplus.plus/send?token=dbe8cc80aa704ae88e48e8769b786cc2&'
 Stock_DB_Tool = None
 
@@ -20,7 +18,3 @@ def stockid2table(stockid, base=10):
     obj.update(stockid.encode("UTF-8"))
     hc = obj.hexdigest()
     return int(hc[-4:], 16) % base
-
-
-if __name__ == '__main__':
-    print(datetime.date.today())

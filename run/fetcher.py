@@ -3,12 +3,15 @@ import configparser as cp
 
 import sys
 import os
+sys.path.append(os.path.dirname(sys.path[0]))
+
 import getopt
+import datetime
 import utils.db_tool
 import utils.misc
-import datetime
 
 from jqdatasdk import *
+
 
 JK_User = None
 JK_Token = None
@@ -54,7 +57,7 @@ def _scan():
         tbf_fetch_list = tds - dt
         for tbf in tbf_fetch_list:
             print(sid[0] + ',' + str(tbf[0]) + ',Daily', file=fp)
-        break
+        print(sid[0] + ' Finished.')
     fp.close()
     # 释放锁
     if os.path.exists(File_Locked):
