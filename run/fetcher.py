@@ -75,7 +75,6 @@ def _scan():
             print(stock_id + ',' +
                   str(ipo_date) + ',' + str(delist_date) + ',' + str(tbf[0]) + ',Daily', file=fp)
         print(stock_id + " Finished.")
-        break
     fp.close()
     # 释放锁
     if os.path.exists(File_Locked):

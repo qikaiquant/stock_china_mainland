@@ -25,7 +25,7 @@ class DBTool:
         self._conn.commit()
 
     def get_trade_days(self, start_date=None, end_date=None):
-        sql = "select * from quant_stock.stock_trade_days where trade_date > \'" + start_date + "\' and trade_date < \'" + end_date + "\'"
+        sql = "select * from quant_stock.stock_trade_days where trade_date >= \'" + start_date + "\' and trade_date <= \'" + end_date + "\'"
         self._cursor.execute(sql)
         res = self._cursor.fetchall()
         return res
