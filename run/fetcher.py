@@ -1,8 +1,10 @@
+import time
 import traceback as tb
 import configparser as cp
 
 import sys
 import os
+import pandas
 
 sys.path.append(os.path.dirname(sys.path[0]))
 
@@ -95,30 +97,27 @@ def _fetch_price():
     # 取行情
     fp = None
     try:
+        auth(JK_User, JK_Token)
         fp = open(File_TBF, 'r')
         line = fp.readline()
         fetch_map = {}
-        date_map = {}
         while line:
             segs = line.split(',')
             stock_id = segs[0]
             dt = datetime.datetime.strptime(segs[3], '%Y-%m-%d').date()
             line = fp.readline()
-
-            if stock_id not in date_map:
-                date_map[stock_id] = stock_id + "|" + segs[1] + "|" + segs[2]
-
             if stock_id in fetch_map:
                 fetch_map[stock_id].append(dt)
             else:
                 fetch_map[stock_id] = [dt]
-        print("Load Fetch File Done.")
+        print("Load To-Be-Fetched File Done.")
         for stock_id, dts in fetch_map.items():
+            print(stock_id, "TBF")
+            if len(dts) == 0:
+                print(stock_id, " All Priced Fetched.")
+                continue
             list.sort(dts)
             time_segs = []
-            if len(dts) == 0:
-                print(stock_id, time_segs)
-                break
             start_date = dts[0]
             for i in range(1, len(dts)):
                 if dts[i] - dts[i - 1] < timedelta(days=15):
@@ -126,19 +125,22 @@ def _fetch_price():
                 time_segs.append((start_date, dts[i - 1]))
                 start_date = dts[i]
             time_segs.append((start_date, dts[-1]))
-            print(date_map[stock_id], time_segs)
-    except:
-        tb.print_exc()
+            for time_seg in time_segs:
+                pi = get_price(stock_id, end_date=time_seg[1], start_date=time_seg[0], frequency='daily',
+                               fields=['open', 'close', 'low', 'high', 'volume', 'money', 'factor', 'high_limit',
+                                       'low_limit', 'avg', 'pre_close', 'paused'])
+                Stock_DB_Tool.insert_price(stock_id, pandas.DataFrame(pi))
+                time.sleep(1)
+    except Exception as e:
+        if str(e.args).find("您当天的查询条数超过了每日最大查询限制") != -1:
+            print("Rearch Daily Limited.")
+        else:
+            tb.print_exc()
     finally:
         fp.close()
+        logout()
         # 释放锁
         os.remove(File_Locked)
-
-
-def _check_spare():
-    auth(JK_User, JK_Token)
-    print(str(get_query_count()))
-    logout()
 
 
 if __name__ == '__main__':
@@ -158,7 +160,7 @@ if __name__ == '__main__':
         TBF_Dir = cf.get("DataSource", "TBF_Dir")
 
         opts, args = getopt.getopt(sys.argv[1:], "",
-                                   longopts=["trade_days", "all_stock_info", "spare", "scan", "price"])
+                                   longopts=["trade_days", "all_stock_info", "scan", "price"])
         for opt, _ in opts:
             if opt == '--trade_days':
                 # 获取所有交易日
@@ -166,9 +168,6 @@ if __name__ == '__main__':
             elif opt == '--all_stock_info':
                 # 获取所有股票的基本信息
                 _get_all_stock_info()
-            elif opt == '--spare':
-                # 获取api日限额余量
-                _check_spare()
             elif opt == '--scan':
                 # 获取待抓取的列表
                 _scan()

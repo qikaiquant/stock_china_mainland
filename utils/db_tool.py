@@ -1,4 +1,5 @@
 import pymysql as pms
+import utils.misc
 
 
 class DBTool:
@@ -15,6 +16,25 @@ class DBTool:
     def exec_raw_select(self, sql):
         self._cursor.execute(sql)
         return self._cursor.fetchall()
+
+    def insert_price(self, stock_id, prices):
+        suffix = utils.misc.stockid2table(stock_id)
+        table_name = "quant_stock.price_daily_r" + str(suffix)
+        commit_count = 0
+        for index, row in prices.iterrows():
+            dt = str(index).split()[0]
+            paused = int(float(row["paused"]))
+            sql = 'insert into ' + table_name + " values(\'" + stock_id + "\',\'" + dt + "\'," + str(
+                row["open"]) + "," + str(row["close"]) + "," + str(row["low"]) + "," + str(row["high"]) + "," + str(
+                row["volume"]) + "," + str(row["money"]) + "," + str(row["factor"]) + "," + str(
+                row["high_limit"]) + "," + str(row["low_limit"]) + "," + str(row["avg"]) + "," + str(
+                row["pre_close"]) + "," + str(paused) + ")"
+            self._cursor.execute(sql)
+            commit_count += 1
+            if commit_count == 100:
+                self._conn.commit()
+                commit_count = 0
+        self._conn.commit()
 
     def insert_trade_days(self, ds):
         # 先清空再插入，只支持全量操作
