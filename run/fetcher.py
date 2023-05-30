@@ -12,6 +12,7 @@ import utils.misc
 import datetime
 
 from jqdatasdk import *
+from datetime import timedelta
 
 JK_User = None
 JK_Token = None
@@ -44,12 +45,11 @@ def _scan():
         print("Last Round NOT Finished,Exit")
         return
     # 只能在Linux上运行
-    # os.mknod(File_Locked)
+    os.mknod(File_Locked)
     # 开始Scan，目前只有Daily抓取
     fp = open(File_TBF, 'w')
     stocks = Stock_DB_Tool.get_stock_info(['stock_id', 'start_date'])
     for stock in stocks:
-        print(stock)
         stock_id = stock[0]
         ipo_date = stock[1]
         start_date = datetime.datetime.strptime('2013-01-01', '%Y-%m-%d').date()
@@ -80,11 +80,45 @@ def _fetch_price():
         print("Last Round NOT Finished OR NO TBF,Exit")
         return
     # 只能在Linux上运行
-    os.mknod(File_Locked)
-
-    # 释放锁
-    if os.path.exists(File_Locked):
-        os.remove(File_Locked)
+    # os.mknod(File_Locked)
+    # 取行情
+    fp = None
+    try:
+        fp = open(File_TBF, 'r')
+        line = fp.readline()
+        fetch_map = {}
+        while line:
+            segs = line.split(',')
+            stock_id = segs[0]
+            dt = datetime.datetime.strptime(segs[1], '%Y-%m-%d').date()
+            freq = segs[2]
+            line = fp.readline()
+            if stock_id in fetch_map:
+                fetch_map[stock_id].append(dt)
+            else:
+                fetch_map[stock_id] = [dt]
+        print("Load Fetch File Done.")
+        for stock_id, dts in fetch_map.items():
+            list.sort(dts)
+            time_segs = []
+            if len(dts) == 0:
+                print(stock_id, time_segs)
+                break
+            start_date = dts[0]
+            for i in range(1, len(dts)):
+                if dts[i] - dts[i - 1] < timedelta(days=15):
+                    continue
+                time_segs.append((start_date, dts[i - 1]))
+                start_date = dts[i]
+            time_segs.append((start_date, dts[-1]))
+            print(stock_id, time_segs)
+            break
+    except:
+        tb.print_exc()
+    finally:
+        fp.close()
+        # 释放锁
+        # os.remove(File_Locked)
 
 
 def _check_spare():
@@ -110,7 +144,7 @@ if __name__ == '__main__':
         TBF_Dir = cf.get("DataSource", "TBF_Dir")
 
         opts, args = getopt.getopt(sys.argv[1:], "",
-                                   longopts=["trade_days", "all_stock_info", "check_spare", "scan", "price"])
+                                   longopts=["trade_days", "all_stock_info", "spare", "scan", "price"])
         for opt, _ in opts:
             if opt == '--trade_days':
                 # 获取所有交易日
@@ -118,7 +152,7 @@ if __name__ == '__main__':
             elif opt == '--all_stock_info':
                 # 获取所有股票的基本信息
                 _get_all_stock_info()
-            elif opt == '--check_spare':
+            elif opt == '--spare':
                 # 获取api日限额余量
                 _check_spare()
             elif opt == '--scan':
@@ -127,7 +161,6 @@ if __name__ == '__main__':
             elif opt == '--price':
                 # 抓取行情
                 _fetch_price()
-                print("Fetch Price")
             else:
                 raise getopt.GetoptError("Usage Error")
     except getopt.GetoptError:
