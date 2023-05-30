@@ -75,10 +75,11 @@ def _scan():
             print(stock_id + ',' +
                   str(ipo_date) + ',' + str(delist_date) + ',' + str(tbf[0]) + ',Daily', file=fp)
         print(stock_id + " Finished.")
-        fp.close()
-        # 释放锁
-        if os.path.exists(File_Locked):
-            os.remove(File_Locked)
+        break
+    fp.close()
+    # 释放锁
+    if os.path.exists(File_Locked):
+        os.remove(File_Locked)
 
 
 def _fetch_price():
@@ -91,19 +92,23 @@ def _fetch_price():
         print("Last Round NOT Finished OR NO TBF,Exit")
         return
     # 只能在Linux上运行
-    # os.mknod(File_Locked)
+    os.mknod(File_Locked)
     # 取行情
     fp = None
     try:
         fp = open(File_TBF, 'r')
         line = fp.readline()
         fetch_map = {}
+        date_map = {}
         while line:
             segs = line.split(',')
             stock_id = segs[0]
-            dt = datetime.datetime.strptime(segs[1], '%Y-%m-%d').date()
-            freq = segs[2]
+            dt = datetime.datetime.strptime(segs[3], '%Y-%m-%d').date()
             line = fp.readline()
+
+            if stock_id not in date_map:
+                date_map[stock_id] = stock_id + "|" + segs[1] + "|" + segs[2]
+
             if stock_id in fetch_map:
                 fetch_map[stock_id].append(dt)
             else:
@@ -122,14 +127,13 @@ def _fetch_price():
                 time_segs.append((start_date, dts[i - 1]))
                 start_date = dts[i]
             time_segs.append((start_date, dts[-1]))
-            print(stock_id, time_segs)
-            break
+            print(date_map[stock_id], time_segs)
     except:
         tb.print_exc()
     finally:
         fp.close()
         # 释放锁
-        # os.remove(File_Locked)
+        os.remove(File_Locked)
 
 
 def _check_spare():
