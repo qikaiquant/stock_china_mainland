@@ -48,26 +48,37 @@ def _scan():
     os.mknod(File_Locked)
     # 开始Scan，目前只有Daily抓取
     fp = open(File_TBF, 'w')
-    stocks = Stock_DB_Tool.get_stock_info(['stock_id', 'start_date'])
+    stocks = Stock_DB_Tool.get_stock_info(['stock_id', 'start_date', 'end_date'])
     for stock in stocks:
         stock_id = stock[0]
         ipo_date = stock[1]
+        delist_date = stock[2]
         start_date = datetime.datetime.strptime('2013-01-01', '%Y-%m-%d').date()
+        end_date = datetime.date.today()
+        # 退市时间在2013年1月1日之前，不参考
+        if delist_date < start_date:
+            print(stock_id + " Delisted at " + str(delist_date))
+            continue
+        # 已退市股票，按照退市时间为准
+        if delist_date < end_date:
+            end_date = delist_date
+        # 上市时间晚于2013年1月1日，以上市时间为准
         if ipo_date > start_date:
             start_date = ipo_date
-        tds = set(Stock_DB_Tool.get_trade_days(str(start_date), str(datetime.date.today())))
+        tds = set(Stock_DB_Tool.get_trade_days(str(start_date), str(end_date)))
         suffix = utils.misc.stockid2table(stock_id, 10)
         table_name = "quant_stock.price_daily_r" + str(suffix)
         sql = "select dt from " + table_name + " where sid = \'" + stock_id + '\''
         dt = set(Stock_DB_Tool.exec_raw_select(sql))
         tbf_fetch_list = tds - dt
         for tbf in tbf_fetch_list:
-            print(stock_id + ',' + str(tbf[0]) + ',Daily', file=fp)
+            print(stock_id + ',' +
+                  str(ipo_date) + ',' + str(delist_date) + ',' + str(tbf[0]) + ',Daily', file=fp)
         print(stock_id + " Finished.")
-    fp.close()
-    # 释放锁
-    if os.path.exists(File_Locked):
-        os.remove(File_Locked)
+        fp.close()
+        # 释放锁
+        if os.path.exists(File_Locked):
+            os.remove(File_Locked)
 
 
 def _fetch_price():
