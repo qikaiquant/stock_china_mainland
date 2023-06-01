@@ -12,6 +12,7 @@ import getopt
 import utils.db_tool
 import utils.misc
 import datetime
+import platform
 
 from jqdatasdk import *
 from datetime import timedelta
@@ -21,6 +22,7 @@ JK_Token = None
 
 Stock_DB_Tool = None
 
+OS_TYPE = platform.system()
 TBF_Dir = None
 File_Locked = 'TBF.Locked'
 File_TBF = 'price.TBF.txt'
@@ -47,7 +49,8 @@ def _scan():
         print("Last Round NOT Finished,Exit")
         return
     # 只能在Linux上运行
-    os.mknod(File_Locked)
+    if OS_TYPE == 'Linux':
+        os.mknod(File_Locked)
     # 开始Scan，目前只有Daily抓取
     fp = open(File_TBF, 'w')
     stocks = Stock_DB_Tool.get_stock_info(['stock_id', 'start_date', 'end_date'])
@@ -61,14 +64,14 @@ def _scan():
         if delist_date < start_date:
             print(stock_id + " Delisted at " + str(delist_date))
             continue
-        # 已退市股票，按照退市时间为准
+        # 已退市股票，以退市时间为准
         if delist_date < end_date:
             end_date = delist_date
         # 上市时间晚于2013年1月1日，以上市时间为准
         if ipo_date > start_date:
             start_date = ipo_date
         tds = set(Stock_DB_Tool.get_trade_days(str(start_date), str(end_date)))
-        suffix = utils.misc.stockid2table(stock_id, 10)
+        suffix = utils.misc.stockid2table(stock_id)
         table_name = "quant_stock.price_daily_r" + str(suffix)
         sql = "select dt from " + table_name + " where sid = \'" + stock_id + '\''
         dt = set(Stock_DB_Tool.exec_raw_select(sql))
@@ -79,8 +82,7 @@ def _scan():
         print(stock_id + " Finished.")
     fp.close()
     # 释放锁
-    if os.path.exists(File_Locked):
-        os.remove(File_Locked)
+    os.remove(File_Locked)
 
 
 def _fetch_price():
@@ -93,7 +95,8 @@ def _fetch_price():
         print("Last Round NOT Finished OR NO TBF,Exit")
         return
     # 只能在Linux上运行
-    os.mknod(File_Locked)
+    if OS_TYPE == 'Linux':
+        os.mknod(File_Locked)
     # 取行情
     fp = None
     try:
@@ -157,7 +160,10 @@ if __name__ == '__main__':
         JK_User = cf.get("DataSource", 'JK_User')
         JK_Token = cf.get("DataSource", 'JK_Token')
         # 行情抓取相关配置
-        TBF_Dir = cf.get("DataSource", "TBF_Dir")
+        if OS_TYPE == 'Linux':
+            TBF_Dir = cf.get("DataSource", "LINUX_TBF_DIR")
+        else:
+            TBF_Dir = cf.get("DataSource", "WIN_TBF_Dir")
 
         opts, args = getopt.getopt(sys.argv[1:], "",
                                    longopts=["trade_days", "all_stock_info", "scan", "price"])

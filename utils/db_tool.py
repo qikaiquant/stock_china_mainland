@@ -24,7 +24,7 @@ class DBTool:
         for index, row in prices.iterrows():
             dt = str(index).split()[0]
             paused = int(float(row["paused"]))
-            sql = 'insert into ' + table_name + " values(\'" + stock_id + "\',\'" + dt + "\'," + str(
+            sql = 'insert ignore into ' + table_name + " values(\'" + stock_id + "\',\'" + dt + "\'," + str(
                 row["open"]) + "," + str(row["close"]) + "," + str(row["low"]) + "," + str(row["high"]) + "," + str(
                 row["volume"]) + "," + str(row["money"]) + "," + str(row["factor"]) + "," + str(
                 row["high_limit"]) + "," + str(row["low_limit"]) + "," + str(row["avg"]) + "," + str(
