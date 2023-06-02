@@ -27,6 +27,7 @@ class DBTool:
             try:
                 paused = int(float(row["paused"]))
             except ValueError:
+                # 发生这种情况，很可能是这支股票已退市，但数据库里尚未更新
                 print(index, row)
                 continue
             sql = 'insert ignore into ' + table_name + " values(\'" + stock_id + "\',\'" + dt + "\'," + str(

@@ -114,7 +114,6 @@ def _fetch_price():
                 fetch_map[stock_id] = [dt]
         print("Load To-Be-Fetched File Done.")
         for stock_id, dts in fetch_map.items():
-            print(stock_id, "TBF")
             if len(dts) == 0:
                 print(stock_id, " All Priced Fetched.")
                 continue
