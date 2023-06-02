@@ -23,7 +23,12 @@ class DBTool:
         commit_count = 0
         for index, row in prices.iterrows():
             dt = str(index).split()[0]
-            paused = int(float(row["paused"]))
+            paused = 0
+            try:
+                paused = int(float(row["paused"]))
+            except ValueError:
+                print(index, row)
+                continue
             sql = 'insert ignore into ' + table_name + " values(\'" + stock_id + "\',\'" + dt + "\'," + str(
                 row["open"]) + "," + str(row["close"]) + "," + str(row["low"]) + "," + str(row["high"]) + "," + str(
                 row["volume"]) + "," + str(row["money"]) + "," + str(row["factor"]) + "," + str(

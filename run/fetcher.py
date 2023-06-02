@@ -79,7 +79,6 @@ def _scan():
         for tbf in tbf_fetch_list:
             print(stock_id + ',' +
                   str(ipo_date) + ',' + str(delist_date) + ',' + str(tbf[0]) + ',Daily', file=fp)
-        print(stock_id + " Finished.")
     fp.close()
     # 释放锁
     os.remove(File_Locked)
