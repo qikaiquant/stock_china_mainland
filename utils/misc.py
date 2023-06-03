@@ -51,8 +51,8 @@ def draw():
     tb = ax2.table(cellText=celltext, colLabels=columns, loc='lower left', cellLoc='center', rowLoc='bottom')
     tb.scale(1.1, 1.3)
 
-    plt.savefig("D:\\test\\aaa.jpg", dpi=600)
-    plt.show()
+    plt.savefig("/home/qikai/aaa.jpg", dpi=600)
+    # plt.show()
 
 
 if __name__ == '__main__':

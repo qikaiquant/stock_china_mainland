@@ -67,7 +67,6 @@ class DBTool:
             self._cursor.execute(sql)
             commit_count += 1
             if commit_count == 100:
-                print('Commit')
                 self._conn.commit()
                 commit_count = 0
         self._conn.commit()
