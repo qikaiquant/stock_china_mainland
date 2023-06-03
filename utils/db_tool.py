@@ -70,6 +70,11 @@ class DBTool:
                 self._conn.commit()
                 commit_count = 0
         self._conn.commit()
+        # 手动插入指数信息:沪深300
+        sql = "insert into quant_stock.stock_info values(\'000300.XSHG\', \'沪深300\', \'HS300\'," \
+              " \'2005-04-08\', \'2200-01-01\',\'{}\')"
+        self._cursor.execute(sql)
+        self._conn.commit()
 
     def get_stock_info(self, fileds):
         if fileds is None:
