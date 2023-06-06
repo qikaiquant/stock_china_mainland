@@ -41,12 +41,13 @@ def _get_all_stock_info():
 
 
 def _scan():
+    utils.misc.log("Start Scan")
     if not os.path.exists(TBF_Dir):
         os.mkdir(TBF_Dir)
     os.chdir(TBF_Dir)
     # 确认锁
     if os.path.exists(File_Locked):
-        print("Last Round NOT Finished,Exit")
+        utils.misc.log("Last Round NOT Finished,Exit")
         return
     # 只能在Linux上运行
     if OS_TYPE == 'Linux':
@@ -62,7 +63,6 @@ def _scan():
         end_date = datetime.date.today()
         # 退市时间在2013年1月1日之前，不参考
         if delist_date < start_date:
-            print(stock_id + " Delisted at " + str(delist_date))
             continue
         # 已退市股票，以退市时间为准
         if delist_date < end_date:
@@ -82,10 +82,11 @@ def _scan():
     fp.close()
     # 释放锁
     os.remove(File_Locked)
+    utils.misc.log("End Scan")
 
 
 def _fetch_price():
-    utils.misc.log("Start Fetch Prce")
+    utils.misc.log("Start Fetch Price")
     if not os.path.exists(TBF_Dir):
         utils.misc.log("TBF Dir NOT Exit")
         return
