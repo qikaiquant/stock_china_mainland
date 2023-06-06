@@ -85,13 +85,14 @@ def _scan():
 
 
 def _fetch_price():
+    utils.misc.log("Start Fetch Prce")
     if not os.path.exists(TBF_Dir):
-        print("TBF Dir NOT Exit")
+        utils.misc.log("TBF Dir NOT Exit")
         return
     os.chdir(TBF_Dir)
     # 确认锁及抓取文件
     if os.path.exists(File_Locked) or not os.path.exists(File_TBF):
-        print("Last Round NOT Finished OR NO TBF,Exit")
+        utils.misc.log("Last Round NOT Finished OR NO TBF,Exit")
         return
     # 只能在Linux上运行
     if OS_TYPE == 'Linux':
@@ -112,10 +113,15 @@ def _fetch_price():
                 fetch_map[stock_id].append(dt)
             else:
                 fetch_map[stock_id] = [dt]
-        print("Load To-Be-Fetched File Done.")
+
+        if len(fetch_map) == 0:
+            raise ("NO Price TBF.")
+        else:
+            utils.misc.log("Load To-Be-Fetched File Done.")
+
         for stock_id, dts in fetch_map.items():
             if len(dts) == 0:
-                print(stock_id, " All Priced Fetched.")
+                utils.misc.log(stock_id, " All Priced Fetched.")
                 continue
             list.sort(dts)
             time_segs = []
@@ -131,10 +137,10 @@ def _fetch_price():
                                fields=['open', 'close', 'low', 'high', 'volume', 'money', 'factor', 'high_limit',
                                        'low_limit', 'avg', 'pre_close', 'paused'])
                 Stock_DB_Tool.insert_price(stock_id, pandas.DataFrame(pi))
-                time.sleep(1)
+                time.sleep(0.1)
     except Exception as e:
         if str(e.args).find("您当天的查询条数超过了每日最大查询限制") != -1:
-            print("Rearch Daily Limited.")
+            utils.misc.log("Rearch Daily Limited.")
         else:
             tb.print_exc()
     finally:
@@ -142,6 +148,7 @@ def _fetch_price():
         logout()
         # 释放锁
         os.remove(File_Locked)
+        utils.misc.log("End Fetch Price")
 
 
 if __name__ == '__main__':

@@ -3,6 +3,7 @@ from urllib.parse import urlencode
 from hashlib import md5
 
 import random
+import datetime
 import matplotlib.pyplot as plt
 
 Msg_Base_Url = 'http://www.pushplus.plus/send?token=dbe8cc80aa704ae88e48e8769b786cc2&'
@@ -21,6 +22,16 @@ def stockid2table(stockid, base=10):
     obj.update(stockid.encode("UTF-8"))
     hc = obj.hexdigest()
     return int(hc[-4:], 16) % base
+
+
+def log(msg):
+    """
+    个人不喜欢用logger包，太重+打印到控制台太过繁琐
+    :param msg:
+    :return:
+    """
+    now = datetime.datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
+    print(now, msg)
 
 
 def draw():
@@ -51,9 +62,9 @@ def draw():
     tb = ax2.table(cellText=celltext, colLabels=columns, loc='lower left', cellLoc='center', rowLoc='bottom')
     tb.scale(1.1, 1.3)
 
-    plt.savefig("/home/qikai/aaa.jpg", dpi=600)
-    # plt.show()
+    # plt.savefig("/home/qikai/aaa.jpg", dpi=600)
+    plt.show()
 
 
 if __name__ == '__main__':
-    draw()
+    log("asdfdsafas")
