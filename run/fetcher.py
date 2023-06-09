@@ -14,8 +14,8 @@ import utils.misc
 import datetime
 import platform
 
-from jqdatasdk import *
 from datetime import timedelta
+from jqdatasdk import *
 
 JK_User = None
 JK_Token = None
@@ -152,6 +152,12 @@ def _fetch_price():
         utils.misc.log("End Fetch Price")
 
 
+def _check_spare():
+    auth(JK_User, JK_Token)
+    utils.misc.log(get_query_count())
+    logout()
+
+
 if __name__ == '__main__':
     try:
         cf = cp.ConfigParser()
@@ -172,7 +178,7 @@ if __name__ == '__main__':
             TBF_Dir = cf.get("DataSource", "WIN_TBF_Dir")
 
         opts, args = getopt.getopt(sys.argv[1:], "",
-                                   longopts=["trade_days", "all_stock_info", "scan", "price"])
+                                   longopts=["trade_days", "all_stock_info", "scan", "price", "spare"])
         for opt, _ in opts:
             if opt == '--trade_days':
                 # 获取所有交易日
@@ -186,6 +192,8 @@ if __name__ == '__main__':
             elif opt == '--price':
                 # 抓取行情
                 _fetch_price()
+            elif opt == '--spare':
+                _check_spare()
             else:
                 raise getopt.GetoptError("Usage Error")
     except getopt.GetoptError:

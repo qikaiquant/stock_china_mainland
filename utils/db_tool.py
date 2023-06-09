@@ -1,12 +1,15 @@
 import pymysql as pms
-import utils.misc
+from utils.misc import *
 
 
 class DBTool:
     def __init__(self, host, port, user, passwd):
-        print("DB Init")
+        log("DB Init")
         self._conn = pms.connect(host=host, port=port, user=user, passwd=passwd)
         self._cursor = self._conn.cursor()
+
+    def get_conn(self):
+        return self._conn
 
     def clear_table(self, table_name):
         sql = "truncate table " + table_name
@@ -17,8 +20,21 @@ class DBTool:
         self._cursor.execute(sql)
         return self._cursor.fetchall()
 
+    def get_price(self, stock_id, fields, start_dt, end_dt):
+        if fields is None:
+            log("Fields is NECESSARY.")
+            return
+        suffix = stockid2table(stock_id)
+        table_name = "quant_stock.price_daily_r" + str(suffix)
+        sql = "select " + ','.join(
+            fields) + " from " + table_name + " where sid = \'" + stock_id + "\' and dt >= \'" + str(
+            start_dt) + "\' and dt <= \'" + str(end_dt) + "\' order by dt"
+        self._cursor.execute(sql)
+        res = self._cursor.fetchall()
+        return res
+
     def insert_price(self, stock_id, prices):
-        suffix = utils.misc.stockid2table(stock_id)
+        suffix = stockid2table(stock_id)
         table_name = "quant_stock.price_daily_r" + str(suffix)
         commit_count = 0
         for index, row in prices.iterrows():
@@ -88,4 +104,4 @@ class DBTool:
     def __del__(self):
         self._cursor.close()
         self._conn.close()
-        print("DB Connection Closed.")
+        print("DB Closed.")
