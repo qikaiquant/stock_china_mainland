@@ -25,11 +25,12 @@ class MaStrategy(BaseStrategy):
 
     def backtest(self):
         stocks = self.ctx.db_tool.get_stock_info(['stock_id', 'cn_name', 'start_date', 'end_date'])
+        stock_price_map = {}
         count = 0
         for stock in stocks:
             sh_name = stock[1]
             res = self.ctx.db_tool.get_price(stock[0], ['dt', 'close', 'money'], stock[2], stock[3])
             stock_df = pandas.DataFrame(res, columns=['dt', 'close', 'money'])
+            stock_price_map[stock[0]] = stock_df
             count += 1
             log(sh_name + " Loaded, Index " + str(count))
-            break
