@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.dirname(sys.path[0]))
+
 import configparser as cp
 import importlib as il
 import traceback as tb
