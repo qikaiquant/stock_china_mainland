@@ -1,3 +1,5 @@
+import datetime
+
 import pymysql as pms
 from utils.misc import *
 
@@ -7,9 +9,6 @@ class DBTool:
         log("DB Init")
         self._conn = pms.connect(host=host, port=port, user=user, passwd=passwd)
         self._cursor = self._conn.cursor()
-
-    def get_conn(self):
-        return self._conn
 
     def clear_table(self, table_name):
         sql = "truncate table " + table_name
@@ -67,7 +66,12 @@ class DBTool:
         self._conn.commit()
 
     def get_trade_days(self, start_date=None, end_date=None):
-        sql = "select * from quant_stock.stock_trade_days where trade_date >= \'" + start_date + "\' and trade_date <= \'" + end_date + "\'"
+        if not start_date:
+            start_date = datetime.datetime.strptime('2013-01-01', '%Y-%m-%d').date()
+        if not end_date:
+            end_date = datetime.datetime.today()
+        sql = "select * from quant_stock.stock_trade_days where trade_date >= \'" + str(
+            start_date) + "\' and trade_date <= \'" + str(end_date) + "\'"
         self._cursor.execute(sql)
         res = self._cursor.fetchall()
         return res
