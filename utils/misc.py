@@ -1,19 +1,17 @@
+import pandas
+import talib
+import random
+import datetime
+import configparser
+import platform
+import matplotlib.pyplot as plt
+
 from urllib import request
 from urllib.parse import urlencode
 from hashlib import md5
-
-import pandas
-import talib
-
 from utils.db_tool import *
 
-import random
-import datetime
-import matplotlib.pyplot as plt
-import configparser as cp
-
 Msg_Base_Url = 'http://www.pushplus.plus/send?token=dbe8cc80aa704ae88e48e8769b786cc2&'
-Stock_DB_Tool = None
 
 
 def send_wechat_message(title, content):
@@ -28,6 +26,28 @@ def stockid2table(stockid, base=10):
     obj.update(stockid.encode("UTF-8"))
     hc = obj.hexdigest()
     return int(hc[-4:], 16) % base
+
+
+def load_config(file):
+    # 载入原始配置
+    conf_dict = {}
+    cf = configparser.ConfigParser()
+    cf.read(file)
+    secs = cf.sections()
+    for sec in secs:
+        conf_dict[sec] = {}
+        its = cf.items(sec)
+        for k, v in its:
+            conf_dict[sec][k] = v
+    if platform.system() == 'Linux':
+        conf_dict['Mysql']['host'] = 'localhost'
+        conf_dict['Redis']['host'] = 'localhost'
+    port = int(conf_dict['Mysql']['port'])
+    conf_dict['Mysql']['port'] = port
+    port = int(conf_dict['Redis']['port'])
+    conf_dict['Redis']['port'] = port
+    log(conf_dict)
+    return conf_dict
 
 
 def log(msg):
@@ -73,7 +93,10 @@ def draw():
 
 
 def draw_stock_price(stock_id, sdate, edate):
-    prices = Stock_DB_Tool.get_price(stock_id, ['dt', 'close'], sdate, edate)
+    conf_dict = load_config("../config/config.ini")
+    db_tool = DBTool(conf_dict['Mysql']['host'], conf_dict['Mysql']['port'], conf_dict['Mysql']['user'],
+                     conf_dict['Mysql']['passwd'])
+    prices = db_tool.get_price(stock_id, ['dt', 'close'], sdate, edate)
     df = pandas.DataFrame(prices, columns=['dt', 'close'])
     df['SMA15'] = talib.SMA(df['close'], timeperiod=15)
     df['SMA7'] = talib.SMA(df['close'], timeperiod=7)
@@ -89,16 +112,4 @@ def draw_stock_price(stock_id, sdate, edate):
 
 
 if __name__ == '__main__':
-    cf = cp.ConfigParser()
-    cf.read("../config/config.ini")
-    # 初始化数据库
-    host = cf.get("Mysql", 'Host')
-    port = int(cf.get("Mysql", 'Port'))
-    user = cf.get("Mysql", 'User')
-    passwd = cf.get("Mysql", 'Passwd')
-    Stock_DB_Tool = DBTool(host, port, user, passwd)
-
-    sdate = cf.get("Backtest", "BTC_Start_Date")
-    edate = cf.get("Backtest", "BTC_End_Date")
-
-    draw_stock_price("000786.XSHE", sdate, edate)
+    load_config("../config/config.ini")

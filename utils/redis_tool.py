@@ -1,7 +1,5 @@
-import pickle
-import time
-
 import redis
+import pickle
 
 
 class RedisTool:

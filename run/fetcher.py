@@ -1,21 +1,18 @@
 import time
 import traceback as tb
-import configparser as cp
-
+import getopt
+import datetime
+import platform
 import sys
 import os
 import pandas
 
 sys.path.append(os.path.dirname(sys.path[0]))
 
-import getopt
-import utils.db_tool
-import utils.misc
-import datetime
-import platform
-
 from datetime import timedelta
 from jqdatasdk import *
+from utils.db_tool import *
+from utils.misc import *
 
 JK_User = None
 JK_Token = None
@@ -41,13 +38,13 @@ def _get_all_stock_info():
 
 
 def _scan():
-    utils.misc.log("Start Scan")
+    log("Start Scan")
     if not os.path.exists(TBF_Dir):
         os.mkdir(TBF_Dir)
     os.chdir(TBF_Dir)
     # 确认锁
     if os.path.exists(File_Locked):
-        utils.misc.log("Last Round NOT Finished,Exit")
+        log("Last Round NOT Finished,Exit")
         return
     # 只能在Linux上运行
     if OS_TYPE == 'Linux':
@@ -82,18 +79,18 @@ def _scan():
     fp.close()
     # 释放锁
     os.remove(File_Locked)
-    utils.misc.log("End Scan")
+    log("End Scan")
 
 
 def _fetch_price():
-    utils.misc.log("Start Fetch Price")
+    log("Start Fetch Price")
     if not os.path.exists(TBF_Dir):
-        utils.misc.log("TBF Dir NOT Exit")
+        log("TBF Dir NOT Exit")
         return
     os.chdir(TBF_Dir)
     # 确认锁及抓取文件
     if os.path.exists(File_Locked) or not os.path.exists(File_TBF):
-        utils.misc.log("Last Round NOT Finished OR NO TBF,Exit")
+        log("Last Round NOT Finished OR NO TBF,Exit")
         return
     # 只能在Linux上运行
     if OS_TYPE == 'Linux':
@@ -118,11 +115,11 @@ def _fetch_price():
         if len(fetch_map) == 0:
             raise ("NO Price TBF.")
         else:
-            utils.misc.log("Load To-Be-Fetched File Done.")
+            log("Load To-Be-Fetched File Done.")
 
         for stock_id, dts in fetch_map.items():
             if len(dts) == 0:
-                utils.misc.log(stock_id, " All Priced Fetched.")
+                log(stock_id, " All Priced Fetched.")
                 continue
             list.sort(dts)
             time_segs = []
@@ -141,7 +138,7 @@ def _fetch_price():
                 time.sleep(0.1)
     except Exception as e:
         if str(e.args).find("您当天的查询条数超过了每日最大查询限制") != -1:
-            utils.misc.log("Rearch Daily Limited.")
+            log("Rearch Daily Limited.")
         else:
             tb.print_exc()
     finally:
@@ -149,7 +146,7 @@ def _fetch_price():
         logout()
         # 释放锁
         os.remove(File_Locked)
-        utils.misc.log("End Fetch Price")
+        log("End Fetch Price")
 
 
 def _check_spare():
@@ -159,46 +156,36 @@ def _check_spare():
 
 
 if __name__ == '__main__':
-    try:
-        cf = cp.ConfigParser()
-        cf.read("../config/config.ini")
-        # 初始化数据库
-        host = cf.get("Mysql", 'Host')
-        if OS_TYPE == 'Linux':
-            host = 'localhost'
-        port = int(cf.get("Mysql", 'Port'))
-        user = cf.get("Mysql", 'User')
-        passwd = cf.get("Mysql", 'Passwd')
-        Stock_DB_Tool = utils.db_tool.DBTool(host, port, user, passwd)
-        # 聚宽账号
-        JK_User = cf.get("DataSource", 'JK_User')
-        JK_Token = cf.get("DataSource", 'JK_Token')
-        # 行情抓取相关配置
-        if OS_TYPE == 'Linux':
-            TBF_Dir = cf.get("DataSource", "LINUX_TBF_DIR")
-        else:
-            TBF_Dir = cf.get("DataSource", "WIN_TBF_Dir")
+    conf_dict = load_config("../config/config.ini")
+    # 初始化数据库
+    Stock_DB_Tool = DBTool(conf_dict['Mysql']['host'], conf_dict['Mysql']['port'], conf_dict['Mysql']['user'],
+                           conf_dict['Mysql']['passwd'])
+    # 聚宽账号
+    JK_User = conf_dict['DataSource']['jk_user']
+    JK_Token = conf_dict['DataSource']['jk_token']
+    # 行情抓取相关配置
+    if OS_TYPE == 'Linux':
+        TBF_Dir = conf_dict['DataSource']['linux_tbf_dir']
+    else:
+        TBF_Dir = conf_dict['DataSource']['win_tbf_dir']
 
-        opts, args = getopt.getopt(sys.argv[1:], "",
-                                   longopts=["trade_days", "all_stock_info", "scan", "price", "spare"])
-        for opt, _ in opts:
-            if opt == '--trade_days':
-                # 获取所有交易日
-                _get_trade_days()
-            elif opt == '--all_stock_info':
-                # 获取所有股票的基本信息
-                _get_all_stock_info()
-            elif opt == '--scan':
-                # 获取待抓取的列表
-                _scan()
-            elif opt == '--price':
-                # 抓取行情
-                _fetch_price()
-            elif opt == '--spare':
-                _check_spare()
-            else:
-                raise getopt.GetoptError("Usage Error")
-    except getopt.GetoptError:
-        tb.print_exc()
-    except:
-        tb.print_exc()
+    opts, args = getopt.getopt(sys.argv[1:], "",
+                               longopts=["trade_days", "all_stock_info", "scan", "price", "spare"])
+    for opt, _ in opts:
+        if opt == '--trade_days':
+            # 获取所有交易日
+            _get_trade_days()
+        elif opt == '--all_stock_info':
+            # 获取所有股票的基本信息
+            _get_all_stock_info()
+        elif opt == '--scan':
+            # 获取待抓取的列表
+            _scan()
+        elif opt == '--price':
+            # 抓取行情
+            _fetch_price()
+        elif opt == '--spare':
+            _check_spare()
+        else:
+            log("Usage Error")
+            sys.exit(1)
