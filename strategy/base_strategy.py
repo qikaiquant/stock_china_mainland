@@ -9,12 +9,6 @@ class Position:
         self.hold = {}
         self.spare = bib
 
-    def output_detail(self):
-        print("---------Hold-----------")
-        print(self.hold)
-        print("---------Spare----------")
-        print(self.spare)
-
     def buy(self, stock_id, price, budget):
         volumn = int(budget / (price * 100)) * 100
         if volumn == 0:

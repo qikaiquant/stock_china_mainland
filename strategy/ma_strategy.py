@@ -33,11 +33,18 @@ class MaStrategy(BaseStrategy):
         self.stock_price_map = {}
         self.stock_info_map = {}
 
-    def calc_net_worth(self, position, dt):
+    def calc_networth_log(self, position, dt, fp):
+        log_array = [str(dt)]
         nw = position.spare
         for stock_id, (_, volumn) in position.hold.items():
+            stock_name = self.stock_info_map[stock_id]
             price = self.stock_price_map[stock_id].loc[dt, 'close']
             nw += price * volumn
+            log_item = stock_name + "|" + str(price) + "|" + str(volumn)
+            log_array.append(log_item)
+        log_array.append(str(position.spare))
+        log_array.insert(1, str(nw))
+        print(",".join(log_array), file=fp)
         return nw
 
     def pick_candidate_position(self, cur_day, trade_days, filter_list):
@@ -57,7 +64,7 @@ class MaStrategy(BaseStrategy):
                 break
             # End 需要保证这些日期都是有交易的
             pre1 = trade_days[0]
-            if df.loc[pre1, 'SMA7'] < df.loc[pre1, 'SMA15']:
+            if df.loc[pre1, 'SMA7'] <= df.loc[pre1, 'SMA15']:
                 continue
             flag = True
             for i in range(1, len(trade_days)):
@@ -75,7 +82,8 @@ class MaStrategy(BaseStrategy):
     def backtest(self):
         # 载入BenchMark
         self.load_benchmark(['000300.XSHG'])
-        # draw_STG(self.ctx.bt_res, ['000300.XSHG'])
+        # 打开回测log文件
+        fp = open('../log/SMA_Detail.csv', 'w')
         # 载入回测周期内全部股票行情并计算SMA
         stocks = self.ctx.db_tool.get_stock_info(['stock_id', 'cn_name', 'start_date', 'end_date'])
         count = 1
@@ -116,11 +124,11 @@ class MaStrategy(BaseStrategy):
                     postion.sell(stock_id, df.loc[dt, 'avg'], sell_all=True)
             # 如果不满仓，补足
             if len(postion.hold) < 5:
-                pre_8_td = get_preN_tds(all_trade_days, dt, 8)
-                res = self.pick_candidate_position(dt, pre_8_td, postion.hold.keys())
+                pre_N_td = get_preN_tds(all_trade_days, dt, 8)
+                res = self.pick_candidate_position(dt, pre_N_td, postion.hold.keys())
                 if len(res) == 0:
                     log("Pick NO Candidate")
-                    net_worth.append(self.calc_net_worth(postion, dt))
+                    net_worth.append(self.calc_networth_log(postion, dt, fp))
                     continue
                 res.sort(key=lambda x: x[2], reverse=True)
                 # num：剩余仓位和候选集合之间的小值
@@ -133,6 +141,7 @@ class MaStrategy(BaseStrategy):
                     if len(postion.hold) == 5:
                         break
                     postion.buy(item[0], item[1], budget)
-            net_worth.append(self.calc_net_worth(postion, dt))
+            net_worth.append(self.calc_networth_log(postion, dt, fp))
+        fp.close()
         self.ctx.bt_res.insert(loc=1, column='stg_SMA', value=net_worth)
         draw_STG(self.ctx.bt_res)

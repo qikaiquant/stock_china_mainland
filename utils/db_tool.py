@@ -19,14 +19,17 @@ class DBTool:
         self._cursor.execute(sql)
         return self._cursor.fetchall()
 
-    def get_price(self, stock_id, fields, start_dt, end_dt):
-        if fields is None:
-            log("Fields is NECESSARY.")
-            return
+    def get_price(self, stock_id, fields, start_dt=None, end_dt=None):
+        fields_str = "*"
+        if len(fields) != 0:
+            fields_str = ",".join(fields)
         suffix = stockid2table(stock_id)
         table_name = "quant_stock.price_daily_r" + str(suffix)
-        sql = "select " + ','.join(
-            fields) + " from " + table_name + " where sid = \'" + stock_id + "\' and dt >= \'" + str(
+        if not start_dt:
+            start_dt = datetime.datetime.strptime('2013-01-01', '%Y-%m-%d').date()
+        if not end_dt:
+            end_dt = datetime.datetime.today()
+        sql = "select " + fields_str + " from " + table_name + " where sid = \'" + stock_id + "\' and dt >= \'" + str(
             start_dt) + "\' and dt <= \'" + str(end_dt) + "\' order by dt"
         self._cursor.execute(sql)
         res = self._cursor.fetchall()

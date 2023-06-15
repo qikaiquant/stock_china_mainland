@@ -2,9 +2,15 @@ from urllib import request
 from urllib.parse import urlencode
 from hashlib import md5
 
+import pandas
+import talib
+
+from utils.db_tool import *
+
 import random
 import datetime
 import matplotlib.pyplot as plt
+import configparser as cp
 
 Msg_Base_Url = 'http://www.pushplus.plus/send?token=dbe8cc80aa704ae88e48e8769b786cc2&'
 Stock_DB_Tool = None
@@ -66,5 +72,33 @@ def draw():
     plt.show()
 
 
+def draw_stock_price(stock_id, sdate, edate):
+    prices = Stock_DB_Tool.get_price(stock_id, ['dt', 'close'], sdate, edate)
+    df = pandas.DataFrame(prices, columns=['dt', 'close'])
+    df['SMA15'] = talib.SMA(df['close'], timeperiod=15)
+    df['SMA7'] = talib.SMA(df['close'], timeperiod=7)
+    df['SMA15'].fillna(method='bfill', inplace=True)
+    df['SMA7'].fillna(method='bfill', inplace=True)
+
+    plt.figure(figsize=(10, 6), dpi=100)
+    plt.plot(df['dt'], df['close'], color='black', label=stock_id)
+    plt.plot(df['dt'], df['SMA7'], color='red', label="SMA7")
+    plt.plot(df['dt'], df['SMA15'], color='blue', label="SMA15")
+    plt.legend()
+    plt.show()
+
+
 if __name__ == '__main__':
-    draw()
+    cf = cp.ConfigParser()
+    cf.read("../config/config.ini")
+    # 初始化数据库
+    host = cf.get("Mysql", 'Host')
+    port = int(cf.get("Mysql", 'Port'))
+    user = cf.get("Mysql", 'User')
+    passwd = cf.get("Mysql", 'Passwd')
+    Stock_DB_Tool = DBTool(host, port, user, passwd)
+
+    sdate = cf.get("Backtest", "BTC_Start_Date")
+    edate = cf.get("Backtest", "BTC_End_Date")
+
+    draw_stock_price("000786.XSHE", sdate, edate)
