@@ -1,6 +1,7 @@
 import sys
 import os
 import configparser as cp
+import time
 
 sys.path.append(os.path.dirname(sys.path[0]))
 
@@ -18,11 +19,17 @@ def load_price():
               'high_limit', 'low_limit', 'avg', 'pre_close', 'paused']
     count = 1
     for (stock_id,) in res:
+        t0 = time.time()
         res = Stock_DB_Tool.get_price(stock_id, fields=db_col)
-        Stock_Redis_Tool.set_price(stock_id, res)
+        t1 = time.time()
+        t2, t3 = Stock_Redis_Tool.set_price(stock_id, res)
+        print("总耗时:" + str(t3 - t0))
+        print("--读数据库:" + str(t1 - t0))
+        print("--序列化:" + str(t2 - t1))
+        print("--写Redis:" + str(t3 - t2))
         count += 1
         log(count)
-        if count == 100:
+        if count == 5:
             break
 
 

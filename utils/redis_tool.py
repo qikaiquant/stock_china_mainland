@@ -1,4 +1,5 @@
 import pickle
+import time
 
 import redis
 
@@ -9,7 +10,11 @@ class RedisTool:
         self._conn = redis.Redis(host=host, port=port, password=passwd, db=db)
 
     def set_price(self, stock_id, res):
-        self._conn.set(stock_id, pickle.dumps(res))
+        res_bytes = pickle.dumps(res)
+        t0 = time.time()
+        self._conn.set(stock_id, res_bytes)
+        t1 = time.time()
+        return t0, t1
 
     def get_price(self, stock_id):
         res = self._conn.get(stock_id)
