@@ -164,6 +164,8 @@ if __name__ == '__main__':
         cf.read("../config/config.ini")
         # 初始化数据库
         host = cf.get("Mysql", 'Host')
+        if OS_TYPE == 'Linux':
+            host = 'localhost'
         port = int(cf.get("Mysql", 'Port'))
         user = cf.get("Mysql", 'User')
         passwd = cf.get("Mysql", 'Passwd')
