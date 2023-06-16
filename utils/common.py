@@ -6,8 +6,8 @@ from hashlib import md5
 from urllib import request
 from urllib.parse import urlencode
 
-Msg_Base_Url = 'http://www.pushplus.plus/send?token=dbe8cc80aa704ae88e48e8769b786cc2&'
-OS_TYPE = platform.system()
+_Msg_Base_Url = 'http://www.pushplus.plus/send?token=dbe8cc80aa704ae88e48e8769b786cc2&'
+_OS_TYPE = platform.system()
 
 
 def _init_logger():
@@ -17,7 +17,7 @@ def _init_logger():
                                        datefmt='%Y-%m-%d %H:%M:%S')
     debug_formatter = logging.Formatter('[%(asctime)s][%(levelname)s]%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     # 生产环境，输出到log文件
-    if OS_TYPE == 'Linux':
+    if _OS_TYPE == 'Linux':
         fh = logging.FileHandler("../log/quant_stock.log")
         fh.setFormatter(prod_formatter)
         logger.addHandler(fh)
@@ -30,7 +30,7 @@ def _init_logger():
 
 def send_wechat_message(title, content):
     http_params = {'title': title, 'content': content}
-    url = Msg_Base_Url + urlencode(http_params)
+    url = _Msg_Base_Url + urlencode(http_params)
     res = request.urlopen(url)
     print(res.read().decode())
 
@@ -42,26 +42,26 @@ def stockid2table(stockid, base=10):
     return int(hc[-4:], 16) % base
 
 
-def load_config(file):
+def _load_config(file):
     # 载入原始配置
-    conf_dict = {}
+    cd = {}
     cf = configparser.ConfigParser()
     cf.read(file)
     secs = cf.sections()
     for sec in secs:
-        conf_dict[sec] = {}
+        cd[sec] = {}
         its = cf.items(sec)
         for k, v in its:
-            conf_dict[sec][k] = v
-    if OS_TYPE == 'Linux':
-        conf_dict['Mysql']['host'] = 'localhost'
-        conf_dict['Redis']['host'] = 'localhost'
-    port = int(conf_dict['Mysql']['port'])
-    conf_dict['Mysql']['port'] = port
-    port = int(conf_dict['Redis']['port'])
-    conf_dict['Redis']['port'] = port
-    return conf_dict
+            cd[sec][k] = v
+    if _OS_TYPE == 'Linux':
+        cd['Mysql']['host'] = 'localhost'
+        cd['Redis']['host'] = 'localhost'
+    port = int(cd['Mysql']['port'])
+    cd['Mysql']['port'] = port
+    port = int(cd['Redis']['port'])
+    cd['Redis']['port'] = port
+    return cd
 
 
 _init_logger()
-conf_dict = load_config("../config/config.ini")
+conf_dict = _load_config("../config/config.ini")

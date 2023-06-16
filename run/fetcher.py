@@ -33,9 +33,11 @@ def _get_trade_days():
 
 
 def _get_all_stock_info():
+    logging.info("Start Get All Stock Info")
     auth(JK_User, JK_Token)
     Stock_DB_Tool.insert_stock_info(pandas.DataFrame(get_all_securities(['stock'])))
     logout()
+    logging.info("End Get All Stock Info")
 
 
 def _scan():
