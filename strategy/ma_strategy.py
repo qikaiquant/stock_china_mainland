@@ -1,10 +1,10 @@
+import datetime
+import talib
+import matplotlib.pyplot as plt
+
 from datetime import timedelta
 from strategy.base_strategy import *
 from utils.common import *
-
-import matplotlib.pyplot as plt
-import talib
-import pandas
 
 
 def draw_STG(res):
@@ -127,7 +127,7 @@ class MaStrategy(BaseStrategy):
                 pre_N_td = get_preN_tds(all_trade_days, dt, 8)
                 res = self.pick_candidate_position(dt, pre_N_td, postion.hold.keys())
                 if len(res) == 0:
-                    log("Pick NO Candidate")
+                    logging.info("Pick NO Candidate")
                     net_worth.append(self.calc_networth_log(postion, dt, fp))
                     continue
                 res.sort(key=lambda x: x[2], reverse=True)

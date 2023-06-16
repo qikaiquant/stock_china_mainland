@@ -1,11 +1,12 @@
+import logging
 import time
-import traceback as tb
 import getopt
 import datetime
 import platform
 import sys
 import os
 import pandas
+import traceback as tb
 
 sys.path.append(os.path.dirname(sys.path[0]))
 
@@ -38,13 +39,13 @@ def _get_all_stock_info():
 
 
 def _scan():
-    log("Start Scan")
+    logging.info("Start Scan")
     if not os.path.exists(TBF_Dir):
         os.mkdir(TBF_Dir)
     os.chdir(TBF_Dir)
     # 确认锁
     if os.path.exists(File_Locked):
-        log("Last Round NOT Finished,Exit")
+        logging.info("Last Round NOT Finished,Exit")
         return
     # 只能在Linux上运行
     if OS_TYPE == 'Linux':
@@ -79,18 +80,18 @@ def _scan():
     fp.close()
     # 释放锁
     os.remove(File_Locked)
-    log("End Scan")
+    logging.info("End Scan")
 
 
 def _fetch_price():
-    log("Start Fetch Price")
+    logging.info("Start Fetch Price")
     if not os.path.exists(TBF_Dir):
-        log("TBF Dir NOT Exit")
+        logging.info("TBF Dir NOT Exit")
         return
     os.chdir(TBF_Dir)
     # 确认锁及抓取文件
     if os.path.exists(File_Locked) or not os.path.exists(File_TBF):
-        log("Last Round NOT Finished OR NO TBF,Exit")
+        logging.info("Last Round NOT Finished OR NO TBF,Exit")
         return
     # 只能在Linux上运行
     if OS_TYPE == 'Linux':
@@ -115,11 +116,11 @@ def _fetch_price():
         if len(fetch_map) == 0:
             raise ("NO Price TBF.")
         else:
-            log("Load To-Be-Fetched File Done.")
+            logging.info("Load To-Be-Fetched File Done.")
 
         for stock_id, dts in fetch_map.items():
             if len(dts) == 0:
-                log(stock_id, " All Priced Fetched.")
+                logging.info(" All Priced Fetched.")
                 continue
             list.sort(dts)
             time_segs = []
@@ -138,7 +139,7 @@ def _fetch_price():
                 time.sleep(0.1)
     except Exception as e:
         if str(e.args).find("您当天的查询条数超过了每日最大查询限制") != -1:
-            log("Rearch Daily Limited.")
+            logging.info("Rearch Daily Limited.")
         else:
             tb.print_exc()
     finally:
@@ -146,12 +147,12 @@ def _fetch_price():
         logout()
         # 释放锁
         os.remove(File_Locked)
-        log("End Fetch Price")
+        logging.info("End Fetch Price")
 
 
 def _check_spare():
     auth(JK_User, JK_Token)
-    utils.misc.log(get_query_count())
+    log(logging.INFO, get_query_count())
     logout()
 
 
@@ -187,5 +188,5 @@ if __name__ == '__main__':
         elif opt == '--spare':
             _check_spare()
         else:
-            log("Usage Error")
+            logging.error("Usage Error")
             sys.exit(1)

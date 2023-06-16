@@ -1,14 +1,33 @@
 import configparser
+import logging
 import platform
-import random
-import datetime
-import matplotlib.pyplot as plt
-
+import sys
+from hashlib import md5
 from urllib import request
 from urllib.parse import urlencode
-from hashlib import md5
 
 Msg_Base_Url = 'http://www.pushplus.plus/send?token=dbe8cc80aa704ae88e48e8769b786cc2&'
+OS_TYPE = platform.system()
+
+
+def _init_logger():
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+
+    prod_formatter = logging.Formatter('[%(asctime)s][%(levelname)s][%(filename)s:%(lineno)d]%(message)s',
+                                       datefmt='%Y-%m-%d %H:%M:%S')
+    debug_formatter = logging.Formatter('[%(asctime)s][%(levelname)s]%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+
+    # 生产环境，输出到log文件
+    if OS_TYPE == 'Linux':
+        fh = logging.FileHandler("../log/quant_stock.log")
+        fh.setFormatter(prod_formatter)
+        logger.addHandler(fh)
+    # 测试环境，输出到标准输出
+    else:
+        sh = logging.StreamHandler(sys.stdout)
+        sh.setFormatter(debug_formatter)
+        logger.addHandler(sh)
 
 
 def send_wechat_message(title, content):
@@ -36,7 +55,7 @@ def load_config(file):
         its = cf.items(sec)
         for k, v in its:
             conf_dict[sec][k] = v
-    if platform.system() == 'Linux':
+    if OS_TYPE == 'Linux':
         conf_dict['Mysql']['host'] = 'localhost'
         conf_dict['Redis']['host'] = 'localhost'
     port = int(conf_dict['Mysql']['port'])
@@ -46,43 +65,4 @@ def load_config(file):
     return conf_dict
 
 
-def log(msg):
-    """
-    个人不喜欢用logger包，太重+打印到控制台太过繁琐
-    :param msg:
-    :return:
-    """
-    now = datetime.datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
-    print(now, msg)
-
-
-def draw():
-    x = range(0, 120)
-    y1 = [random.randint(25, 30) for i in x]
-    y2 = [random.randint(11, 14) for i in x]
-
-    fig = plt.figure(figsize=(10, 6), dpi=100)
-    plt.rc('font', family='FangSong', size=14)
-    # 左侧折线图
-    left, bottom, width, height = 0.05, 0.2, 0.7, 0.6
-    ax1 = fig.add_axes([left, bottom, width, height])
-    ax1.plot(x, y1, color='darkred', label="Zhang")
-    ax1.plot(x, y2, color='slategrey', label="Wang")
-    ax1.grid(linestyle='--')
-    ax1.set_facecolor('whitesmoke')
-    ax1.spines['top'].set_visible(False)
-    ax1.spines['right'].set_visible(False)
-    # plt.title("000023.SZ")
-    ax1.legend(loc='best')
-    # 右侧数据指标表格
-    left, bottom, width, height = 0.76, 0.2, 0.2, 0.6
-    ax2 = fig.add_axes([left, bottom, width, height])
-    celltext = [['收益', '120%', '250%'], ['年化收益', '120%', '250%'], ['夏普指数', '0.5', '2'],
-                ['最大回撤', '50%', '20%']]
-    columns = ['指标', "MA50", "基线"]
-    ax2.axis('off')
-    tb = ax2.table(cellText=celltext, colLabels=columns, loc='lower left', cellLoc='center', rowLoc='bottom')
-    tb.scale(1.1, 1.3)
-
-    # plt.savefig("/home/qikai/aaa.jpg", dpi=600)
-    plt.show()
+_init_logger()

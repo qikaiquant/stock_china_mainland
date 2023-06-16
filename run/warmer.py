@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 sys.path.append(os.path.dirname(sys.path[0]))
 from utils.db_tool import *
@@ -21,6 +21,7 @@ def load_price():
 
 
 if __name__ == '__main__':
+    logging.info("Start Warmer")
     # 读配置文件
     conf_dict = load_config("../config/config.ini")
     # 初始化数据库
@@ -29,6 +30,5 @@ if __name__ == '__main__':
     # 初始化Redis
     Stock_Redis_Tool = RedisTool(conf_dict['Redis']['host'], conf_dict['Redis']['port'], conf_dict['Redis']['passwd'])
     # 预热缓存
-    log("Start Cache Warmer")
     load_price()
-    log("End Cache Warmer")
+    logging.info("Warmer End")

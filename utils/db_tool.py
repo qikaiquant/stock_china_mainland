@@ -1,10 +1,13 @@
+import datetime
+
 import pymysql as pms
+
 from utils.common import *
 
 
 class DBTool:
     def __init__(self, host, port, user, passwd):
-        log("DB Init")
+        logging.info("DB Init")
         self._conn = pms.connect(host=host, port=port, user=user, passwd=passwd)
         self._cursor = self._conn.cursor()
 
@@ -109,4 +112,4 @@ class DBTool:
     def __del__(self):
         self._cursor.close()
         self._conn.close()
-        print("DB Closed.")
+        logging.info("DB Closed.")

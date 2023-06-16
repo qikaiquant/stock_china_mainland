@@ -1,7 +1,7 @@
-from utils.common import *
-
-import pandas
 import operator
+import pandas
+
+from utils.common import *
 
 
 class Position:
@@ -12,11 +12,11 @@ class Position:
     def buy(self, stock_id, price, budget):
         volumn = int(budget / (price * 100)) * 100
         if volumn == 0:
-            log("Too Expensive, Fail to Buy")
+            logging.info("Too Expensive, Fail to Buy")
             return
         money = price * volumn
         if money > self.spare:
-            log("Cannot buy, No Enough Money")
+            logging.info("Cannot buy, No Enough Money")
             return
         if stock_id not in self.hold:
             self.hold[stock_id] = [price, volumn]
@@ -28,7 +28,7 @@ class Position:
 
     def sell(self, stock_id, price, volumn=None, sell_all=False):
         if stock_id not in self.hold:
-            log("Nothing to Be Sold.")
+            logging.info("Nothing to Be Sold.")
             return
         cur_volumn = self.hold[stock_id][1]
         if sell_all or volumn >= cur_volumn:
@@ -40,9 +40,10 @@ class Position:
 
 
 class STGContext:
-    def __init__(self, sdt=None, edt=None, dbt=None, bib=100000):
-        # 通用
+    def __init__(self, sdt=None, edt=None, dbt=None, ct=None, bib=100000):
+        # 存储连接工具
         self.db_tool = dbt
+        self.cache_tool = ct
         # 回测相关字段
         self.bt_sdt = sdt
         self.bt_edt = edt
@@ -50,9 +51,6 @@ class STGContext:
         self.bt_res = pandas.DataFrame()  # 包含基准/策略结果
         # 持仓明细
         self.ps = Position(bib=bib)
-
-    def add_bt_res(self, colname, data):
-        self.bt_res[colname] = data
 
 
 class BaseStrategy:
@@ -79,8 +77,8 @@ class BaseStrategy:
                 break
         if not dt_valid:
             raise RuntimeError("BenchMark Error")
-        self.ctx.add_bt_res('dt', pre_dt)
+        self.ctx.bt_res['dt'] = pre_dt
         # 处理Bib并生成基线点
         for name, bf in bms.items():
             factor = self.ctx.bt_init_budget / bf['close'][0]
-            self.ctx.add_bt_res('bm_' + name, bf['close'] * factor)
+            self.ctx.bt_res['bm_' + name] = bf['close'] * factor
