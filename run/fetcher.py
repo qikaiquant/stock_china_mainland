@@ -69,7 +69,7 @@ def _scan():
         if ipo_date > start_date:
             start_date = ipo_date
         tds = set(Stock_DB_Tool.get_trade_days(str(start_date), str(end_date)))
-        suffix = utils.misc.stockid2table(stock_id)
+        suffix = stockid2table(stock_id)
         table_name = "quant_stock.price_daily_r" + str(suffix)
         sql = "select dt from " + table_name + " where sid = \'" + stock_id + '\''
         dt = set(Stock_DB_Tool.exec_raw_select(sql))
