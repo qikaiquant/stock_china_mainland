@@ -1,6 +1,6 @@
 from datetime import timedelta
 from strategy.base_strategy import *
-from utils.misc import *
+from utils.common import *
 
 import matplotlib.pyplot as plt
 import talib

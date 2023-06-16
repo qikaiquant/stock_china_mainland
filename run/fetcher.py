@@ -12,7 +12,7 @@ sys.path.append(os.path.dirname(sys.path[0]))
 from datetime import timedelta
 from jqdatasdk import *
 from utils.db_tool import *
-from utils.misc import *
+from utils.common import *
 
 JK_User = None
 JK_Token = None

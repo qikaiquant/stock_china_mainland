@@ -1,7 +1,5 @@
-import datetime
-
 import pymysql as pms
-from utils.misc import *
+from utils.common import *
 
 
 class DBTool:

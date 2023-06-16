@@ -4,7 +4,7 @@ import os
 sys.path.append(os.path.dirname(sys.path[0]))
 import importlib
 from strategy.base_strategy import STGContext
-from utils.misc import *
+from utils.common import *
 from utils.db_tool import *
 
 if __name__ == '__main__':
