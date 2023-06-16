@@ -22,8 +22,6 @@ def load_price():
 
 if __name__ == '__main__':
     logging.info("Start Warmer")
-    # 读配置文件
-    conf_dict = load_config("../config/config.ini")
     # 初始化数据库
     Stock_DB_Tool = DBTool(conf_dict['Mysql']['host'], conf_dict['Mysql']['port'], conf_dict['Mysql']['user'],
                            conf_dict['Mysql']['passwd'])

@@ -1,11 +1,11 @@
-import time
+import os
 import random
+import sys
+import time
+
+import matplotlib.pyplot as plt
 import pandas
 import talib
-import sys
-import os
-import logging
-import matplotlib.pyplot as plt
 
 sys.path.append(os.path.dirname(sys.path[0]))
 
@@ -47,7 +47,6 @@ def draw():
 
 
 def draw_stock_price(stock_id, sdate, edate):
-    conf_dict = load_config("../config/config.ini")
     db_tool = DBTool(conf_dict['Mysql']['host'], conf_dict['Mysql']['port'], conf_dict['Mysql']['user'],
                      conf_dict['Mysql']['passwd'])
     prices = db_tool.get_price(stock_id, ['dt', 'close'], sdate, edate)
@@ -66,7 +65,6 @@ def draw_stock_price(stock_id, sdate, edate):
 
 
 def test_speed():
-    conf_dict = load_config("../config/config.ini")
     # 初始化数据库
     dbtool = DBTool(conf_dict['Mysql']['host'], conf_dict['Mysql']['port'], conf_dict['Mysql']['user'],
                     conf_dict['Mysql']['passwd'])

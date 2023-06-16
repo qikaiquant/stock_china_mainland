@@ -13,11 +13,9 @@ OS_TYPE = platform.system()
 def _init_logger():
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
-
     prod_formatter = logging.Formatter('[%(asctime)s][%(levelname)s][%(filename)s:%(lineno)d]%(message)s',
                                        datefmt='%Y-%m-%d %H:%M:%S')
     debug_formatter = logging.Formatter('[%(asctime)s][%(levelname)s]%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-
     # 生产环境，输出到log文件
     if OS_TYPE == 'Linux':
         fh = logging.FileHandler("../log/quant_stock.log")
@@ -66,3 +64,4 @@ def load_config(file):
 
 
 _init_logger()
+conf_dict = load_config("../config/config.ini")

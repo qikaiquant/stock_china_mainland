@@ -10,7 +10,6 @@ from utils.redis_tool import *
 
 if __name__ == '__main__':
     logging.info("Start Backtest")
-    conf_dict = load_config("../config/config.ini")
     file = importlib.import_module(conf_dict['Backtest']['strategy_module_path'])
     cls = getattr(file, conf_dict['Backtest']['strategy_class_name'])
     # 初始化存储连接
