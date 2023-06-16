@@ -24,9 +24,9 @@ class RedisTool:
         else:
             self._conn.set(key, value)
 
-    def get(self, stock_id, db_no, serialize=False):
+    def get(self, key, db_no, serialize=False):
         self._conn.select(db_no)
-        res = self._conn.get(stock_id)
+        res = self._conn.get(key)
         if serialize:
             return pickle.loads(res)
         else:
