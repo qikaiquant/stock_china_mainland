@@ -110,6 +110,5 @@ class DBTool:
         return res
 
     def __del__(self):
-        logging.info("DB Closed.")
         self._cursor.close()
         self._conn.close()

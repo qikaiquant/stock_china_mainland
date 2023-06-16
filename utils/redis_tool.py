@@ -44,5 +44,4 @@ class RedisTool:
             return res
 
     def __del__(self):
-        logging.info("Redis Closed.")
         self._conn.close()
