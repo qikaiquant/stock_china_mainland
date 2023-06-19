@@ -53,13 +53,20 @@ def _load_config(file):
         its = cf.items(sec)
         for k, v in its:
             cd[sec][k] = v
+    # 整理操作系统
     if _OS_TYPE == 'Linux':
         cd['Mysql']['host'] = 'localhost'
         cd['Redis']['host'] = 'localhost'
+    # 端口整理成Int
     port = int(cd['Mysql']['port'])
     cd['Mysql']['port'] = port
     port = int(cd['Redis']['port'])
     cd['Redis']['port'] = port
+    # 整理Prehandlers
+    handlers = cd['Redis']['prehandlers'].split(',')
+    cd['Redis']['prehandlers'] = []
+    for handler in handlers:
+        cd['Redis']['prehandlers'].append(handler.strip())
     return cd
 
 

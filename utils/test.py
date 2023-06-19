@@ -82,5 +82,13 @@ def test_speed():
     print("读缓存耗时:", t2 - t1)
 
 
+def test_config():
+    print(conf_dict)
+
+
+def add_sma():
+    pass
+
+
 if __name__ == '__main__':
-    test_speed()
+    add_sma()
