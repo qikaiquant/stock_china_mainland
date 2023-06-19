@@ -1,4 +1,5 @@
 import configparser
+import json
 import logging
 import platform
 import sys
@@ -62,11 +63,10 @@ def _load_config(file):
     cd['Mysql']['port'] = port
     port = int(cd['Redis']['port'])
     cd['Redis']['port'] = port
-    # 整理Prehandlers
-    handlers = cd['Redis']['prehandlers'].split(',')
-    cd['Redis']['prehandlers'] = []
-    for handler in handlers:
-        cd['Redis']['prehandlers'].append(handler.strip())
+    # 整理DB_No_Map
+    map_str = cd['Redis']['db_no_map']
+    d = json.loads(map_str)
+    cd['Redis']['db_no_map'] = d
     return cd
 
 

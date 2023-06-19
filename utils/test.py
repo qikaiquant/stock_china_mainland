@@ -91,4 +91,4 @@ def add_sma():
 
 
 if __name__ == '__main__':
-    add_sma()
+    test_config()

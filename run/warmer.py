@@ -1,3 +1,5 @@
+import getopt
+import logging
 import os
 import sys
 
@@ -10,33 +12,34 @@ from utils.common import *
 
 Stock_DB_Tool = None
 Stock_Redis_Tool = None
-Raw_Price_DB_Clumns = ['dt', 'open', 'close', 'low', 'high', 'volumn', 'money', 'factor',
-                       'high_limit', 'low_limit', 'avg', 'pre_close', 'paused']
 
 
 class PreHandlers:
     @staticmethod
-    def add_macd(res):
-        del_col = ['open', 'low', 'high', 'volumn', 'factor',
-                   'high_limit', 'low_limit', 'pre_close', 'paused']
-        for c in del_col:
-            del res[c]
-        res.set_index('dt', inplace=True)
+    def ph_macd(db_no):
+        Stock_Redis_Tool.clear(db_no)
+        res = Stock_DB_Tool.get_stock_info(['stock_id'])
+        cols = ['dt', 'close', 'avg', 'money']
+        for (stock_id,) in res:
+            res = Stock_DB_Tool.get_price(stock_id, fields=cols)
+            res_df = pandas.DataFrame(res, columns=cols)
+            res_df.set_index('dt', inplace=True)
+            Stock_Redis_Tool.set(stock_id, res_df, db_no, serialize=True)
 
 
-def load_price():
-    res = Stock_DB_Tool.get_stock_info(['stock_id'])
-    Stock_Redis_Tool.clear(db.DB_PRICE)
-    for (stock_id,) in res:
-        res = Stock_DB_Tool.get_price(stock_id, fields=Raw_Price_DB_Clumns)
-        res_df = pandas.DataFrame(res, columns=Raw_Price_DB_Clumns)
-        for prehs_str in conf_dict['Redis']['prehandlers']:
-            if not hasattr(PreHandlers, prehs_str):
-                logging.warning(prehs_str + " is NOT Set in PreHandlers")
-                continue
-            func = getattr(PreHandlers, prehs_str)
-            func(res_df)
-        Stock_Redis_Tool.set(stock_id, res_df, db.DB_PRICE, serialize=True)
+def warm_db(c_map, dblist):
+    for db_no in dblist:
+        db_no_str = str(db_no)
+        if db_no_str not in c_map:
+            logging.warning("db_no " + str(db_no_str) + " NOT in DB_No_Map, CHECK Config.ini")
+            continue
+        func_str = c_map[db_no_str]
+        if not hasattr(PreHandlers, func_str):
+            logging.warning(func_str + " is NOT Set in PreHandlers,CHECK Config.ini")
+            continue
+        logging.info("To Warm Cache for PreHandler " + func_str + " In DB " + db_no_str)
+        func = getattr(PreHandlers, func_str)
+        func(db_no)
 
 
 if __name__ == '__main__':
@@ -47,5 +50,20 @@ if __name__ == '__main__':
     # 初始化Redis
     Stock_Redis_Tool = RedisTool(conf_dict['Redis']['host'], conf_dict['Redis']['port'], conf_dict['Redis']['passwd'])
     # 预热缓存
-    load_price()
+    cache_map = conf_dict['Redis']['db_no_map']
+    opts, args = getopt.getopt(sys.argv[1:], "an:")
+    for k, v in opts:
+        # 预热所有db
+        if k == '-a':
+            warm_db(cache_map, cache_map.keys())
+        # 预热指定db
+        elif k == '-n':
+            dbs = v.split(',')
+            db_list = []
+            for db in dbs:
+                db_list.append(int(db.strip()))
+            warm_db(cache_map, db_list)
+        else:
+            logging.error("Usage Error")
+            sys.exit(1)
     logging.info("Warmer End")
