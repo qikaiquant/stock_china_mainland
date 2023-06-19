@@ -1,5 +1,4 @@
 import getopt
-import logging
 import os
 import sys
 
@@ -17,7 +16,7 @@ Stock_Redis_Tool = None
 class PreHandlers:
     @staticmethod
     def ph_macd(db_no):
-        Stock_Redis_Tool.clear(db_no)
+        Stock_Redis_Tool.clear(int(db_no))
         res = Stock_DB_Tool.get_stock_info(['stock_id'])
         cols = ['dt', 'close', 'avg', 'money']
         for (stock_id,) in res:
@@ -29,15 +28,14 @@ class PreHandlers:
 
 def warm_db(c_map, dblist):
     for db_no in dblist:
-        db_no_str = str(db_no)
-        if db_no_str not in c_map:
-            logging.warning("db_no " + str(db_no_str) + " NOT in DB_No_Map, CHECK Config.ini")
+        if db_no not in c_map:
+            logging.warning("db_no " + db_no + " NOT in DB_No_Map, CHECK config.ini")
             continue
-        func_str = c_map[db_no_str]
+        func_str = c_map[db_no]
         if not hasattr(PreHandlers, func_str):
-            logging.warning(func_str + " is NOT Set in PreHandlers,CHECK Config.ini")
+            logging.warning(func_str + " is NOT Set in PreHandlers,CHECK config.ini")
             continue
-        logging.info("To Warm Cache for PreHandler " + func_str + " In DB " + db_no_str)
+        logging.info("To Warm Cache for PreHandler " + func_str + " In DB " + db_no)
         func = getattr(PreHandlers, func_str)
         func(db_no)
 
@@ -61,7 +59,7 @@ if __name__ == '__main__':
             dbs = v.split(',')
             db_list = []
             for db in dbs:
-                db_list.append(int(db.strip()))
+                db_list.append(db.strip())
             warm_db(cache_map, db_list)
         else:
             logging.error("Usage Error")
