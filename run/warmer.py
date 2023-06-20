@@ -3,6 +3,7 @@ import os
 import sys
 
 import pandas
+import talib
 
 sys.path.append(os.path.dirname(sys.path[0]))
 from utils.db_tool import *
@@ -23,6 +24,9 @@ class PreHandlers:
             res = Stock_DB_Tool.get_price(stock_id, fields=cols)
             res_df = pandas.DataFrame(res, columns=cols)
             res_df.set_index('dt', inplace=True)
+            res_df['dif'], res_df['dea'], res_df['hist'] = talib.MACD(res_df['close'], fastperiod=12, slowperiod=26,
+                                                                      signalperiod=9)
+            print(res_df.head(100))
             Stock_Redis_Tool.set(stock_id, res_df, db_no, serialize=True)
 
 

@@ -77,7 +77,7 @@ def test_speed():
     t1 = time.time()
     print("读数据库耗时:", t1 - t0)
     for stock_id in stocks:
-        cachetool.get(stock_id, db.DB_PRICE, serialize=True)
+        cachetool.get(stock_id, 0, serialize=True)
     t2 = time.time()
     print("读缓存耗时:", t2 - t1)
 
@@ -86,9 +86,13 @@ def test_config():
     print(conf_dict)
 
 
-def add_sma():
-    pass
+def test_redis_db_type():
+    _conn = redis.Redis(host=conf_dict['Redis']['host'], port=conf_dict['Redis']['port'],
+                        password=conf_dict['Redis']['passwd'])
+    _conn.select(12)
+    _conn.set("name", 'zhangsan')
+    print(_conn.get('name'))
 
 
 if __name__ == '__main__':
-    test_config()
+    test_redis_db_type()
