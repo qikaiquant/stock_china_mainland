@@ -94,5 +94,13 @@ def test_redis_db_type():
     print(_conn.get('name'))
 
 
+def _get_stock_price():
+    # 初始化数据库
+    dbtool = DBTool(conf_dict['Mysql']['host'], conf_dict['Mysql']['port'], conf_dict['Mysql']['user'],
+                    conf_dict['Mysql']['passwd'])
+    price = dbtool.get_price('000406.XSHE', [])
+    print(price, len(price))
+
+
 if __name__ == '__main__':
-    test_redis_db_type()
+    _get_stock_price()

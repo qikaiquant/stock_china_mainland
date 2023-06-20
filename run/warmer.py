@@ -4,6 +4,8 @@ import sys
 
 import pandas
 import talib
+import numpy
+import traceback as tb
 
 sys.path.append(os.path.dirname(sys.path[0]))
 from utils.db_tool import *
@@ -18,16 +20,23 @@ class PreHandlers:
     @staticmethod
     def ph_macd(db_no):
         Stock_Redis_Tool.clear(int(db_no))
-        res = Stock_DB_Tool.get_stock_info(['stock_id'])
+        stocks = Stock_DB_Tool.get_stock_info(['stock_id'])
         cols = ['dt', 'close', 'avg', 'money']
-        for (stock_id,) in res:
-            res = Stock_DB_Tool.get_price(stock_id, fields=cols)
-            res_df = pandas.DataFrame(res, columns=cols)
-            res_df.set_index('dt', inplace=True)
-            res_df['dif'], res_df['dea'], res_df['hist'] = talib.MACD(res_df['close'], fastperiod=12, slowperiod=26,
-                                                                      signalperiod=9)
-            print(res_df.head(100))
-            Stock_Redis_Tool.set(stock_id, res_df, db_no, serialize=True)
+        for (stock_id,) in stocks:
+            try:
+                res = Stock_DB_Tool.get_price(stock_id, fields=cols)
+                # 股票在2013-01-01前已退市
+                if len(res) == 0:
+                    continue
+                res_df = pandas.DataFrame(res, columns=cols)
+                res_df.set_index('dt', inplace=True)
+                res_df['dif'], res_df['dea'], res_df['hist'] = talib.MACD(numpy.array(res_df['close']), fastperiod=12,
+                                                                          slowperiod=26, signalperiod=9)
+                Stock_Redis_Tool.set(stock_id, res_df, db_no, serialize=True)
+            except Exception as e:
+                tb.print_exc()
+                print(stock_id)
+                break
 
 
 def warm_db(c_map, dblist):
