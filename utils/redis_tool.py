@@ -22,6 +22,8 @@ class RedisTool:
     def get(self, key, db_no, serialize=False):
         self._conn.select(db_no)
         res = self._conn.get(key)
+        if not res:
+            return None
         if serialize:
             return pickle.loads(res)
         else:

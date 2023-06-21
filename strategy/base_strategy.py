@@ -40,6 +40,13 @@ class Position:
 
 
 class STGContext:
+    def _expand_trads_days(self, sdt, edt):
+        tds = []
+        res = self.db_tool.get_trade_days(sdt, edt)
+        for (td,) in res:
+            tds.append(td)
+        return tds
+
     def __init__(self, sdt=None, edt=None, dbt=None, ct=None, bib=100000):
         # 存储连接工具
         self.db_tool = dbt
@@ -47,6 +54,7 @@ class STGContext:
         # 回测相关字段
         self.bt_sdt = sdt
         self.bt_edt = edt
+        self.bt_tds = self._expand_trads_days(sdt, edt)
         self.bt_init_budget = bib
         self.bt_res = pandas.DataFrame()  # 包含基准/策略结果
         # 持仓明细
@@ -56,6 +64,13 @@ class STGContext:
 class BaseStrategy:
     def __init__(self, ctx):
         self.ctx = ctx
+
+    def backtest(self):
+        """
+        所有子类都必须实现该方法
+        :return:
+        """
+        pass
 
     def load_benchmark(self, bm_list):
         # 读入回测日期内的Benchmark

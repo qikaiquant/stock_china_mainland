@@ -26,7 +26,7 @@ def get_preN_tds(trade_days, cur_day, days):
     return res
 
 
-class MaStrategy(BaseStrategy):
+class SmaStrategy(BaseStrategy):
 
     def __init__(self, ctx):
         super().__init__(ctx)

@@ -3,6 +3,7 @@ import json
 import logging
 import platform
 import sys
+from datetime import datetime
 from hashlib import md5
 from urllib import request
 from urllib.parse import urlencode
@@ -13,7 +14,7 @@ _OS_TYPE = platform.system()
 
 def _init_logger():
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     prod_formatter = logging.Formatter('[%(asctime)s][%(levelname)s][%(filename)s:%(lineno)d]%(message)s',
                                        datefmt='%Y-%m-%d %H:%M:%S')
     debug_formatter = logging.Formatter('[%(asctime)s][%(levelname)s]%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
@@ -67,6 +68,11 @@ def _load_config(file):
     map_str = cd['Redis']['db_no_map']
     d = json.loads(map_str)
     cd['Redis']['db_no_map'] = d
+    # 整理日期
+    dt = cd['Backtest']['btc_start_date']
+    cd['Backtest']['btc_start_date'] = datetime.strptime(dt, '%Y-%m-%d').date()
+    dt = cd['Backtest']['btc_end_date']
+    cd['Backtest']['btc_end_date'] = datetime.strptime(dt, '%Y-%m-%d').date()
     return cd
 
 
