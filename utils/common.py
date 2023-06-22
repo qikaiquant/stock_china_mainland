@@ -47,34 +47,19 @@ def stockid2table(stockid, base=10):
 def _load_config(file):
     # 载入原始配置
     cd = {}
-    cf = configparser.ConfigParser()
-    cf.read(file)
-    secs = cf.sections()
-    for sec in secs:
-        cd[sec] = {}
-        its = cf.items(sec)
-        for k, v in its:
-            cd[sec][k] = v
+    with open(file) as config_file:
+        cd = json.load(config_file)
     # 整理操作系统
     if _OS_TYPE == 'Linux':
-        cd['Mysql']['host'] = 'localhost'
-        cd['Redis']['host'] = 'localhost'
-    # 端口整理成Int
-    port = int(cd['Mysql']['port'])
-    cd['Mysql']['port'] = port
-    port = int(cd['Redis']['port'])
-    cd['Redis']['port'] = port
-    # 整理DB_No_Map
-    map_str = cd['Redis']['db_no_map']
-    d = json.loads(map_str)
-    cd['Redis']['db_no_map'] = d
+        cd['Mysql']['Host'] = 'localhost'
+        cd['Redis']['Host'] = 'localhost'
     # 整理日期
-    dt = cd['Backtest']['btc_start_date']
-    cd['Backtest']['btc_start_date'] = datetime.strptime(dt, '%Y-%m-%d').date()
-    dt = cd['Backtest']['btc_end_date']
-    cd['Backtest']['btc_end_date'] = datetime.strptime(dt, '%Y-%m-%d').date()
+    dt = cd['Backtest']['Start_Date']
+    cd['Backtest']['Start_Date'] = datetime.strptime(dt, '%Y-%m-%d').date()
+    dt = cd['Backtest']['End_Date']
+    cd['Backtest']['End_Date'] = datetime.strptime(dt, '%Y-%m-%d').date()
     return cd
 
 
 _init_logger()
-conf_dict = _load_config("../config/config.ini")
+conf_dict = _load_config("../config/config.json")

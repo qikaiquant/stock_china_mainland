@@ -10,14 +10,18 @@ from utils.redis_tool import *
 
 if __name__ == '__main__':
     logging.info("Start Backtest")
-    file = importlib.import_module(conf_dict['Backtest']['strategy_module_path'])
-    cls = getattr(file, conf_dict['Backtest']['strategy_class_name'])
+    stg_id = conf_dict['Backtest']['STG']
+    if stg_id not in conf_dict['STG']:
+        logging.error("No " + stg_id + " Settled in STG Seg.")
+        sys.exit(1)
+    file = importlib.import_module(conf_dict['STG'][stg_id]['Module_Path'])
+    cls = getattr(file, conf_dict['STG'][stg_id]['Class_Name'])
     # 初始化存储连接
-    db_tool = DBTool(conf_dict['Mysql']['host'], conf_dict['Mysql']['port'], conf_dict['Mysql']['user'],
-                     conf_dict['Mysql']['passwd'])
-    cache_tool = RedisTool(conf_dict['Redis']['host'], conf_dict['Redis']['port'], conf_dict['Redis']['passwd'])
+    db_tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
+                     conf_dict['Mysql']['Passwd'])
+    cache_tool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'], conf_dict['Redis']['Passwd'])
     # 开始回测
     stg = cls(
-        STGContext(conf_dict['Backtest']['btc_start_date'], conf_dict['Backtest']['btc_end_date'], db_tool, cache_tool))
+        STGContext(conf_dict['Backtest']['Start_Date'], conf_dict['Backtest']['End_Date'], db_tool, cache_tool))
     stg.backtest()
     logging.info("End Backtest")

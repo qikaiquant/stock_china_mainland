@@ -103,4 +103,4 @@ def _get_stock_price():
 
 
 if __name__ == '__main__':
-    _get_stock_price()
+    test_config()

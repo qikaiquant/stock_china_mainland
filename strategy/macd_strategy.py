@@ -14,6 +14,7 @@ def _draw_survery(stock_id, price, pots):
 
     ax1 = fig.add_subplot(211)
     ax1.plot(price.index, price['close'], color='black', label='Close Price')
+    ax1.grid(linestyle='--')
     ax1.legend()
 
     ax2 = fig.add_subplot(212)
@@ -21,6 +22,7 @@ def _draw_survery(stock_id, price, pots):
     ax2.plot(price.index, price['dea'], color='blue', label='DEA')
     for (a, b, c) in pots:
         ax2.annotate(xy=(a, price.loc[a, 'dif']), text=c)
+    ax2.grid(linestyle='--')
     ax2.legend()
 
     # plt.show()
@@ -44,22 +46,21 @@ class MacdStrategy(BaseStrategy):
             self.ctx.cache_tool.set(RAND_STOCK, cache_item, CACHE_DB, serialize=True)
             stocks = cache_item
         # 回测周期调研
-        count = 0
         for stock_id in stocks:
-            count += 1
-            if count != 12:
-                continue
             all_price = self.ctx.cache_tool.get(stock_id, 0, serialize=True)
             price = all_price.loc[self.ctx.bt_sdt:self.ctx.bt_edt]
             status = 1  # 1:空仓，2：满仓
             pots = []
+            init_money = 20000
             for i in range(2, len(self.ctx.bt_tds) - 1):
+                if self.ctx.bt_tds[i - 2] not in price.index:
+                    continue
                 cur_price = price.loc[self.ctx.bt_tds[i], 'avg']
                 day0_fast = price.loc[self.ctx.bt_tds[i - 2], 'dif']
                 day0_slow = price.loc[self.ctx.bt_tds[i - 2], 'dea']
                 day1_fast = price.loc[self.ctx.bt_tds[i - 1], 'dif']
                 day1_slow = price.loc[self.ctx.bt_tds[i - 1], 'dea']
-                # 寻找金叉
+                # 寻找交易信号
                 if (status == 1) and (day0_slow > day0_fast) and (day1_slow < day1_fast):
                     pots.append((self.ctx.bt_tds[i], cur_price, "B"))
                     logging.info("Buy at Price [" + str(cur_price) + "] At Day [" + str(self.ctx.bt_tds[i]) + ']')

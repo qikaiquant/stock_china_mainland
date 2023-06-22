@@ -39,16 +39,17 @@ class PreHandlers:
                 break
 
 
-def warm_db(c_map, dblist):
-    for db_no in dblist:
-        if db_no not in c_map:
-            logging.warning("db_no " + db_no + " NOT in DB_No_Map, CHECK config.ini")
+def warm_db(stg_map, s_list):
+    for s in s_list:
+        if s not in stg_map:
+            logging.warning("STG " + s + " NOT in STG Config.Please CHECK config.json")
             continue
-        func_str = c_map[db_no]
-        if not hasattr(PreHandlers, func_str):
-            logging.warning(func_str + " is NOT Set in PreHandlers,CHECK config.ini")
+        if ("PreHandler" not in stg_map[s]) or (not hasattr(PreHandlers, stg_map[s]['PreHandler'])):
+            logging.warning(s + " Has NO PreHandler.Please CHECK config.json")
             continue
-        logging.info("To Warm Cache for PreHandler " + func_str + " In DB " + db_no)
+        func_str = stg_map[s]['PreHandler']
+        db_no = stg_map[s]['DB_NO']
+        logging.info("To Warm Cache for PreHandler " + func_str + " In DB " + str(db_no))
         func = getattr(PreHandlers, func_str)
         func(db_no)
 
@@ -56,12 +57,12 @@ def warm_db(c_map, dblist):
 if __name__ == '__main__':
     logging.info("Start Warmer")
     # 初始化数据库
-    Stock_DB_Tool = DBTool(conf_dict['Mysql']['host'], conf_dict['Mysql']['port'], conf_dict['Mysql']['user'],
-                           conf_dict['Mysql']['passwd'])
+    Stock_DB_Tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
+                           conf_dict['Mysql']['Passwd'])
     # 初始化Redis
-    Stock_Redis_Tool = RedisTool(conf_dict['Redis']['host'], conf_dict['Redis']['port'], conf_dict['Redis']['passwd'])
+    Stock_Redis_Tool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'], conf_dict['Redis']['Passwd'])
     # 预热缓存
-    cache_map = conf_dict['Redis']['db_no_map']
+    cache_map = conf_dict['STG']
     opts, args = getopt.getopt(sys.argv[1:], "an:")
     for k, v in opts:
         # 预热所有db
@@ -69,11 +70,11 @@ if __name__ == '__main__':
             warm_db(cache_map, cache_map.keys())
         # 预热指定db
         elif k == '-n':
-            dbs = v.split(',')
-            db_list = []
-            for db in dbs:
-                db_list.append(db.strip())
-            warm_db(cache_map, db_list)
+            stgs = v.split(',')
+            stg_list = []
+            for stg in stgs:
+                stg_list.append(stg.strip())
+            warm_db(cache_map, stg_list)
         else:
             logging.error("Usage Error")
             sys.exit(1)

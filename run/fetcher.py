@@ -160,16 +160,16 @@ def _check_spare():
 
 if __name__ == '__main__':
     # 初始化数据库
-    Stock_DB_Tool = DBTool(conf_dict['Mysql']['host'], conf_dict['Mysql']['port'], conf_dict['Mysql']['user'],
-                           conf_dict['Mysql']['passwd'])
+    Stock_DB_Tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
+                           conf_dict['Mysql']['Passwd'])
     # 聚宽账号
-    JK_User = conf_dict['DataSource']['jk_user']
-    JK_Token = conf_dict['DataSource']['jk_token']
+    JK_User = conf_dict['DataSource']['JK_User']
+    JK_Token = conf_dict['DataSource']['JK_Token']
     # 行情抓取相关配置
     if OS_TYPE == 'Linux':
-        TBF_Dir = conf_dict['DataSource']['linux_tbf_dir']
+        TBF_Dir = conf_dict['DataSource']['LINUX_TBF_DIR']
     else:
-        TBF_Dir = conf_dict['DataSource']['win_tbf_dir']
+        TBF_Dir = conf_dict['DataSource']['WIN_TBF_Dir']
 
     opts, args = getopt.getopt(sys.argv[1:], "",
                                longopts=["trade_days", "all_stock_info", "scan", "price", "spare"])
