@@ -81,6 +81,8 @@ class MacdStrategy(BaseStrategy):
 
     def _signal(self, dt, stock_id, ext_dict):
         price = self.ctx.cache_tool.get(stock_id, self.ctx.cache_no, serialize=True)
+        if price is None:
+            return Signal.KEEP
         if (ext_dict['day0'] not in price.index) or (ext_dict['day1'] not in price.index) or (dt not in price.index):
             return Signal.KEEP
         day0_fast = price.loc[ext_dict['day0'], 'dif']
@@ -89,10 +91,15 @@ class MacdStrategy(BaseStrategy):
         day1_slow = price.loc[ext_dict['day1'], 'dea']
 
         sort_value = price.loc[ext_dict['day1'], 'money']
+        if sort_value < 100000:
+            return Signal.KEEP
         # 寻找交易信号
         if (day0_slow > day0_fast) and (day1_slow < day1_fast):
+            ext_dict['sv'] = sort_value
+            ext_dict['jiage'] = price.loc[dt, 'avg']
             return Signal.BUY
         if (day0_slow < day0_fast) and (day1_slow > day1_fast):
+            ext_dict['jiage'] = price.loc[dt, 'avg']
             return Signal.SELL
         return Signal.KEEP
 
@@ -110,9 +117,9 @@ class MacdStrategy(BaseStrategy):
             ext_dict = {'day0': day0, 'day1': day1}
             hold_dict = self.ctx.position.hold
             # 验证Hold是否需要卖出
-            for stock_id, (jiage, volumn) in hold_dict.items():
+            for stock_id in list(hold_dict.keys()):
                 if self._signal(i, stock_id, ext_dict) == Signal.SELL:
-                    self.ctx.position.sell(stock_id, jiage, volumn)
+                    self.ctx.position.sell(stock_id, ext_dict['jiage'], sell_all=True)
             # 满仓，直接退出
             if len(hold_dict) >= 5:
                 continue
@@ -120,6 +127,10 @@ class MacdStrategy(BaseStrategy):
             candidate = []
             for stock in All_Stocks:
                 if self._signal(i, stock, ext_dict) == Signal.BUY:
-                    candidate.append(stock)
-            logging.info(candidate)
-            break
+                    candidate.append((stock, ext_dict['sv'], ext_dict['jiage']))
+            candidate.sort(key=lambda x: x[1], reverse=True)
+            for can in candidate:
+                self.ctx.position.buy(can[0], can[2], 20000)
+                if len(hold_dict) == 5:
+                    break
+            print(i)
