@@ -1,8 +1,7 @@
-import datetime
-
 import pymysql as pms
 
 from utils.common import *
+from datetime import datetime
 
 
 class DBTool:
@@ -27,9 +26,10 @@ class DBTool:
         suffix = stockid2table(stock_id)
         table_name = "quant_stock.price_daily_r" + str(suffix)
         if not start_dt:
-            start_dt = datetime.datetime.strptime('2013-01-01', '%Y-%m-%d').date()
+            start_dt = datetime.strptime('2013-01-01', '%Y-%m-%d')
+            # datetime.datetime.strptime('2013-01-01', '%Y-%m-%d').date()
         if not end_dt:
-            end_dt = datetime.datetime.today()
+            end_dt = datetime.today()
         sql = "select " + fields_str + " from " + table_name + " where sid = \'" + stock_id + "\' and dt >= \'" + str(
             start_dt) + "\' and dt <= \'" + str(end_dt) + "\' order by dt"
         self._cursor.execute(sql)

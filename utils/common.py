@@ -46,7 +46,6 @@ def stockid2table(stockid, base=10):
 
 def _load_config(file):
     # 载入原始配置
-    cd = {}
     with open(file) as config_file:
         cd = json.load(config_file)
     # 整理操作系统
