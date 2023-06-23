@@ -1,11 +1,20 @@
-import logging
+from enum import Enum
 
 import matplotlib.pyplot as plt
 
 from strategy.base_strategy import BaseStrategy
+from utils.common import *
 
 RAND_STOCK = 'RAND_STOCK'
 CACHE_DB = 13
+All_Trade_Days = []
+All_Stocks = []
+
+
+class Signal(Enum):
+    BUY = 0
+    SELL = 1
+    KEEP = 2
 
 
 def _draw_survery(stock_id, price, pots):
@@ -51,7 +60,6 @@ class MacdStrategy(BaseStrategy):
             price = all_price.loc[self.ctx.bt_sdt:self.ctx.bt_edt]
             status = 1  # 1:空仓，2：满仓
             pots = []
-            init_money = 20000
             for i in range(2, len(self.ctx.bt_tds) - 1):
                 if self.ctx.bt_tds[i - 2] not in price.index:
                     continue
@@ -71,5 +79,47 @@ class MacdStrategy(BaseStrategy):
                     status = 1
             _draw_survery(stock_id, price, pots)
 
+    def _signal(self, dt, stock_id, ext_dict):
+        price = self.ctx.cache_tool.get(stock_id, self.ctx.cache_no, serialize=True)
+        if (ext_dict['day0'] not in price.index) or (ext_dict['day1'] not in price.index) or (dt not in price.index):
+            return Signal.KEEP
+        day0_fast = price.loc[ext_dict['day0'], 'dif']
+        day0_slow = price.loc[ext_dict['day0'], 'dea']
+        day1_fast = price.loc[ext_dict['day1'], 'dif']
+        day1_slow = price.loc[ext_dict['day1'], 'dea']
+
+        sort_value = price.loc[ext_dict['day1'], 'money']
+        # 寻找交易信号
+        if (day0_slow > day0_fast) and (day1_slow < day1_fast):
+            return Signal.BUY
+        if (day0_slow < day0_fast) and (day1_slow > day1_fast):
+            return Signal.SELL
+        return Signal.KEEP
+
     def backtest(self):
-        self.survey()
+        # load所有股票、交易日信息
+        res = self.ctx.db_tool.get_stock_info(['stock_id'])
+        for (sid,) in res:
+            All_Stocks.append(sid)
+        res = self.ctx.db_tool.get_trade_days()
+        for (td,) in res:
+            All_Trade_Days.append(td)
+        # 遍历所有回测交易日
+        for i in self.ctx.bt_tds:
+            (day1, day0) = get_preN_tds(All_Trade_Days, i, 2)
+            ext_dict = {'day0': day0, 'day1': day1}
+            hold_dict = self.ctx.position.hold
+            # 验证Hold是否需要卖出
+            for stock_id, (jiage, volumn) in hold_dict.items():
+                if self._signal(i, stock_id, ext_dict) == Signal.SELL:
+                    self.ctx.position.sell(stock_id, jiage, volumn)
+            # 满仓，直接退出
+            if len(hold_dict) >= 5:
+                continue
+            # 遍历所有股票，补足持仓
+            candidate = []
+            for stock in All_Stocks:
+                if self._signal(i, stock, ext_dict) == Signal.BUY:
+                    candidate.append(stock)
+            logging.info(candidate)
+            break

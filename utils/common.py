@@ -3,7 +3,7 @@ import json
 import logging
 import platform
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from hashlib import md5
 from urllib import request
 from urllib.parse import urlencode
@@ -42,6 +42,17 @@ def stockid2table(stockid, base=10):
     obj.update(stockid.encode("UTF-8"))
     hc = obj.hexdigest()
     return int(hc[-4:], 16) % base
+
+
+def get_preN_tds(all_trade_days, cur_day, days):
+    res = []
+    for i in range(1, len(all_trade_days)):
+        t = cur_day - timedelta(days=i)
+        if t in all_trade_days:
+            res.append(t)
+        if len(res) == days:
+            break
+    return res
 
 
 def _load_config(file):

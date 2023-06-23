@@ -27,7 +27,6 @@ class DBTool:
         table_name = "quant_stock.price_daily_r" + str(suffix)
         if not start_dt:
             start_dt = datetime.strptime('2013-01-01', '%Y-%m-%d')
-            # datetime.datetime.strptime('2013-01-01', '%Y-%m-%d').date()
         if not end_dt:
             end_dt = datetime.today()
         sql = "select " + fields_str + " from " + table_name + " where sid = \'" + stock_id + "\' and dt >= \'" + str(
@@ -71,9 +70,9 @@ class DBTool:
 
     def get_trade_days(self, start_date=None, end_date=None):
         if not start_date:
-            start_date = datetime.datetime.strptime('2013-01-01', '%Y-%m-%d').date()
+            start_date = datetime.strptime('2013-01-01', '%Y-%m-%d')
         if not end_date:
-            end_date = datetime.datetime.today()
+            end_date = datetime.today()
         sql = "select * from quant_stock.stock_trade_days where trade_date >= \'" + str(
             start_date) + "\' and trade_date <= \'" + str(end_date) + "\'"
         self._cursor.execute(sql)
