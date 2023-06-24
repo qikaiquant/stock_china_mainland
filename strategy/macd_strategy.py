@@ -101,6 +101,7 @@ class MacdStrategy(BaseStrategy):
         # 遍历所有回测交易日
         for i in self.ctx.bt_tds:
             print(i)
+            action_log = []
             (day1, day0) = get_preN_tds(All_Trade_Days, i, 2)
             ext_dict = {'day0': day0, 'day1': day1}
             position = self.ctx.position
@@ -109,6 +110,7 @@ class MacdStrategy(BaseStrategy):
                 price = self.ctx.cache_tool.get(stock_id, self.ctx.cache_no, serialize=True)
                 if MacdStrategy._signal(i, price, ext_dict) == Signal.SELL:
                     position.sell(stock_id, price.loc[i, 'avg'], sell_all=True)
+                    action_log.append("-" + stock_id + "(" + str(price.loc[i, 'avg']) + ")")
             # 不满仓，补足
             if position.can_buy():
                 # 遍历所有股票，补足持仓
@@ -119,10 +121,11 @@ class MacdStrategy(BaseStrategy):
                         candidate.append((stock, price.loc[i, 'money'], price.loc[i, 'avg']))
                 candidate.sort(key=lambda x: x[1], reverse=True)
                 for can in candidate:
-                    position.buy(can[0], can[2])
+                    if position.buy(can[0], can[2]):
+                        action_log.append("+" + can[0] + "(" + str(can[2]) + ")")
                     if not position.can_buy():
                         break
-                self.ctx.fill_detail(i)
+                self.ctx.fill_detail(i, action_log)
         self.ctx.cache_tool.set(NW_KEY, self.ctx.daily_nw, self.ctx.cache_no, serialize=True)
 
     def backtest(self):
@@ -134,3 +137,4 @@ class MacdStrategy(BaseStrategy):
         for (td,) in res:
             All_Trade_Days.append(td)
         self._backtest()
+        # self._survey()

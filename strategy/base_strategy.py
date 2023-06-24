@@ -19,12 +19,12 @@ class Position:
     def buy(self, stock_id, jiage):
         if len(self.hold) >= self.max_hold:
             logging.info("Too Many Holds!")
-            return
+            return False
         budget = self._budget if self._budget < self.spare else self.spare
         volumn = int(budget / (jiage * 100)) * 100
         if volumn == 0:
             logging.info("Too Expensive, Fail to Buy")
-            return
+            return False
         money = jiage * volumn
         if stock_id not in self.hold:
             self.hold[stock_id] = [jiage, volumn]
@@ -33,6 +33,7 @@ class Position:
             new_jiage = (money + self.hold[stock_id][1] * self.hold[stock_id][2]) / new_volumn
             self.hold[stock_id].append(new_jiage, new_volumn)
         self.spare -= money
+        return True
 
     def sell(self, stock_id, jiage, volumn=None, sell_all=False):
         if stock_id not in self.hold:
@@ -60,14 +61,18 @@ class STGContext:
         self.bt_tds = self._expand_trads_days(sdt, edt)
         # 持仓明细
         self.position = Position(total_budget, max_hold)
-        self.daily_nw = pandas.DataFrame(columns=['dt', 'stg'])
+        self.daily_nw = pandas.DataFrame(columns=['dt', 'stg_networth', 'details'])
 
-    def fill_detail(self, dt):
+    def fill_detail(self, dt, action_log):
         nw = self.position.spare
+        action_log.append("@" + str(nw))
         for stock_id, (_, volumn) in self.position.hold.items():
             price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
             nw += volumn * price.loc[dt, 'close']
+            action_log.append("$" + stock_id + "(" + str(price.loc[dt, 'close']) + "," + str(volumn) + "," + str(
+                volumn * price.loc[dt, 'close']) + "," + ")")
         new_row = [dt, nw]
+        print(action_log)
         self.daily_nw.loc[len(self.daily_nw)] = new_row
 
     def _expand_trads_days(self, sdt, edt):
