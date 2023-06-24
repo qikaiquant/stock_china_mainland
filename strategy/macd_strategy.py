@@ -125,7 +125,7 @@ class MacdStrategy(BaseStrategy):
                         action_log.append("+" + can[0] + "(" + str(can[2]) + ")")
                     if not position.can_buy():
                         break
-                self.ctx.fill_detail(i, action_log)
+            self.ctx.fill_detail(i, action_log)
         self.ctx.cache_tool.set(NW_KEY, self.ctx.daily_nw, self.ctx.cache_no, serialize=True)
 
     def backtest(self):

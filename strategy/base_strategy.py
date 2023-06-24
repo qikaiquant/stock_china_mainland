@@ -71,7 +71,8 @@ class STGContext:
             nw += volumn * price.loc[dt, 'close']
             action_log.append("$" + stock_id + "(" + str(price.loc[dt, 'close']) + "," + str(volumn) + "," + str(
                 volumn * price.loc[dt, 'close']) + "," + ")")
-        new_row = [dt, nw]
+        action_log.append("#" + str(nw))
+        new_row = [dt, nw, str(action_log)]
         print(action_log)
         self.daily_nw.loc[len(self.daily_nw)] = new_row
 
