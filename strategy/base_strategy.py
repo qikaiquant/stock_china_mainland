@@ -59,20 +59,18 @@ class STGContext:
         self.bt_sdt = sdt
         self.bt_edt = edt
         self.bt_tds = self._expand_trads_days(sdt, edt)
-        # 持仓明细
-        self.position = Position(total_budget, max_hold)
-        self.daily_nw = pandas.DataFrame(columns=['dt', 'stg_networth', 'details'])
+        # 持仓相关字段
+        self.position = Position(total_budget, max_hold)  # 持仓变化
+        self.daily_nw = pandas.DataFrame(columns=['dt', 'stg_networth', 'details'])  # 分日明细
 
     def fill_detail(self, dt, action_log):
         nw = self.position.spare
-        action_log.append("@" + str(nw))
+        action_log['Spare'] = nw
         for stock_id, (_, volumn) in self.position.hold.items():
             price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
             nw += volumn * price.loc[dt, 'close']
-            action_log.append("$" + stock_id + "(" + str(price.loc[dt, 'close']) + "," + str(volumn) + "," + str(
-                volumn * price.loc[dt, 'close']) + "," + ")")
-        action_log.append("#" + str(nw))
-        new_row = [dt, nw, str(action_log)]
+            action_log['Hold'].append((stock_id, price.loc[dt, 'close'], volumn, volumn * price.loc[dt, 'close']))
+        new_row = [dt, nw, action_log]
         print(action_log)
         self.daily_nw.loc[len(self.daily_nw)] = new_row
 
