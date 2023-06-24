@@ -7,7 +7,6 @@ from utils.common import *
 
 RAND_STOCK = 'RAND_STOCK'
 NW_KEY = "NW_KEY"
-CACHE_DB = 13
 All_Trade_Days = []
 All_Stocks = []
 
@@ -36,49 +35,13 @@ def _draw_survery(stock_id, price, pots):
     ax2.legend()
 
     # plt.show()
-    fn = "D:\\test\\" + stock_id + ".jpg"
+    fn = "D:\\test\\survey\\" + stock_id + ".jpg"
     plt.savefig(fn, dpi=600)
 
 
 class MacdStrategy(BaseStrategy):
     def __init__(self, ctx):
         super().__init__(ctx)
-
-    def survey(self):
-        # 随机抽取30条股票做验证，暂存到cache里
-        stocks = self.ctx.cache_tool.get(RAND_STOCK, CACHE_DB, serialize=True)
-        if not stocks:
-            cache_item = []
-            sql = 'select stock_id from quant_stock.stock_info where end_date > \'2013-01-01\' order by rand() limit 30'
-            res = self.ctx.db_tool.exec_raw_select(sql)
-            for (sid,) in res:
-                cache_item.append(sid)
-            self.ctx.cache_tool.set(RAND_STOCK, cache_item, CACHE_DB, serialize=True)
-            stocks = cache_item
-        # 回测周期调研
-        for stock_id in stocks:
-            all_price = self.ctx.cache_tool.get(stock_id, 0, serialize=True)
-            price = all_price.loc[self.ctx.bt_sdt:self.ctx.bt_edt]
-            status = 1  # 1:空仓，2：满仓
-            pots = []
-            for i in range(2, len(self.ctx.bt_tds) - 1):
-                if self.ctx.bt_tds[i - 2] not in price.index:
-                    continue
-                cur_price = price.loc[self.ctx.bt_tds[i], 'avg']
-                day0_fast = price.loc[self.ctx.bt_tds[i - 2], 'dif']
-                day0_slow = price.loc[self.ctx.bt_tds[i - 2], 'dea']
-                day1_fast = price.loc[self.ctx.bt_tds[i - 1], 'dif']
-                day1_slow = price.loc[self.ctx.bt_tds[i - 1], 'dea']
-                # 寻找交易信号
-                if (status == 1) and (day0_slow > day0_fast) and (day1_slow < day1_fast):
-                    pots.append((self.ctx.bt_tds[i], cur_price, "B"))
-                    logging.info("Buy at Price [" + str(cur_price) + "] At Day [" + str(self.ctx.bt_tds[i]) + ']')
-                    status = 2
-                if (status == 2) and (day0_slow < day0_fast) and (day1_slow > day1_fast):
-                    pots.append((self.ctx.bt_tds[i], cur_price, "S"))
-                    logging.info("Sell at Price [" + str(cur_price) + "] At Day [" + str(self.ctx.bt_tds[i]) + ']')
-                    status = 1
-            _draw_survery(stock_id, price, pots)
 
     @staticmethod
     def _signal(dt, price, ext_dict):
@@ -101,14 +64,40 @@ class MacdStrategy(BaseStrategy):
             return Signal.SELL
         return Signal.KEEP
 
-    def backtest(self):
-        # load所有股票、交易日信息
-        res = self.ctx.db_tool.get_stock_info(['stock_id'])
-        for (sid,) in res:
-            All_Stocks.append(sid)
-        res = self.ctx.db_tool.get_trade_days()
-        for (td,) in res:
-            All_Trade_Days.append(td)
+    def _survey(self):
+        # 随机抽取30条股票做验证，暂存到cache里
+        stocks = self.ctx.cache_tool.get(RAND_STOCK, self.ctx.cache_no, serialize=True)
+        if not stocks:
+            cache_item = []
+            sql = 'select stock_id from quant_stock.stock_info where end_date > \'2013-01-01\' order by rand() limit 30'
+            res = self.ctx.db_tool.exec_raw_select(sql)
+            for (sid,) in res:
+                cache_item.append(sid)
+            self.ctx.cache_tool.set(RAND_STOCK, cache_item, self.ctx.cache_no, serialize=True)
+            stocks = cache_item
+        # 回测周期调研
+        for stock_id in stocks:
+            all_price = self.ctx.cache_tool.get(stock_id, self.ctx.cache_no, serialize=True)
+
+            price = all_price.loc[self.ctx.bt_sdt:self.ctx.bt_edt]
+            status = 1  # 1:空仓，2：满仓
+            pots = []
+            for i in range(2, len(self.ctx.bt_tds) - 1):
+                ext_dict = {'day0': self.ctx.bt_tds[i - 2], 'day1': self.ctx.bt_tds[i - 1]}
+                signal = MacdStrategy._signal(self.ctx.bt_tds[i], price, ext_dict)
+                cur_price = price.loc[self.ctx.bt_tds[i], 'avg']
+                # 寻找交易信号
+                if (status == 1) and signal == Signal.BUY:
+                    pots.append((self.ctx.bt_tds[i], cur_price, "B"))
+                    logging.info("Buy at Price [" + str(cur_price) + "] At Day [" + str(self.ctx.bt_tds[i]) + ']')
+                    status = 2
+                if (status == 2) and signal == Signal.SELL:
+                    pots.append((self.ctx.bt_tds[i], cur_price, "S"))
+                    logging.info("Sell at Price [" + str(cur_price) + "] At Day [" + str(self.ctx.bt_tds[i]) + ']')
+                    status = 1
+            _draw_survery(stock_id, price, pots)
+
+    def _backtest(self):
         # 遍历所有回测交易日
         for i in self.ctx.bt_tds:
             print(i)
@@ -135,3 +124,13 @@ class MacdStrategy(BaseStrategy):
                         break
                 self.ctx.fill_detail(i)
         self.ctx.cache_tool.set(NW_KEY, self.ctx.daily_nw, self.ctx.cache_no, serialize=True)
+
+    def backtest(self):
+        # load所有股票、交易日信息
+        res = self.ctx.db_tool.get_stock_info(['stock_id'])
+        for (sid,) in res:
+            All_Stocks.append(sid)
+        res = self.ctx.db_tool.get_trade_days()
+        for (td,) in res:
+            All_Trade_Days.append(td)
+        self._backtest()

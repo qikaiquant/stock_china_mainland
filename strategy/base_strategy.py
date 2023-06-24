@@ -20,14 +20,12 @@ class Position:
         if len(self.hold) >= self.max_hold:
             logging.info("Too Many Holds!")
             return
-        volumn = int(self._budget / (jiage * 100)) * 100
+        budget = self._budget if self._budget < self.spare else self.spare
+        volumn = int(budget / (jiage * 100)) * 100
         if volumn == 0:
             logging.info("Too Expensive, Fail to Buy")
             return
         money = jiage * volumn
-        if money > self.spare:
-            logging.info("Cannot buy, No Enough Money")
-            return
         if stock_id not in self.hold:
             self.hold[stock_id] = [jiage, volumn]
         else:
