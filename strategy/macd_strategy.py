@@ -6,6 +6,7 @@ from strategy.base_strategy import BaseStrategy
 from utils.common import *
 
 RAND_STOCK = 'RAND_STOCK'
+NW_KEY = "NW_KEY"
 CACHE_DB = 13
 All_Trade_Days = []
 All_Stocks = []
@@ -79,8 +80,8 @@ class MacdStrategy(BaseStrategy):
                     status = 1
             _draw_survery(stock_id, price, pots)
 
-    def _signal(self, dt, stock_id, ext_dict):
-        price = self.ctx.cache_tool.get(stock_id, self.ctx.cache_no, serialize=True)
+    @staticmethod
+    def _signal(dt, price, ext_dict):
         if price is None:
             return Signal.KEEP
         if (ext_dict['day0'] not in price.index) or (ext_dict['day1'] not in price.index) or (dt not in price.index):
@@ -95,11 +96,8 @@ class MacdStrategy(BaseStrategy):
             return Signal.KEEP
         # 寻找交易信号
         if (day0_slow > day0_fast) and (day1_slow < day1_fast):
-            ext_dict['sv'] = sort_value
-            ext_dict['jiage'] = price.loc[dt, 'avg']
             return Signal.BUY
         if (day0_slow < day0_fast) and (day1_slow > day1_fast):
-            ext_dict['jiage'] = price.loc[dt, 'avg']
             return Signal.SELL
         return Signal.KEEP
 
@@ -113,24 +111,27 @@ class MacdStrategy(BaseStrategy):
             All_Trade_Days.append(td)
         # 遍历所有回测交易日
         for i in self.ctx.bt_tds:
+            print(i)
             (day1, day0) = get_preN_tds(All_Trade_Days, i, 2)
             ext_dict = {'day0': day0, 'day1': day1}
-            hold_dict = self.ctx.position.hold
-            # 验证Hold是否需要卖出
-            for stock_id in list(hold_dict.keys()):
-                if self._signal(i, stock_id, ext_dict) == Signal.SELL:
-                    self.ctx.position.sell(stock_id, ext_dict['jiage'], sell_all=True)
-            # 满仓，直接退出
-            if len(hold_dict) >= 5:
-                continue
-            # 遍历所有股票，补足持仓
-            candidate = []
-            for stock in All_Stocks:
-                if self._signal(i, stock, ext_dict) == Signal.BUY:
-                    candidate.append((stock, ext_dict['sv'], ext_dict['jiage']))
-            candidate.sort(key=lambda x: x[1], reverse=True)
-            for can in candidate:
-                self.ctx.position.buy(can[0], can[2], 20000)
-                if len(hold_dict) == 5:
-                    break
-            print(i)
+            position = self.ctx.position
+            # Check当前Hold是否需要卖出
+            for stock_id in list(position.hold.keys()):
+                price = self.ctx.cache_tool.get(stock_id, self.ctx.cache_no, serialize=True)
+                if MacdStrategy._signal(i, price, ext_dict) == Signal.SELL:
+                    position.sell(stock_id, price.loc[i, 'avg'], sell_all=True)
+            # 不满仓，补足
+            if position.can_buy():
+                # 遍历所有股票，补足持仓
+                candidate = []
+                for stock in All_Stocks:
+                    price = self.ctx.cache_tool.get(stock, self.ctx.cache_no, serialize=True)
+                    if MacdStrategy._signal(i, price, ext_dict) == Signal.BUY:
+                        candidate.append((stock, price.loc[i, 'money'], price.loc[i, 'avg']))
+                candidate.sort(key=lambda x: x[1], reverse=True)
+                for can in candidate:
+                    position.buy(can[0], can[2])
+                    if not position.can_buy():
+                        break
+                self.ctx.fill_detail(i)
+        self.ctx.cache_tool.set(NW_KEY, self.ctx.daily_nw, self.ctx.cache_no, serialize=True)

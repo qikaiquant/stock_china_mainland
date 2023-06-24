@@ -5,43 +5,53 @@ import pandas
 
 
 class Position:
-    def __init__(self, bib):
+    def __init__(self, bib, mh):
         self.hold = {}
         self.spare = bib
+        self.max_hold = mh
+        self._budget = float(bib / mh)
 
-    def buy(self, stock_id, price, budget):
-        volumn = int(budget / (price * 100)) * 100
+    def can_buy(self):
+        if self.max_hold > len(self.hold):
+            return True
+        return False
+
+    def buy(self, stock_id, jiage):
+        if len(self.hold) >= self.max_hold:
+            logging.info("Too Many Holds!")
+            return
+        volumn = int(self._budget / (jiage * 100)) * 100
         if volumn == 0:
             logging.info("Too Expensive, Fail to Buy")
             return
-        money = price * volumn
+        money = jiage * volumn
         if money > self.spare:
             logging.info("Cannot buy, No Enough Money")
             return
         if stock_id not in self.hold:
-            self.hold[stock_id] = [price, volumn]
+            self.hold[stock_id] = [jiage, volumn]
         else:
             new_volumn = volumn + self.hold[stock_id][2]
-            new_price = (money + self.hold[stock_id][1] * self.hold[stock_id][2]) / new_volumn
-            self.hold[stock_id].append(new_price, new_volumn)
+            new_jiage = (money + self.hold[stock_id][1] * self.hold[stock_id][2]) / new_volumn
+            self.hold[stock_id].append(new_jiage, new_volumn)
         self.spare -= money
 
-    def sell(self, stock_id, price, volumn=None, sell_all=False):
+    def sell(self, stock_id, jiage, volumn=None, sell_all=False):
         if stock_id not in self.hold:
             logging.info("Nothing to Be Sold.")
             return
         cur_volumn = self.hold[stock_id][1]
         if sell_all or volumn >= cur_volumn:
             del self.hold[stock_id]
-            self.spare += price * cur_volumn
+            self.spare += jiage * cur_volumn
         else:
             self.hold[stock_id][1] -= volumn
-            self.spare += price * volumn
+            self.spare += jiage * volumn
 
 
 class STGContext:
 
-    def __init__(self, sdt=None, edt=None, dbt=None, ct=None, cno=None, money=100000):
+    def __init__(self, sdt=None, edt=None, dbt=None, ct=None, cno=None, total_budget=100000, max_hold=5):
         # 存储相关字段
         self.db_tool = dbt
         self.cache_tool = ct
@@ -51,7 +61,16 @@ class STGContext:
         self.bt_edt = edt
         self.bt_tds = self._expand_trads_days(sdt, edt)
         # 持仓明细
-        self.position = Position(money)
+        self.position = Position(total_budget, max_hold)
+        self.daily_nw = pandas.DataFrame(columns=['dt', 'stg'])
+
+    def fill_detail(self, dt):
+        nw = self.position.spare
+        for stock_id, (_, volumn) in self.position.hold.items():
+            price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
+            nw += volumn * price.loc[dt, 'close']
+        new_row = [dt, nw]
+        self.daily_nw.loc[len(self.daily_nw)] = new_row
 
     def _expand_trads_days(self, sdt, edt):
         tds = []
