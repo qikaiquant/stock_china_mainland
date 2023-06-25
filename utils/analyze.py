@@ -68,6 +68,6 @@ if __name__ == '__main__':
     cachetool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'],
                           conf_dict['Redis']['Passwd'])
     res = cachetool.get("NW_KEY", 0, serialize=True)
-    _get_max_loss(res)
-    # _draw_nw(res)
+    # _get_max_loss(res)
+    _draw_nw(res)
     # _parse_stg_detail(res)
