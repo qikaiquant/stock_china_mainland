@@ -102,14 +102,5 @@ def _get_stock_price():
     print(price, len(price))
 
 
-def _draw_nw(res):
-    plt.figure(figsize=(10, 6), dpi=100)
-    plt.plot(res['dt'], res['stg_networth'], color='red', label='stg')
-    plt.legend()
-    fn = "D:\\test\\backtest\\macd_nw_" + str(time.time()) + ".jpg"
-    plt.savefig(fn, dpi=600)
-
-
 if __name__ == '__main__':
-    cachetool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'], conf_dict['Redis']['Passwd'])
-    _draw_nw(cachetool.get("NW_KEY", 0, serialize=True))
+    test_config()

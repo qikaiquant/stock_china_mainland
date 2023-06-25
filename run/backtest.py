@@ -24,6 +24,6 @@ if __name__ == '__main__':
     # 开始回测
     stg = cls(
         STGContext(conf_dict['Backtest']['Start_Date'], conf_dict['Backtest']['End_Date'], db_tool, cache_tool,
-                   cache_no))
+                   cache_no, max_hold=1))
     stg.backtest()
     logging.info("End Backtest")

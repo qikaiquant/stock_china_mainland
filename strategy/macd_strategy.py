@@ -34,9 +34,9 @@ def _draw_survery(stock_id, price, pots):
     ax2.grid(linestyle='--')
     ax2.legend()
 
-    # plt.show()
-    fn = "D:\\test\\survey\\" + stock_id + ".jpg"
-    plt.savefig(fn, dpi=600)
+    plt.show()
+    # fn = "D:\\test\\survey\\" + stock_id + ".jpg"
+    # plt.savefig(fn, dpi=600)
 
 
 class MacdStrategy(BaseStrategy):
@@ -57,7 +57,21 @@ class MacdStrategy(BaseStrategy):
         sort_value = price.loc[ext_dict['day1'], 'money']
         if sort_value < 100000:
             return Signal.KEEP
-        # 寻找交易信号
+        # 过去12天出现了超过3个x，说明黏着，不做交易
+        cross_num = 0
+        pre10_tds = get_preN_tds(All_Trade_Days, dt, 16)
+        for i in range(1, len(pre10_tds)):
+            day0_f = price.loc[pre10_tds[i - 1], 'dif']
+            day0_s = price.loc[pre10_tds[i - 1], 'dea']
+            dif1 = day0_f - day0_s
+            day1_f = price.loc[pre10_tds[i], 'dif']
+            day1_s = price.loc[pre10_tds[i], 'dea']
+            dif2 = day1_f - day1_s
+            if dif1 * dif2 < 0:
+                cross_num += 1
+        if cross_num >= 3:
+            return Signal.KEEP
+        # 寻找交易信号，简单的金叉死叉
         if (day0_slow > day0_fast) and (day1_slow < day1_fast):
             return Signal.BUY
         if (day0_slow < day0_fast) and (day1_slow > day1_fast):
@@ -84,7 +98,7 @@ class MacdStrategy(BaseStrategy):
             pots = []
             for i in range(2, len(self.ctx.bt_tds) - 1):
                 ext_dict = {'day0': self.ctx.bt_tds[i - 2], 'day1': self.ctx.bt_tds[i - 1]}
-                signal = MacdStrategy._signal(self.ctx.bt_tds[i], price, ext_dict)
+                signal = MacdStrategy._signal(self.ctx.bt_tds[i], all_price, ext_dict)
                 cur_price = price.loc[self.ctx.bt_tds[i], 'avg']
                 # 寻找交易信号
                 if (status == 1) and signal == Signal.BUY:
