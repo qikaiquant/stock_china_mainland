@@ -61,6 +61,8 @@ class MacdStrategy(BaseStrategy):
         cross_num = 0
         pre10_tds = get_preN_tds(All_Trade_Days, dt, 16)
         for i in range(1, len(pre10_tds)):
+            if pre10_tds[i - 1] not in price.index or pre10_tds[i] not in price.index:
+                continue
             day0_f = price.loc[pre10_tds[i - 1], 'dif']
             day0_s = price.loc[pre10_tds[i - 1], 'dea']
             dif1 = day0_f - day0_s
