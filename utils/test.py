@@ -103,4 +103,10 @@ def _get_stock_price():
 
 
 if __name__ == '__main__':
-    test_config()
+    pd = pandas.DataFrame(columns=['dt', 'name', 'age'])
+    pd.set_index('dt', inplace=True)
+    #pd.loc[len(pd)] = ['2012-01', 'qikai', 39]
+    #pd.loc[len(pd)] = ['2012-02', 'zhuna', 36]
+
+    pd.loc['2012-03'] = ['qijunzhi', 9]
+    print(pd)

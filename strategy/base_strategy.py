@@ -58,7 +58,7 @@ class Position:
             self.spare += jiage * volumn
 
 
-class STGContext:
+class BaseStrategy:
 
     def __init__(self, sdt=None, edt=None, dbt=None, ct=None, cno=None, total_budget=100000, max_hold=5):
         # 存储相关字段
@@ -86,7 +86,6 @@ class STGContext:
             df['dt'] = bmdf['dt']
             df[bm.name] = bmdf['jiage'] * factor
         df.set_index('dt', inplace=True)
-        print(df.head(10))
         return df
 
     def _expand_trads_days(self, sdt, edt):
@@ -104,11 +103,6 @@ class STGContext:
             nw += volumn * price.loc[dt, 'close']
             action_log['Hold'].append((stock_id, price.loc[dt, 'close'], volumn, volumn * price.loc[dt, 'close']))
         self.daily_status.loc[dt] = [nw, action_log]
-
-
-class BaseStrategy:
-    def __init__(self, ctx):
-        self.ctx = ctx
 
     def backtest(self):
         """

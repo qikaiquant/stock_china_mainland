@@ -1,16 +1,21 @@
+import sys
 import time
 
 from common import *
 from redis_tool import *
 import matplotlib.pyplot as plt
 
+from strategy.base_strategy import *
+
 
 def _draw_nw(df):
     plt.figure(figsize=(10, 6), dpi=100)
-    plt.plot(df['dt'], df['stg_networth'], color='red', label='stg')
+    plt.plot(df.index, df['stg_nw'], color='red', label='stg')
+    plt.plot(df.index, df['HS300'], color='blue', label='HS300')
     plt.legend()
-    fn = "D:\\test\\backtest\\macd_nw_" + str(time.time()) + ".jpg"
-    plt.savefig(fn, dpi=600)
+    # fn = "D:\\test\\backtest\\macd_nw_" + str(time.time()) + ".jpg"
+    # plt.savefig(fn, dpi=600)
+    plt.show()
 
 
 def _parse_stg_detail(df):
@@ -67,7 +72,13 @@ def _get_max_loss(df):
 if __name__ == '__main__':
     cachetool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'],
                           conf_dict['Redis']['Passwd'])
-    res = cachetool.get("NW_KEY", 0, serialize=True)
+    stg_res = cachetool.get(RES_KEY, 0, serialize=True)
+    benchmark_res = pandas.DataFrame(cachetool.get(BENCHMARK_KEY, 0, serialize=True))
+    if len(stg_res) != len(benchmark_res):
+        print("EEEERROR!!!")
+        sys.exit(1)
+    res = pandas.merge(benchmark_res, stg_res, left_index=True, right_index=True)
+    print(res)
     # _get_max_loss(res)
     _draw_nw(res)
     # _parse_stg_detail(res)

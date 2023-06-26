@@ -3,8 +3,6 @@ import sys
 import importlib
 
 sys.path.append(os.path.dirname(sys.path[0]))
-
-from strategy.base_strategy import STGContext
 from utils.db_tool import *
 from utils.redis_tool import *
 
@@ -22,8 +20,7 @@ if __name__ == '__main__':
                      conf_dict['Mysql']['Passwd'])
     cache_tool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'], conf_dict['Redis']['Passwd'])
     # 开始回测
-    stg = cls(
-        STGContext(conf_dict['Backtest']['Start_Date'], conf_dict['Backtest']['End_Date'], db_tool, cache_tool,
-                   cache_no, max_hold=1))
+    stg = cls(conf_dict['Backtest']['Start_Date'], conf_dict['Backtest']['End_Date'], db_tool, cache_tool, cache_no,
+              max_hold=1)
     stg.backtest()
     logging.info("End Backtest")

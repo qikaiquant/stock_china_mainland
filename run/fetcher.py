@@ -59,7 +59,7 @@ def _scan():
         stock_id = stock[0]
         ipo_date = stock[1]
         delist_date = stock[2]
-        start_date = datetime.datetime.strptime('2013-01-01', '%Y-%m-%d').date()
+        start_date = datetime.strptime('2013-01-01', '%Y-%m-%d').date()
         end_date = datetime.date.today()
         # 退市时间在2013年1月1日之前，不参考
         if delist_date < start_date:
@@ -108,7 +108,7 @@ def _fetch_price():
         while line:
             segs = line.split(',')
             stock_id = segs[0]
-            dt = datetime.datetime.strptime(segs[3], '%Y-%m-%d').date()
+            dt = datetime.strptime(segs[3], '%Y-%m-%d').date()
             line = fp.readline()
             if stock_id in fetch_map:
                 fetch_map[stock_id].append(dt)
