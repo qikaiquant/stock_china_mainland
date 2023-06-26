@@ -67,6 +67,7 @@ class MacdStrategy(BaseStrategy):
                 cross_num += 1
         if cross_num >= 3:
             is_stinged = True
+            return Signal.SELL
         # 寻找交易信号，简单的金叉死叉
         day0_fast = price.loc[ext_dict['day0'], 'dif']
         day0_slow = price.loc[ext_dict['day0'], 'dea']
@@ -143,8 +144,8 @@ class MacdStrategy(BaseStrategy):
                         action_log['Buy'].append((can[0], can[2]))
                     if not position.can_buy():
                         break
-            self.ctx.fill_detail(i, action_log)
-        self.ctx.cache_tool.set(NW_KEY, self.ctx.daily_nw, self.ctx.cache_no, serialize=True)
+            self.ctx.fill_nw_detail(i, action_log)
+        self.ctx.cache_tool.set(NW_KEY, self.ctx.daily_status, self.ctx.cache_no, serialize=True)
 
     def backtest(self):
         # load所有股票、交易日信息

@@ -1,7 +1,14 @@
 import logging
 import operator
 
+import numpy
 import pandas
+
+from enum import Enum
+
+
+class BenchMark(Enum):
+    HS300 = "000300.XSHG"
 
 
 class Position:
@@ -60,19 +67,20 @@ class STGContext:
         self.bt_edt = edt
         self.bt_tds = self._expand_trads_days(sdt, edt)
         # 持仓相关字段
+        self.total_budget = total_budget
         self.position = Position(total_budget, max_hold)  # 持仓变化
-        self.daily_nw = pandas.DataFrame(columns=['dt', 'stg_networth', 'details'])  # 分日明细
+        self.daily_status = self._init_daily_status()  # 分日明细
 
-    def fill_detail(self, dt, action_log):
-        nw = self.position.spare
-        action_log['Spare'] = nw
-        for stock_id, (_, volumn) in self.position.hold.items():
-            price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
-            nw += volumn * price.loc[dt, 'close']
-            action_log['Hold'].append((stock_id, price.loc[dt, 'close'], volumn, volumn * price.loc[dt, 'close']))
-        new_row = [dt, nw, action_log]
-        print(action_log)
-        self.daily_nw.loc[len(self.daily_nw)] = new_row
+    def _init_daily_status(self):
+        res = self.db_tool.get_price(BenchMark.HS300.value, ['dt', 'close'], self.bt_sdt, self.bt_edt)
+        df = pandas.DataFrame(res, columns=['dt', 'jiage'])
+        df.set_index('dt', inplace=True)
+        factor = float(self.total_budget / res[0][1])
+        df['benchmark_nw'] = df['jiage'] * factor
+        del df['jiage']
+        df['stg_nw'] = numpy.NaN
+        df['details'] = numpy.NaN
+        return df
 
     def _expand_trads_days(self, sdt, edt):
         tds = []
@@ -80,6 +88,16 @@ class STGContext:
         for (td,) in res:
             tds.append(td)
         return tds
+
+    def fill_nw_detail(self, dt, action_log):
+        nw = self.position.spare
+        action_log['Spare'] = nw
+        for stock_id, (_, volumn) in self.position.hold.items():
+            price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
+            nw += volumn * price.loc[dt, 'close']
+            action_log['Hold'].append((stock_id, price.loc[dt, 'close'], volumn, volumn * price.loc[dt, 'close']))
+        self.daily_status.loc[dt, 'stg_nw'] = nw
+        self.daily_status.loc[dt, 'details'] = action_log
 
 
 class BaseStrategy:
@@ -92,29 +110,3 @@ class BaseStrategy:
         :return:
         """
         pass
-
-    def load_benchmark(self, bm_list):
-        # 读入回测日期内的Benchmark
-        sdt = self.ctx.bt_sdt
-        edt = self.ctx.bt_edt
-        bms = {}
-        for bm_name in bm_list:
-            res = self.ctx.db_tool.get_price(bm_name, ['dt', 'close'], sdt, edt)
-            bms[bm_name] = pandas.DataFrame(res, columns=['dt', 'close'])
-        # 验证几条Benchmark日期是否对齐，若对不齐抛RuntimError异常
-        dt_valid = True
-        pre_dt = None
-        for name, bf in bms.items():
-            if not pre_dt:
-                pre_dt = bf['dt']
-                continue
-            if not operator.eq(pre_dt, bf['bt']):
-                dt_valid = False
-                break
-        if not dt_valid:
-            raise RuntimeError("BenchMark Error")
-        self.ctx.bt_res['dt'] = pre_dt
-        # 处理Bib并生成基线点
-        for name, bf in bms.items():
-            factor = self.ctx.bt_init_budget / bf['close'][0]
-            self.ctx.bt_res['bm_' + name] = bf['close'] * factor
