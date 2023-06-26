@@ -109,7 +109,7 @@ class MacdStrategy(BaseStrategy):
 
     def _backtest(self):
         # 载入benchmark
-        self.ctx.cache_tool.set(BenchMark, self.ctx.daily_benchmark, self.ctx.cache_no, serialize=True)
+        self.ctx.cache_tool.set(BENCHMARK_KEY, self.ctx.daily_benchmark, self.ctx.cache_no, serialize=True)
         # 遍历所有回测交易日
         for i in self.ctx.bt_tds:
             print(i)
