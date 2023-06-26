@@ -1,11 +1,9 @@
 import matplotlib.pyplot as plt
 
-from strategy.base_strategy import BaseStrategy, Signal
+from strategy.base_strategy import *
 from utils.common import *
 
 RAND_STOCK = 'RAND_STOCK'
-RES_KEY = "RES_KEY"
-BENCHMARK_KEY = "BENCHMARK_KEY"
 All_Trade_Days = []
 All_Stocks = []
 
@@ -139,7 +137,7 @@ class MacdStrategy(BaseStrategy):
                         action_log['Buy'].append((can[0], can[2]))
                     if not position.can_buy():
                         break
-            self.ctx.fill_nw_detail(i, action_log)
+            self.ctx.fill_daily_status(i, action_log)
         self.ctx.cache_tool.set(RES_KEY, self.ctx.daily_status, self.ctx.cache_no, serialize=True)
 
     def backtest(self):

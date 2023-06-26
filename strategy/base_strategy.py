@@ -4,6 +4,9 @@ import pandas
 from enum import Enum
 from utils.common import BenchMark
 
+RES_KEY = "RES_KEY"
+BENCHMARK_KEY = "BENCHMARK_KEY"
+
 
 class Signal(Enum):
     BUY = 0
@@ -71,6 +74,7 @@ class STGContext:
         self.position = Position(total_budget, max_hold)  # 持仓变化
         self.daily_benchmark = self._init_daily_benchmark()  # 分日明细
         self.daily_status = pandas.DataFrame(columns=['dt', 'stg_nw', 'details'])
+        self.daily_status.set_index('dt', inplace=True)
 
     def _init_daily_benchmark(self):
         df = pandas.DataFrame()
@@ -92,14 +96,14 @@ class STGContext:
             tds.append(td)
         return tds
 
-    def fill_nw_detail(self, dt, action_log):
+    def fill_daily_status(self, dt, action_log):
         nw = self.position.spare
         action_log['Spare'] = nw
         for stock_id, (_, volumn) in self.position.hold.items():
             price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
             nw += volumn * price.loc[dt, 'close']
             action_log['Hold'].append((stock_id, price.loc[dt, 'close'], volumn, volumn * price.loc[dt, 'close']))
-        self.daily_status.loc[len(self.daily_status)] = [dt, nw, action_log]
+        self.daily_status.loc[dt] = [nw, action_log]
 
 
 class BaseStrategy:
