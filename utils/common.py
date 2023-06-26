@@ -4,12 +4,17 @@ import logging
 import platform
 import sys
 from datetime import datetime, timedelta
+from enum import Enum
 from hashlib import md5
 from urllib import request
 from urllib.parse import urlencode
 
 _Msg_Base_Url = 'http://www.pushplus.plus/send?token=dbe8cc80aa704ae88e48e8769b786cc2&'
 _OS_TYPE = platform.system()
+
+
+class BenchMark(Enum):
+    HS300 = "000300.XSHG"  # 沪深300
 
 
 def _init_logger():

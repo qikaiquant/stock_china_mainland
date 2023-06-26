@@ -1,20 +1,13 @@
-from enum import Enum
-
 import matplotlib.pyplot as plt
 
-from strategy.base_strategy import BaseStrategy
+from strategy.base_strategy import BaseStrategy, Signal
 from utils.common import *
 
 RAND_STOCK = 'RAND_STOCK'
-NW_KEY = "NW_KEY"
+RES_KEY = "RES_KEY"
+BENCHMARK_KEY = "BENCHMARK_KEY"
 All_Trade_Days = []
 All_Stocks = []
-
-
-class Signal(Enum):
-    BUY = 0
-    SELL = 1
-    KEEP = 2
 
 
 def _draw_survery(stock_id, price, pots):
@@ -117,6 +110,8 @@ class MacdStrategy(BaseStrategy):
             _draw_survery(stock_id, price, pots)
 
     def _backtest(self):
+        # 载入benchmark
+        self.ctx.cache_tool.set(BenchMark, self.ctx.daily_benchmark, self.ctx.cache_no, serialize=True)
         # 遍历所有回测交易日
         for i in self.ctx.bt_tds:
             print(i)
@@ -145,7 +140,7 @@ class MacdStrategy(BaseStrategy):
                     if not position.can_buy():
                         break
             self.ctx.fill_nw_detail(i, action_log)
-        self.ctx.cache_tool.set(NW_KEY, self.ctx.daily_status, self.ctx.cache_no, serialize=True)
+        self.ctx.cache_tool.set(RES_KEY, self.ctx.daily_status, self.ctx.cache_no, serialize=True)
 
     def backtest(self):
         # load所有股票、交易日信息

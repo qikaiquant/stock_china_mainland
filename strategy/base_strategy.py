@@ -1,14 +1,14 @@
 import logging
-import operator
-
-import numpy
 import pandas
 
 from enum import Enum
+from utils.common import BenchMark
 
 
-class BenchMark(Enum):
-    HS300 = "000300.XSHG"
+class Signal(Enum):
+    BUY = 0
+    SELL = 1
+    KEEP = 2
 
 
 class Position:
@@ -69,17 +69,20 @@ class STGContext:
         # 持仓相关字段
         self.total_budget = total_budget
         self.position = Position(total_budget, max_hold)  # 持仓变化
-        self.daily_status = self._init_daily_status()  # 分日明细
+        self.daily_benchmark = self._init_daily_benchmark()  # 分日明细
+        self.daily_status = pandas.DataFrame(columns=['dt', 'stg_nw', 'details'])
 
-    def _init_daily_status(self):
-        res = self.db_tool.get_price(BenchMark.HS300.value, ['dt', 'close'], self.bt_sdt, self.bt_edt)
-        df = pandas.DataFrame(res, columns=['dt', 'jiage'])
+    def _init_daily_benchmark(self):
+        df = pandas.DataFrame()
+        # 添加每列
+        for bm in BenchMark:
+            res = self.db_tool.get_price(bm.value, ['dt', 'close'], self.bt_sdt, self.bt_edt)
+            factor = float(self.total_budget / res[0][1])
+            bmdf = pandas.DataFrame(res, columns=['dt', 'jiage'])
+            df['dt'] = bmdf['dt']
+            df[bm.name] = bmdf['jiage'] * factor
         df.set_index('dt', inplace=True)
-        factor = float(self.total_budget / res[0][1])
-        df['benchmark_nw'] = df['jiage'] * factor
-        del df['jiage']
-        df['stg_nw'] = numpy.NaN
-        df['details'] = numpy.NaN
+        print(df.head(10))
         return df
 
     def _expand_trads_days(self, sdt, edt):
@@ -96,8 +99,7 @@ class STGContext:
             price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
             nw += volumn * price.loc[dt, 'close']
             action_log['Hold'].append((stock_id, price.loc[dt, 'close'], volumn, volumn * price.loc[dt, 'close']))
-        self.daily_status.loc[dt, 'stg_nw'] = nw
-        self.daily_status.loc[dt, 'details'] = action_log
+        self.daily_status.loc[len(self.daily_status)] = [dt, nw, action_log]
 
 
 class BaseStrategy:
