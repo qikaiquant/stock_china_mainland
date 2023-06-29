@@ -1,10 +1,7 @@
-import sys
-import time
+import matplotlib.pyplot as plt
 
 from common import *
 from redis_tool import *
-import matplotlib.pyplot as plt
-
 from strategy.base_strategy import *
 
 

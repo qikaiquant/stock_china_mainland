@@ -60,7 +60,7 @@ def _scan():
         ipo_date = stock[1]
         delist_date = stock[2]
         start_date = datetime.strptime('2013-01-01', '%Y-%m-%d').date()
-        end_date = datetime.date.today()
+        end_date = datetime.today().date()
         # 退市时间在2013年1月1日之前，不参考
         if delist_date < start_date:
             continue
