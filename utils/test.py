@@ -1,4 +1,3 @@
-import datetime
 import os
 import random
 import sys
@@ -88,22 +87,22 @@ def test_config():
 
 
 def test_redis_db_type():
-    _conn = redis.Redis(host=conf_dict['Redis']['host'], port=conf_dict['Redis']['port'],
-                        password=conf_dict['Redis']['passwd'])
+    _conn = redis.Redis(host=conf_dict['Redis']['Host'], port=conf_dict['Redis']['Port'],
+                        password=conf_dict['Redis']['Passwd'])
     _conn.select(12)
     _conn.set("name", 'zhangsan')
     print(_conn.get('name'))
 
 
-def _get_stock_price():
+def _get_stock_info():
     # 初始化数据库
-    dbtool = DBTool(conf_dict['Mysql']['host'], conf_dict['Mysql']['port'], conf_dict['Mysql']['user'],
-                    conf_dict['Mysql']['passwd'])
-    price = dbtool.get_price('000406.XSHE', [])
-    print(price, len(price))
+    dbtool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
+                    conf_dict['Mysql']['Passwd'])
+    price = dbtool.get_stock_info(['start_date'])
+    for (t,) in price:
+        print(type(t))
+        break
 
 
 if __name__ == '__main__':
-    start_date = datetime.strptime('2013-01-01', '%Y-%m-%d').date()
-    end_date = datetime.today().date()
-    print(type(start_date), type(end_date))
+    test_config()
