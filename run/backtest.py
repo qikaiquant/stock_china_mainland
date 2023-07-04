@@ -21,6 +21,6 @@ if __name__ == '__main__':
     cache_tool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'], conf_dict['Redis']['Passwd'])
     # 开始回测
     stg = cls(conf_dict['Backtest']['Start_Date'], conf_dict['Backtest']['End_Date'], db_tool, cache_tool, cache_no,
-              max_hold=1)
+              max_hold=3)
     stg.backtest()
     logging.info("End Backtest")

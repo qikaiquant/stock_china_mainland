@@ -72,21 +72,22 @@ class MacdStrategy(BaseStrategy):
             return Signal.SELL
         return Signal.KEEP
 
-    def _survey(self):
-        # 随机抽取30条股票做验证，暂存到cache里
-        stocks = self.cache_tool.get(RAND_STOCK, self.cache_no, serialize=True)
-        if not stocks:
-            cache_item = []
-            sql = 'select stock_id from quant_stock.stock_info where end_date > \'2013-01-01\' order by rand() limit 30'
-            res = self.db_tool.exec_raw_select(sql)
-            for (sid,) in res:
-                cache_item.append(sid)
-            self.cache_tool.set(RAND_STOCK, cache_item, self.cache_no, serialize=True)
-            stocks = cache_item
+    def _survey(self, stocks):
+        # 如果不显式传入股票代码，则随机选择30支股票做调研
+        if (stocks is None) or (len(stocks) == 0):
+            stocks = self.cache_tool.get(RAND_STOCK, self.cache_no, serialize=True)
+            if not stocks:
+                stocks = []
+                sql = 'select stock_id from quant_stock.stock_info where end_date > \'2013-01-01\' order by rand() ' \
+                      'limit 30'
+                res = self.db_tool.exec_raw_select(sql)
+                for (sid,) in res:
+                    stocks.append(sid)
+                self.cache_tool.set(RAND_STOCK, stocks, COMMON_CACHE_ID, serialize=True)
+                stocks = stocks
         # 回测周期调研
         for stock_id in stocks:
             all_price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
-
             price = all_price.loc[self.bt_sdt:self.bt_edt]
             status = 1  # 1:空仓，2：满仓
             pots = []
@@ -107,7 +108,7 @@ class MacdStrategy(BaseStrategy):
 
     def _backtest(self):
         # 载入benchmark
-        self.cache_tool.set(BENCHMARK_KEY, self.daily_benchmark, self.cache_no, serialize=True)
+        self.cache_tool.set(BENCHMARK_KEY, self.daily_benchmark, COMMON_CACHE_ID, serialize=True)
         # 遍历所有回测交易日
         for i in self.bt_tds:
             print(i)
@@ -136,7 +137,7 @@ class MacdStrategy(BaseStrategy):
                     if not position.can_buy():
                         break
             self.fill_daily_status(i, action_log)
-        self.cache_tool.set(RES_KEY, self.daily_status, self.cache_no, serialize=True)
+        self.cache_tool.set(RES_KEY, self.daily_status, COMMON_CACHE_ID, serialize=True)
 
     def backtest(self):
         # load所有股票、交易日信息
@@ -146,5 +147,5 @@ class MacdStrategy(BaseStrategy):
         res = self.db_tool.get_trade_days()
         for (td,) in res:
             All_Trade_Days.append(td)
-        self._backtest()
-        # self._survey()
+        # self._backtest()
+        self._survey(["300142.XSHE"])

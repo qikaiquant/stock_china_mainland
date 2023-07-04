@@ -1,11 +1,10 @@
-import logging
 import pandas
 
-from enum import Enum
-from utils.common import BenchMark
+from utils.common import *
 
 RES_KEY = "RES_KEY"
 BENCHMARK_KEY = "BENCHMARK_KEY"
+COMMON_CACHE_ID = conf_dict["Redis"]["CommonCache"]
 
 
 class Signal(Enum):
