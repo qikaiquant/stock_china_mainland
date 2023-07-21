@@ -3,10 +3,6 @@ import matplotlib.pyplot as plt
 from strategy.base_strategy import *
 from utils.common import *
 
-RAND_STOCK = 'RAND_STOCK'
-All_Trade_Days = []
-All_Stocks = []
-
 
 def _draw_survery(stock_id, price, pots):
     fig = plt.figure(figsize=(10, 6), dpi=100)
@@ -32,8 +28,7 @@ def _draw_survery(stock_id, price, pots):
 
 class MacdStrategy(BaseStrategy):
 
-    @staticmethod
-    def _signal(dt, price, ext_dict):
+    def _signal(self, dt, price, ext_dict):
         if price is None:
             return Signal.KEEP
         if (ext_dict['day0'] not in price.index) or (ext_dict['day1'] not in price.index) or (dt not in price.index):
@@ -42,7 +37,7 @@ class MacdStrategy(BaseStrategy):
         is_stinged = False
         # 过去12天出现了超过3个x，说明黏着，不做交易
         cross_num = 0
-        pre10_tds = get_preN_tds(All_Trade_Days, dt, 16)
+        pre10_tds = get_preN_tds(self.all_trade_days, dt, 16)
         for i in range(1, len(pre10_tds)):
             if pre10_tds[i - 1] not in price.index or pre10_tds[i] not in price.index:
                 continue
@@ -93,7 +88,7 @@ class MacdStrategy(BaseStrategy):
             pots = []
             for i in range(2, len(self.bt_tds) - 1):
                 ext_dict = {'day0': self.bt_tds[i - 2], 'day1': self.bt_tds[i - 1]}
-                signal = MacdStrategy._signal(self.bt_tds[i], all_price, ext_dict)
+                signal = self._signal(self.bt_tds[i], all_price, ext_dict)
                 cur_price = price.loc[self.bt_tds[i], 'avg']
                 # 寻找交易信号
                 if (status == 1) and signal == Signal.BUY:
@@ -113,22 +108,22 @@ class MacdStrategy(BaseStrategy):
         for i in self.bt_tds:
             print(i)
             action_log = {'Buy': [], 'Sell': [], 'Hold': []}
-            (day1, day0) = get_preN_tds(All_Trade_Days, i, 2)
+            (day1, day0) = get_preN_tds(self.all_trade_days, i, 2)
             ext_dict = {'day0': day0, 'day1': day1}
             position = self.position
             # Check当前Hold是否需要卖出
             for stock_id in list(position.hold.keys()):
                 price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
-                if MacdStrategy._signal(i, price, ext_dict) == Signal.SELL:
+                if self._signal(i, price, ext_dict) == Signal.SELL:
                     position.sell(stock_id, price.loc[i, 'avg'], sell_all=True)
                     action_log['Sell'].append((stock_id, price.loc[i, 'avg']))
             # 不满仓，补足
             if position.can_buy():
                 # 遍历所有股票，补足持仓
                 candidate = []
-                for stock in All_Stocks:
+                for stock in self.all_stocks:
                     price = self.cache_tool.get(stock, self.cache_no, serialize=True)
-                    if MacdStrategy._signal(i, price, ext_dict) == Signal.BUY:
+                    if self._signal(i, price, ext_dict) == Signal.BUY:
                         candidate.append((stock, price.loc[i, 'money'], price.loc[i, 'avg']))
                 candidate.sort(key=lambda x: x[1], reverse=True)
                 for can in candidate:
@@ -140,12 +135,5 @@ class MacdStrategy(BaseStrategy):
         self.cache_tool.set(RES_KEY, self.daily_status, COMMON_CACHE_ID, serialize=True)
 
     def backtest(self):
-        # load所有股票、交易日信息
-        res = self.db_tool.get_stock_info(['stock_id'])
-        for (sid,) in res:
-            All_Stocks.append(sid)
-        res = self.db_tool.get_trade_days()
-        for (td,) in res:
-            All_Trade_Days.append(td)
         # self._backtest()
         self._survey(["300142.XSHE"])

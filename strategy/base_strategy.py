@@ -2,8 +2,14 @@ import pandas
 
 from utils.common import *
 
+# 策略结果Key
 RES_KEY = "RES_KEY"
+# 基准结果Key
 BENCHMARK_KEY = "BENCHMARK_KEY"
+# 调研用的随机Stock ID
+RAND_STOCK = 'RAND_STOCK'
+
+# 存放回测结果的Redis DB
 COMMON_CACHE_ID = conf_dict["Redis"]["CommonCache"]
 
 
@@ -74,6 +80,15 @@ class BaseStrategy:
         self.daily_benchmark = self._init_daily_benchmark()  # 分日明细
         self.daily_status = pandas.DataFrame(columns=['dt', 'stg_nw', 'details'])
         self.daily_status.set_index('dt', inplace=True)
+        # 载入股票全量信息
+        self.all_stocks = []
+        self.all_trade_days = []
+        res = self.db_tool.get_stock_info(['stock_id'])
+        for (sid,) in res:
+            self.all_stocks.append(sid)
+        res = self.db_tool.get_trade_days()
+        for (td,) in res:
+            self.all_trade_days.append(td)
 
     def _init_daily_benchmark(self):
         df = pandas.DataFrame()

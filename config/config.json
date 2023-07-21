@@ -37,11 +37,17 @@
       "Class_Name": "MacdStrategy",
       "DB_NO": 0,
       "PreHandler": "ph_macd"
+    },
+    "KDJ": {
+      "Module_Path": "strategy.kdj_strategy",
+      "Class_Name": "KdjStrategy",
+      "DB_NO": 1,
+      "PreHandler": "ph_kdj"
     }
   },
   "Backtest": {
-    "STG": "MACD",
-    "Start_Date": "2018-01-01",
-    "End_Date": "2021-01-01"
+    "STG": "KDJ",
+    "Start_Date": "2022-07-15",
+    "End_Date": "2023-07-15"
   }
 }

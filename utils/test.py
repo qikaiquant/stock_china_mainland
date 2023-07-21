@@ -4,8 +4,9 @@ import sys
 import time
 
 import matplotlib.pyplot as plt
+import mplfinance as mpf
+import numpy
 import pandas
-import talib
 
 sys.path.append(os.path.dirname(sys.path[0]))
 
@@ -47,21 +48,43 @@ def draw():
 
 
 def draw_stock_price(stock_id, sdate, edate):
-    db_tool = DBTool(conf_dict['Mysql']['host'], conf_dict['Mysql']['port'], conf_dict['Mysql']['user'],
-                     conf_dict['Mysql']['passwd'])
+    db_tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
+                     conf_dict['Mysql']['Passwd'])
     prices = db_tool.get_price(stock_id, ['dt', 'close'], sdate, edate)
     df = pandas.DataFrame(prices, columns=['dt', 'close'])
-    df['SMA15'] = talib.SMA(df['close'], timeperiod=15)
-    df['SMA7'] = talib.SMA(df['close'], timeperiod=7)
-    df['SMA15'].fillna(method='bfill', inplace=True)
-    df['SMA7'].fillna(method='bfill', inplace=True)
+    df.set_index('dt', inplace=True)
+    index = [i for i in range(0, len(df['close']))]
+    cofs = numpy.polyfit(index, df['close'], deg=1)
+    ft_x = [df.index[0], df.index[len(df.index) - 1]]
+    ft_y = [cofs[1], cofs[0] * (len(df['close']) - 1) + cofs[1]]
+    print(cofs)
 
     plt.figure(figsize=(10, 6), dpi=100)
-    plt.plot(df['dt'], df['close'], color='black', label=stock_id)
-    plt.plot(df['dt'], df['SMA7'], color='red', label="SMA7")
-    plt.plot(df['dt'], df['SMA15'], color='blue', label="SMA15")
+    plt.plot(df.index, df['close'], color='blue', label=stock_id)
+    plt.plot(ft_x, ft_y, color='red', label="Fit")
+
     plt.legend()
     plt.show()
+
+
+def test_mpf(stock_id, sdate, edate):
+    cols = ['dt', 'open', 'high', 'low', 'close', 'volumn']
+    db_tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
+                     conf_dict['Mysql']['Passwd'])
+    prices = db_tool.get_price(stock_id, cols, sdate, edate)
+    df = pandas.DataFrame(prices, columns=['Date', 'Open', 'High', 'Low', 'Close', 'Volume'])
+    df.index = pandas.DatetimeIndex(df['Date'])
+    del df['Date']
+    print(df.head(10))
+    mpf.plot(df,
+             type='line',
+             ylabel="price",
+             style='default',
+             title='TTTTT',
+             volume=True,
+             mav=(5, 10),
+             figratio=(5, 3),
+             ylabel_lower="Volume")
 
 
 def test_speed():
@@ -105,4 +128,6 @@ def _get_stock_info():
 
 
 if __name__ == '__main__':
-    test_config()
+    # time_str = datetime.now().strftime("%Y%m%d_%H_%M_%S")
+    draw_stock_price("300142.XSHE", '2018-01-01', '2022-08-01')
+    # test_mpf("300142.XSHE", '2022-01-01', '2023-07-01')
