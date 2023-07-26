@@ -6,7 +6,7 @@ from common import *
 
 SFTP_Client = None
 DIR_Except = {"__pycache__"}
-FILE_Except = {"analyze.py", 'sftp_client.py', 'test.py'}
+FILE_Except = {"analyze.py", 'deployer.py', 'test.py'}
 
 
 def _check_local_file():
