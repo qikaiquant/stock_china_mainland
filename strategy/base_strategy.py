@@ -64,8 +64,7 @@ class Position:
 
 
 class BaseStrategy:
-
-    def __init__(self, sdt=None, edt=None, dbt=None, ct=None, cno=None, total_budget=100000, max_hold=5):
+    def __init__(self, sdt, edt, dbt, ct, cno, total_budget, max_hold):
         # 存储相关字段
         self.db_tool = dbt
         self.cache_tool = ct
@@ -76,6 +75,8 @@ class BaseStrategy:
         self.bt_tds = self._expand_trads_days(sdt, edt)
         # 持仓相关字段
         self.total_budget = total_budget
+        self.stop_loss_point = -1  # 止损点，-1表示不设置
+        self.stop_surplus_point = -1  # 止盈点，-1表示不设置
         self.position = Position(total_budget, max_hold)  # 持仓变化
         self.daily_benchmark = self._init_daily_benchmark()  # 分日明细
         self.daily_status = pandas.DataFrame(columns=['dt', 'stg_nw', 'details'])
@@ -117,6 +118,25 @@ class BaseStrategy:
             nw += volumn * price.loc[dt, 'close']
             action_log['Hold'].append((stock_id, price.loc[dt, 'close'], volumn, volumn * price.loc[dt, 'close']))
         self.daily_status.loc[dt] = [nw, action_log]
+
+    def stop_loss_surplus(self, stock_id, jiage):
+        if stock_id not in self.position.hold:
+            return False
+        buy_jiage = self.position.hold[stock_id][0]
+        if self.stop_loss_point != -1:
+            min_jiage = buy_jiage * (100 - self.stop_loss_point) / 100.0
+            if jiage < min_jiage:
+                logging.info(
+                    "Stop Loss For Stock " + stock_id + " At Price[" + str(jiage) + "](Buy:[" + str(buy_jiage) + "])")
+                return True
+        if self.stop_surplus_point != -1:
+            max_jiage = buy_jiage * (100 + self.stop_loss_point) / 100.0
+            if jiage > max_jiage:
+                logging.info(
+                    "Stop Surplus For Stock " + stock_id + " At Price[" + str(jiage) + "](Buy:[" + str(
+                        buy_jiage) + "])")
+                return True
+        return False
 
     def backtest(self):
         """
