@@ -6,12 +6,38 @@ from strategy.base_strategy import *
 from dateutil import relativedelta
 
 
-def _draw_nw(df):
-    plt.figure(figsize=(10, 6), dpi=100)
-    plt.plot(df.index, df['stg_nw'], color='red', label='stg')
-    plt.plot(df.index, df['HS300'], color='blue', label='HS300')
-    plt.legend()
-    # plt.savefig("D:\\test\\backtest\\macd_nw.jpg", dpi=600)
+def _draw_backtest(df, id_dict):
+    fig = plt.figure(figsize=(10, 6), dpi=100)
+    plt.rc('font', family='FangSong', size=14)
+    # 左侧折线图
+    left, bottom, width, height = 0.05, 0.2, 0.7, 0.6
+    ax1 = fig.add_axes([left, bottom, width, height])
+    ax1.plot(df.index, df['HS300'], color='slategrey', label="基准")
+    ax1.plot(df.index, df['stg_nw'], color='darkred', label="策略")
+    ax1.grid(linestyle='--')
+    ax1.set_facecolor('whitesmoke')
+    ax1.spines['top'].set_visible(False)
+    ax1.spines['right'].set_visible(False)
+    ax1.annotate(text='', xytext=(id_dict['策略']['最大回撤'][0], df.loc[id_dict['策略']['最大回撤'][0], 'stg_nw']),
+                 xy=(id_dict['策略']['最大回撤'][1], df.loc[id_dict['策略']['最大回撤'][1], 'stg_nw']),
+                 arrowprops=dict(arrowstyle='->', color='r', linewidth=2))
+    # plt.title("000023.SZ")
+    ax1.legend(loc='best')
+    # 右侧数据指标表格
+    left, bottom, width, height = 0.76, 0.2, 0.2, 0.6
+    ax2 = fig.add_axes([left, bottom, width, height])
+
+    celltext = [['收益', '{:.1%}'.format(id_dict['策略']['收益率']), '{:.1%}'.format(id_dict['基准']['收益率'])],
+                ['年化收益', '{:.1%}'.format(id_dict['策略']['年化收益率']),
+                 '{:.1%}'.format(id_dict['基准']['年化收益率'])],
+                ['最大回撤', '{:.1%}'.format(id_dict['策略']['最大回撤'][2]), '-'],
+                ['夏普比率', '{:.2f}'.format(id_dict['策略']['夏普比率']), '-']]
+    columns = ['指标', "策略", "基线"]
+    ax2.axis('off')
+    tb = ax2.table(cellText=celltext, colLabels=columns, loc='lower left', cellLoc='center', rowLoc='bottom')
+    tb.scale(1.1, 1.3)
+
+    # plt.savefig("/home/qikai/aaa.jpg", dpi=600)
     plt.show()
 
 
@@ -165,6 +191,7 @@ if __name__ == '__main__':
     res = pandas.merge(benchmark_res, stg_res, left_index=True, right_index=True)
     index = _get_index(res)
     print(index)
+    _draw_backtest(res, index)
     # _get_max_loss(res, conf_dict['Backtest']['Start_Date'], conf_dict['Backtest']['End_Date'])
     # _draw_nw(res)
     # _parse_stg_detail(res)
