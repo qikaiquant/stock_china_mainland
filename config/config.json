@@ -53,6 +53,6 @@
     "End_Date": "2023-07-15",
     "Budget": 100000,
     "MaxHold": 1,
-    "Risk_Free_Rate": 0.02
+    "Risk_Free_Rate": 0.026
   }
 }

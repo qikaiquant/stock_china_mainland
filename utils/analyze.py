@@ -12,7 +12,7 @@ def _draw_backtest(df, id_dict):
     # 左侧折线图
     left, bottom, width, height = 0.05, 0.2, 0.7, 0.6
     ax1 = fig.add_axes([left, bottom, width, height])
-    ax1.plot(df.index, df['HS300'], color='slategrey', label="基准")
+    ax1.plot(df.index, df['HS300'], color='slategrey', label="基线")
     ax1.plot(df.index, df['stg_nw'], color='darkred', label="策略")
     ax1.grid(linestyle='--')
     ax1.set_facecolor('whitesmoke')
@@ -68,8 +68,7 @@ def _get_max_loss(df, start_dt, end_dt):
     loss_list = []
     loss_dict = {}
     seg = df.loc[start_dt:end_dt]
-    for index, row in seg.iterrows():
-        dt = index
+    for dt, row in seg.iterrows():
         detail = row['details']
         for item in detail['Hold']:
             stock_id = item[0]
@@ -193,5 +192,4 @@ if __name__ == '__main__':
     print(index)
     _draw_backtest(res, index)
     # _get_max_loss(res, conf_dict['Backtest']['Start_Date'], conf_dict['Backtest']['End_Date'])
-    # _draw_nw(res)
     # _parse_stg_detail(res)
