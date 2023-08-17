@@ -65,6 +65,28 @@ class PreHandlers:
                 print(stock_id)
                 break
 
+    @staticmethod
+    def ph_ema(db_no):
+        Stock_Redis_Tool.clear(int(db_no))
+        stocks = Stock_DB_Tool.get_stock_info(['stock_id'])
+        cols = ['dt', 'close', 'avg', 'volumn', 'money']
+        for (stock_id,) in stocks:
+            try:
+                res = Stock_DB_Tool.get_price(stock_id, fields=cols)
+                # 股票在2013-01-01前已退市
+                if len(res) == 0:
+                    continue
+                res_df = pandas.DataFrame(res, columns=cols)
+                res_df.set_index('dt', inplace=True)
+                # 计算ema指标
+                res_df['ema20'] = talib.EMA(res_df['close'].values, timeperiod=20)
+                res_df['ema10'] = talib.EMA(res_df['close'].values, timeperiod=10)
+                Stock_Redis_Tool.set(stock_id, res_df, db_no, serialize=True)
+            except Exception as e:
+                tb.print_exc()
+                print(stock_id)
+                break
+
 
 def warm_db(stg_map, s_list):
     for s in s_list:

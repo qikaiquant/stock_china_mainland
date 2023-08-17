@@ -3,13 +3,6 @@ import matplotlib.pyplot as plt
 
 from strategy.base_strategy import *
 
-"""
-策略框架。
-新建策略，需要实现_singal()函数和warmer中的数据预处理函数ph_XXXX
-理论上，实现了_singal()函数和warmer中的ph_XXX，并在config.json中配置好，
-就可以做策略的验证。
-"""
-
 
 def _draw_survery(stock_id, price, pots):
     fig = plt.figure(figsize=(10, 6), dpi=100)
@@ -17,30 +10,46 @@ def _draw_survery(stock_id, price, pots):
 
     ax1 = fig.add_subplot(211)
     ax1.plot(price.index, price['close'], color='black', label='Close Price')
+    for (a, b, c) in pots:
+        ax1.annotate(xy=(a, price.loc[a, 'close']), text=c)
     ax1.grid(linestyle='--')
     ax1.legend()
 
     ax2 = fig.add_subplot(212)
-    # ax2.plot(price.index, price['K'], color='red', label='K')
-    for (a, b, c) in pots:
-        ax2.annotate(xy=(a, price.loc[a, 'D']), text=c)
+    ax2.plot(price.index, price['ema10'], color='red', label='ema10')
+    ax2.plot(price.index, price['ema20'], color='blue', label='ema20')
     ax2.grid(linestyle='--')
     ax2.legend()
 
-    plt.show()
-    # fn = "D:\\test\\survey\\" + stock_id + ".jpg"
-    # plt.savefig(fn, dpi=600)
+    # plt.show()
+    fn = "D:\\test\\survey\\" + stock_id + ".jpg"
+    plt.savefig(fn, dpi=600)
 
 
-class XXXStrategy(BaseStrategy):
+class EMAStrategy(BaseStrategy):
     def __init__(self, sdt, edt, dbt, ct, cno, total_budget, max_hold):
         super().__init__(sdt, edt, dbt, ct, cno, total_budget, max_hold)
-        if "StopLossPoint" in conf_dict['STG']['XXX']:
-            self.stop_loss_point = conf_dict['STG']['XXX']['StopLossPoint']
-        if "StopSurplusPoint" in conf_dict['STG']['XXX']:
-            self.stop_surplus_point = conf_dict['STG']['XXX']['StopSurplusPoint']
+        if "StopLossPoint" in conf_dict['STG']['EMA']:
+            self.stop_loss_point = conf_dict['STG']['EMA']['StopLossPoint']
+        if "StopSurplusPoint" in conf_dict['STG']['EMA']:
+            self.stop_surplus_point = conf_dict['STG']['EMA']['StopSurplusPoint']
 
     def _signal(self, stock_id, dt, price):
+        # check止盈止损
+        if (price is None) or (dt not in price.index):
+            return Signal.KEEP
+        cur_jiage = price.loc[dt, 'close']
+        if self.stop_loss_surplus(stock_id, cur_jiage):
+            return Signal.SELL
+        d1, d0 = get_preN_tds(self.all_trade_days, dt, 2)
+        if (d1 not in price.index) or (d0 not in price.index):
+            return Signal.KEEP
+        # 金叉买
+        if (price.loc[d0, 'ema20'] > price.loc[d0, 'ema10']) and (price.loc[d1, "ema20"] < price.loc[d1, "ema10"]):
+            return Signal.BUY
+        # 死叉卖
+        if (price.loc[d0, 'ema20'] < price.loc[d0, 'ema10']) and (price.loc[d1, "ema20"] > price.loc[d1, "ema10"]):
+            return Signal.SELL
         return Signal.KEEP
 
     def _survey(self, stocks):
@@ -101,5 +110,4 @@ class XXXStrategy(BaseStrategy):
         self.cache_tool.set(RES_KEY, self.daily_status, COMMON_CACHE_ID, serialize=True)
 
     def backtest(self):
-        # self._backtest()
         self._survey([])

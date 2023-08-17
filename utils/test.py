@@ -14,7 +14,7 @@ from utils.redis_tool import *
 from utils.common import *
 
 
-def draw_stock_price(stock_id, sdate, edate):
+def draw_stock_price_trend(stock_id, sdate, edate):
     db_tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
                      conf_dict['Mysql']['Passwd'])
     prices = db_tool.get_price(stock_id, ['dt', 'close'], sdate, edate)

@@ -34,7 +34,6 @@ class MacdStrategy(BaseStrategy):
         if (ext_dict['day0'] not in price.index) or (ext_dict['day1'] not in price.index) or (dt not in price.index):
             return Signal.KEEP
 
-        is_stinged = False
         # 过去12天出现了超过3个x，说明黏着，不做交易
         cross_num = 0
         pre10_tds = get_preN_tds(self.all_trade_days, dt, 16)
@@ -50,7 +49,6 @@ class MacdStrategy(BaseStrategy):
             if dif1 * dif2 < 0:
                 cross_num += 1
         if cross_num >= 3:
-            is_stinged = True
             return Signal.SELL
         # 寻找交易信号，简单的金叉死叉
         day0_fast = price.loc[ext_dict['day0'], 'dif']
@@ -61,7 +59,7 @@ class MacdStrategy(BaseStrategy):
         sort_value = price.loc[ext_dict['day1'], 'money']
         if sort_value < 100000:
             return Signal.KEEP
-        if (day0_slow > day0_fast) and (day1_slow < day1_fast) and (not is_stinged):
+        if (day0_slow > day0_fast) and (day1_slow < day1_fast):
             return Signal.BUY
         if (day0_slow < day0_fast) and (day1_slow > day1_fast):
             return Signal.SELL

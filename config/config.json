@@ -45,10 +45,18 @@
       "PreHandler": "ph_kdj",
       "StopLossPoint": 15,
       "StopSurplusPoint": -1
+    },
+    "EMA": {
+      "Module_Path": "strategy.ema_strategy",
+      "Class_Name": "EMAStrategy",
+      "DB_NO": 2,
+      "PreHandler": "ph_ema",
+      "StopLossPoint": 15,
+      "StopSurplusPoint": -1
     }
   },
   "Backtest": {
-    "STG": "KDJ",
+    "STG": "EMA",
     "Start_Date": "2022-07-15",
     "End_Date": "2023-07-15",
     "Budget": 100000,

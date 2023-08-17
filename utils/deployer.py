@@ -36,7 +36,7 @@ def recur_put(lb, rb, cur_df):
         elif os.path.isdir(absp):
             recur_put(local_base, remote_base, item)
         else:
-            print(str(absp) + " is nonthing")
+            print(str(absp) + " is nothing")
 
 
 if __name__ == '__main__':
