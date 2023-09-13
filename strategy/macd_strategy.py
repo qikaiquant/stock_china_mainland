@@ -1,7 +1,14 @@
+import random
 import matplotlib.pyplot as plt
 
 from strategy.base_strategy import *
-from utils.common import *
+
+"""
+策略框架。
+新建策略，需要实现_singal()函数和warmer中的数据预处理函数ph_XXXX
+理论上，实现了_singal()函数和warmer中的ph_XXX，并在config.json中配置好，
+就可以做策略的验证。
+"""
 
 
 def _draw_survery(stock_id, price, pots):
@@ -21,22 +28,33 @@ def _draw_survery(stock_id, price, pots):
     ax2.grid(linestyle='--')
     ax2.legend()
 
-    plt.show()
-    # fn = "D:\\test\\survey\\" + stock_id + ".jpg"
-    # plt.savefig(fn, dpi=600)
+    # plt.show()
+    fn = "D:\\test\\" + stock_id + ".jpg"
+    plt.savefig(fn, dpi=600)
 
 
 class MacdStrategy(BaseStrategy):
+    def __init__(self, sdt, edt, dbt, ct, cno, total_budget, max_hold):
+        super().__init__(sdt, edt, dbt, ct, cno, total_budget, max_hold)
+        if "StopLossPoint" in conf_dict['STG']['MACD']:
+            self.stop_loss_point = conf_dict['STG']['MACD']['StopLossPoint']
+        if "StopSurplusPoint" in conf_dict['STG']['MACD']:
+            self.stop_surplus_point = conf_dict['STG']['MACD']['StopSurplusPoint']
 
-    def _signal(self, dt, price, ext_dict):
-        if price is None:
+    def _signal(self, stock_id, dt, price):
+        # check止盈止损
+        if (price is None) or (dt not in price.index):
             return Signal.KEEP
-        if (ext_dict['day0'] not in price.index) or (ext_dict['day1'] not in price.index) or (dt not in price.index):
+        cur_jiage = price.loc[dt, 'close']
+        if self.stop_loss_surplus(stock_id, cur_jiage):
+            return Signal.SELL
+        # macd信号
+        d1, d0 = get_preN_tds(self.all_trade_days, dt, 2)
+        if (d1 not in price.index) or (d0 not in price.index):
             return Signal.KEEP
-
         # 过去12天出现了超过3个x，说明黏着，不做交易
         cross_num = 0
-        pre10_tds = get_preN_tds(self.all_trade_days, dt, 16)
+        pre10_tds = get_preN_tds(self.all_trade_days, dt, 12)
         for i in range(1, len(pre10_tds)):
             if pre10_tds[i - 1] not in price.index or pre10_tds[i] not in price.index:
                 continue
@@ -49,16 +67,13 @@ class MacdStrategy(BaseStrategy):
             if dif1 * dif2 < 0:
                 cross_num += 1
         if cross_num >= 3:
-            return Signal.SELL
-        # 寻找交易信号，简单的金叉死叉
-        day0_fast = price.loc[ext_dict['day0'], 'dif']
-        day0_slow = price.loc[ext_dict['day0'], 'dea']
-        day1_fast = price.loc[ext_dict['day1'], 'dif']
-        day1_slow = price.loc[ext_dict['day1'], 'dea']
-
-        sort_value = price.loc[ext_dict['day1'], 'money']
-        if sort_value < 100000:
             return Signal.KEEP
+        # 寻找交易信号，简单的金叉死叉
+        day0_fast = price.loc[d0, 'dif']
+        day0_slow = price.loc[d0, 'dea']
+        day1_fast = price.loc[d1, 'dif']
+        day1_slow = price.loc[d1, 'dea']
+
         if (day0_slow > day0_fast) and (day1_slow < day1_fast):
             return Signal.BUY
         if (day0_slow < day0_fast) and (day1_slow > day1_fast):
@@ -68,36 +83,30 @@ class MacdStrategy(BaseStrategy):
     def _survey(self, stocks):
         # 如果不显式传入股票代码，则随机选择30支股票做调研
         if (stocks is None) or (len(stocks) == 0):
-            stocks = self.cache_tool.get(RAND_STOCK, self.cache_no, serialize=True)
+            stocks = self.cache_tool.get(RAND_STOCK, COMMON_CACHE_ID, serialize=True)
             if not stocks:
-                stocks = []
-                sql = 'select stock_id from quant_stock.stock_info where end_date > \'2013-01-01\' order by rand() ' \
-                      'limit 30'
-                res = self.db_tool.exec_raw_select(sql)
-                for (sid,) in res:
-                    stocks.append(sid)
+                stocks = random.sample(self.all_stocks, 30)
                 self.cache_tool.set(RAND_STOCK, stocks, COMMON_CACHE_ID, serialize=True)
-                stocks = stocks
-        # 回测周期调研
+        # 调研过程
         for stock_id in stocks:
-            all_price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
-            price = all_price.loc[self.bt_sdt:self.bt_edt]
+            price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
             status = 1  # 1:空仓，2：满仓
-            pots = []
-            for i in range(2, len(self.bt_tds) - 1):
-                ext_dict = {'day0': self.bt_tds[i - 2], 'day1': self.bt_tds[i - 1]}
-                signal = self._signal(self.bt_tds[i], all_price, ext_dict)
-                cur_price = price.loc[self.bt_tds[i], 'avg']
+            trade_pots = []
+            for dt in self.bt_tds:
+                if dt not in price.index:
+                    continue
+                signal = self._signal(stock_id, dt, price)
+                cur_price = price.loc[dt, 'avg']
                 # 寻找交易信号
                 if (status == 1) and signal == Signal.BUY:
-                    pots.append((self.bt_tds[i], cur_price, "B"))
-                    logging.info("Buy at Price [" + str(cur_price) + "] At Day [" + str(self.bt_tds[i]) + ']')
+                    trade_pots.append((dt, cur_price, "B"))
+                    logging.info("Buy at Price [" + str(cur_price) + "] At Day [" + str(dt) + ']')
                     status = 2
                 if (status == 2) and signal == Signal.SELL:
-                    pots.append((self.bt_tds[i], cur_price, "S"))
-                    logging.info("Sell at Price [" + str(cur_price) + "] At Day [" + str(self.bt_tds[i]) + ']')
+                    trade_pots.append((dt, cur_price, "S"))
+                    logging.info("Sell at Price [" + str(cur_price) + "] At Day [" + str(dt) + ']')
                     status = 1
-            _draw_survery(stock_id, price, pots)
+            _draw_survery(stock_id, price.loc[self.bt_sdt:self.bt_edt], trade_pots)
 
     def _backtest(self):
         # 载入benchmark
@@ -106,13 +115,11 @@ class MacdStrategy(BaseStrategy):
         for i in self.bt_tds:
             print(i)
             action_log = {'Buy': [], 'Sell': [], 'Hold': []}
-            (day1, day0) = get_preN_tds(self.all_trade_days, i, 2)
-            ext_dict = {'day0': day0, 'day1': day1}
             position = self.position
             # Check当前Hold是否需要卖出
             for stock_id in list(position.hold.keys()):
                 price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
-                if self._signal(i, price, ext_dict) == Signal.SELL:
+                if self._signal(stock_id, i, price) == Signal.SELL:
                     position.sell(stock_id, price.loc[i, 'avg'], sell_all=True)
                     action_log['Sell'].append((stock_id, price.loc[i, 'avg']))
             # 不满仓，补足
@@ -121,7 +128,7 @@ class MacdStrategy(BaseStrategy):
                 candidate = []
                 for stock in self.all_stocks:
                     price = self.cache_tool.get(stock, self.cache_no, serialize=True)
-                    if self._signal(i, price, ext_dict) == Signal.BUY:
+                    if self._signal(stock, i, price) == Signal.BUY:
                         candidate.append((stock, price.loc[i, 'money'], price.loc[i, 'avg']))
                 candidate.sort(key=lambda x: x[1], reverse=True)
                 for can in candidate:
@@ -133,5 +140,5 @@ class MacdStrategy(BaseStrategy):
         self.cache_tool.set(RES_KEY, self.daily_status, COMMON_CACHE_ID, serialize=True)
 
     def backtest(self):
-        # self._backtest()
-        self._survey(["300142.XSHE"])
+        self._backtest()
+        # self._survey([])

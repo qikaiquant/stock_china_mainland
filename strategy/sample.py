@@ -56,6 +56,8 @@ class XXXStrategy(BaseStrategy):
             status = 1  # 1:空仓，2：满仓
             trade_pots = []
             for dt in self.bt_tds:
+                if dt not in price.index:
+                    continue
                 signal = self._signal(stock_id, dt, price)
                 cur_price = price.loc[dt, 'avg']
                 # 寻找交易信号

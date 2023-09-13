@@ -16,8 +16,8 @@ def _draw_survery(stock_id, price, pots):
     ax1.legend()
 
     ax2 = fig.add_subplot(212)
-    ax2.plot(price.index, price['ema10'], color='red', label='ema10')
-    ax2.plot(price.index, price['ema20'], color='blue', label='ema20')
+    ax2.plot(price.index, price['ema50'], color='red', label='ema50')
+    ax2.plot(price.index, price['ema100'], color='blue', label='ema100')
     ax2.grid(linestyle='--')
     ax2.legend()
 
@@ -45,10 +45,10 @@ class EMAStrategy(BaseStrategy):
         if (d1 not in price.index) or (d0 not in price.index):
             return Signal.KEEP
         # 金叉买
-        if (price.loc[d0, 'ema20'] > price.loc[d0, 'ema10']) and (price.loc[d1, "ema20"] < price.loc[d1, "ema10"]):
+        if (price.loc[d0, 'ema100'] > price.loc[d0, 'ema50']) and (price.loc[d1, "ema100"] < price.loc[d1, "ema50"]):
             return Signal.BUY
         # 死叉卖
-        if (price.loc[d0, 'ema20'] < price.loc[d0, 'ema10']) and (price.loc[d1, "ema20"] > price.loc[d1, "ema10"]):
+        if (price.loc[d0, 'ema100'] < price.loc[d0, 'ema50']) and (price.loc[d1, "ema100"] > price.loc[d1, "ema50"]):
             return Signal.SELL
         return Signal.KEEP
 

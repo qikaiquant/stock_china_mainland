@@ -56,7 +56,7 @@
     }
   },
   "Backtest": {
-    "STG": "EMA",
+    "STG": "MACD",
     "Start_Date": "2022-07-15",
     "End_Date": "2023-07-15",
     "Budget": 100000,

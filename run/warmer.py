@@ -79,8 +79,8 @@ class PreHandlers:
                 res_df = pandas.DataFrame(res, columns=cols)
                 res_df.set_index('dt', inplace=True)
                 # 计算ema指标
-                res_df['ema20'] = talib.EMA(res_df['close'].values, timeperiod=20)
-                res_df['ema10'] = talib.EMA(res_df['close'].values, timeperiod=10)
+                res_df['ema50'] = talib.EMA(res_df['close'].values, timeperiod=50)
+                res_df['ema100'] = talib.EMA(res_df['close'].values, timeperiod=100)
                 Stock_Redis_Tool.set(stock_id, res_df, db_no, serialize=True)
             except Exception as e:
                 tb.print_exc()

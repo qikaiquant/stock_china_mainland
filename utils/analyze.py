@@ -189,6 +189,6 @@ if __name__ == '__main__':
         sys.exit(1)
     res = pandas.merge(benchmark_res, stg_res, left_index=True, right_index=True)
     index = _get_index(res)
-    _draw_backtest(res, index)
-    # _get_max_loss(res, conf_dict['Backtest']['Start_Date'], conf_dict['Backtest']['End_Date'])
+    # _draw_backtest(res, index)
+    _get_max_loss(res, conf_dict['Backtest']['Start_Date'], conf_dict['Backtest']['End_Date'])
     # _parse_stg_detail(res)
