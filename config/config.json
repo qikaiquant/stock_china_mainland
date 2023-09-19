@@ -36,7 +36,9 @@
       "Module_Path": "strategy.macd_strategy",
       "Class_Name": "MacdStrategy",
       "DB_NO": 0,
-      "PreHandler": "ph_macd"
+      "PreHandler": "ph_macd",
+      "StopLossPoint": 15,
+      "StopSurplusPoint": -1
     },
     "KDJ": {
       "Module_Path": "strategy.kdj_strategy",
@@ -60,7 +62,7 @@
     "Start_Date": "2022-07-15",
     "End_Date": "2023-07-15",
     "Budget": 100000,
-    "MaxHold": 1,
+    "MaxHold": 3,
     "Risk_Free_Rate": 0.026
   }
 }

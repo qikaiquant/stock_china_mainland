@@ -22,5 +22,5 @@ if __name__ == '__main__':
     # 开始回测
     stg = cls(conf_dict['Backtest']['Start_Date'], conf_dict['Backtest']['End_Date'], db_tool, cache_tool, cache_no,
               conf_dict['Backtest']['Budget'], conf_dict['Backtest']['MaxHold'])
-    stg.backtest()
+    stg.run()
     logging.info("End Backtest")
