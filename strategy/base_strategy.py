@@ -66,7 +66,7 @@ class Position:
 
 
 class BaseStrategy:
-    def __init__(self, sdt, edt, dbt, ct, cno, total_budget, max_hold):
+    def __init__(self, sdt, edt, dbt, ct, cno, total_budget, max_hold, stg_id):
         # 存储相关字段
         self.db_tool = dbt
         self.cache_tool = ct
@@ -77,8 +77,6 @@ class BaseStrategy:
         self.bt_tds = self._expand_trads_days(sdt, edt)
         # 持仓相关字段
         self.total_budget = total_budget
-        self.stop_loss_point = -1  # 止损点，-1表示不设置
-        self.stop_surplus_point = -1  # 止盈点，-1表示不设置
         self.position = Position(total_budget, max_hold)  # 持仓变化
         self.daily_benchmark = self._init_daily_benchmark()  # 分日明细
         self.daily_status = pandas.DataFrame(columns=['dt', 'stg_nw', 'details'])
@@ -92,6 +90,13 @@ class BaseStrategy:
         res = self.db_tool.get_trade_days()
         for (td,) in res:
             self.all_trade_days.append(td)
+        # 设置止损止盈点
+        self.stop_loss_point = -1  # 止损点，-1表示不设置
+        self.stop_surplus_point = -1  # 止盈点，-1表示不设置
+        if "StopLossPoint" in conf_dict['STG'][stg_id]:
+            self.stop_loss_point = conf_dict['STG'][stg_id]['StopLossPoint']
+        if "StopSurplusPoint" in conf_dict['STG'][stg_id]:
+            self.stop_surplus_point = conf_dict['STG'][stg_id]['StopSurplusPoint']
 
     def _init_daily_benchmark(self):
         df = pandas.DataFrame()
@@ -140,8 +145,7 @@ class BaseStrategy:
                 return True
         return False
 
-    @staticmethod
-    def draw_survery(stock_id, price, pots):
+    def draw_survery(self, stock_id, price, pots, is_draw):
         fig = plt.figure(figsize=(10, 6), dpi=100)
         plt.title(stock_id)
 
@@ -151,17 +155,18 @@ class BaseStrategy:
         ax1.legend()
 
         ax2 = fig.add_subplot(212)
-        # ax2.plot(price.index, price['K'], color='red', label='K')
         for (a, b, c) in pots:
             ax2.annotate(xy=(a, price.loc[a, 'D']), text=c)
         ax2.grid(linestyle='--')
         ax2.legend()
 
-        plt.show()
-        # fn = "D:\\test\\survey\\" + stock_id + ".jpg"
-        # plt.savefig(fn, dpi=600)
+        if is_draw:
+            plt.show()
+        else:
+            fn = "D:\\test\\survey\\" + stock_id + ".jpg"
+            plt.savefig(fn, dpi=600)
 
-    def survey(self, stocks):
+    def survey(self, stocks, is_draw):
         # 如果不显式传入股票代码，则随机选择30支股票做调研
         if (stocks is None) or (len(stocks) == 0):
             stocks = self.cache_tool.get(RAND_STOCK, COMMON_CACHE_ID, serialize=True)
@@ -174,10 +179,11 @@ class BaseStrategy:
             status = 1  # 1:空仓，2：满仓
             trade_pots = []
             for dt in self.bt_tds:
-                if dt not in price.index:
+                pre_dt = get_preN_tds(self.all_trade_days, dt, 1)
+                if (dt not in price.index) or (pre_dt not in price.index):
                     continue
-                signal = self.signal(stock_id, dt, price)
-                cur_price = price.loc[dt, 'avg']
+                signal = self.signal(stock_id, pre_dt, price)
+                cur_price = price.loc[dt, 'open']
                 # 寻找交易信号
                 if (status == 1) and signal == Signal.BUY:
                     trade_pots.append((dt, cur_price, "B"))
@@ -187,37 +193,40 @@ class BaseStrategy:
                     trade_pots.append((dt, cur_price, "S"))
                     logging.info("Sell at Price [" + str(cur_price) + "] At Day [" + str(dt) + ']')
                     status = 1
-            self.draw_survery(stock_id, price.loc[self.bt_sdt:self.bt_edt], trade_pots)
+            self.draw_survery(stock_id, price.loc[self.bt_sdt:self.bt_edt], trade_pots, is_draw)
 
     def backtest(self):
         # 载入benchmark
         self.cache_tool.set(BENCHMARK_KEY, self.daily_benchmark, COMMON_CACHE_ID, serialize=True)
         # 遍历所有回测交易日
-        for i in self.bt_tds:
-            print(i)
+        for dt in self.bt_tds:
+            print(dt)
             action_log = {'Buy': [], 'Sell': [], 'Hold': []}
             position = self.position
+            pre_dt = get_preN_tds(self.all_trade_days, dt, 1)
             # Check当前Hold是否需要卖出
             for stock_id in list(position.hold.keys()):
                 price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
-                if self.signal(stock_id, i, price) == Signal.SELL:
-                    position.sell(stock_id, price.loc[i, 'avg'], sell_all=True)
-                    action_log['Sell'].append((stock_id, price.loc[i, 'avg']))
+                if self.signal(stock_id, pre_dt, price) == Signal.SELL:
+                    position.sell(stock_id, price.loc[dt, 'open'], sell_all=True)
+                    action_log['Sell'].append((stock_id, price.loc[dt, 'open']))
             # 不满仓，补足
             if position.can_buy():
                 # 遍历所有股票，补足持仓
                 candidate = []
                 for stock in self.all_stocks:
                     price = self.cache_tool.get(stock, self.cache_no, serialize=True)
-                    if self.signal(stock, i, price) == Signal.BUY:
-                        candidate.append((stock, price.loc[i, 'money'], price.loc[i, 'avg']))
+                    if (dt not in price.index) or (pre_dt not in price.index):
+                        continue
+                    if self.signal(stock, pre_dt, price) == Signal.BUY:
+                        candidate.append((stock, price.loc[pre_dt, 'money'], price.loc[dt, 'open']))
                 candidate.sort(key=lambda x: x[1], reverse=True)
                 for can in candidate:
                     if position.buy(can[0], can[2]):
                         action_log['Buy'].append((can[0], can[2]))
                     if not position.can_buy():
                         break
-            self._fill_daily_status(i, action_log)
+            self._fill_daily_status(dt, action_log)
         self.cache_tool.set(RES_KEY, self.daily_status, COMMON_CACHE_ID, serialize=True)
 
     def signal(self, stock_id, dt, price):

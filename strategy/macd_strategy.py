@@ -2,14 +2,7 @@ from strategy.base_strategy import *
 
 
 class MacdStrategy(BaseStrategy):
-    def __init__(self, sdt, edt, dbt, ct, cno, total_budget, max_hold):
-        super().__init__(sdt, edt, dbt, ct, cno, total_budget, max_hold)
-        if "StopLossPoint" in conf_dict['STG']['MACD']:
-            self.stop_loss_point = conf_dict['STG']['MACD']['StopLossPoint']
-        if "StopSurplusPoint" in conf_dict['STG']['MACD']:
-            self.stop_surplus_point = conf_dict['STG']['MACD']['StopSurplusPoint']
-
-    def _signal(self, stock_id, dt, price):
+    def signal(self, stock_id, dt, price):
         # check止盈止损
         if (price is None) or (dt not in price.index):
             return Signal.KEEP
@@ -47,3 +40,7 @@ class MacdStrategy(BaseStrategy):
         if (day0_slow < day0_fast) and (day1_slow > day1_fast):
             return Signal.SELL
         return Signal.KEEP
+
+    def run(self):
+        # self.survey([], False)
+        self.backtest()

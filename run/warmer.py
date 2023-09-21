@@ -21,7 +21,7 @@ class PreHandlers:
     def ph_macd(db_no):
         Stock_Redis_Tool.clear(int(db_no))
         stocks = Stock_DB_Tool.get_stock_info(['stock_id'])
-        cols = ['dt', 'close', 'avg', 'money']
+        cols = ['dt', 'close', 'open', 'money']
         for (stock_id,) in stocks:
             try:
                 res = Stock_DB_Tool.get_price(stock_id, fields=cols)
