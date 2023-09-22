@@ -1,6 +1,5 @@
-import matplotlib.pyplot as plt
-import pandas
 import random
+import pandas
 
 from utils.common import *
 
@@ -145,27 +144,6 @@ class BaseStrategy:
                 return True
         return False
 
-    def draw_survery(self, stock_id, price, pots, is_draw):
-        fig = plt.figure(figsize=(10, 6), dpi=100)
-        plt.title(stock_id)
-
-        ax1 = fig.add_subplot(211)
-        ax1.plot(price.index, price['close'], color='black', label='Close Price')
-        ax1.grid(linestyle='--')
-        ax1.legend()
-
-        ax2 = fig.add_subplot(212)
-        for (a, b, c) in pots:
-            ax2.annotate(xy=(a, price.loc[a, 'D']), text=c)
-        ax2.grid(linestyle='--')
-        ax2.legend()
-
-        if is_draw:
-            plt.show()
-        else:
-            fn = "D:\\test\\survey\\" + stock_id + ".jpg"
-            plt.savefig(fn, dpi=600)
-
     def survey(self, stocks, is_draw):
         # 如果不显式传入股票代码，则随机选择30支股票做调研
         if (stocks is None) or (len(stocks) == 0):
@@ -175,25 +153,32 @@ class BaseStrategy:
                 self.cache_tool.set(RAND_STOCK, stocks, COMMON_CACHE_ID, serialize=True)
         # 调研过程
         for stock_id in stocks:
+            logging.info("+++++++++++++++++++" + stock_id + "++++++++++++++++++++")
             price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
+            if price is None:
+                continue
             status = 1  # 1:空仓，2：满仓
             trade_pots = []
             for dt in self.bt_tds:
-                pre_dt = get_preN_tds(self.all_trade_days, dt, 1)
+                sig_action = Signal.KEEP.name
+                [pre_dt] = get_preN_tds(self.all_trade_days, dt, 1)
                 if (dt not in price.index) or (pre_dt not in price.index):
                     continue
-                signal = self.signal(stock_id, pre_dt, price)
+                signal, reason = self.signal(stock_id, pre_dt, price)
                 cur_price = price.loc[dt, 'open']
                 # 寻找交易信号
                 if (status == 1) and signal == Signal.BUY:
                     trade_pots.append((dt, cur_price, "B"))
-                    logging.info("Buy at Price [" + str(cur_price) + "] At Day [" + str(dt) + ']')
+                    sig_action = Signal.BUY.name
                     status = 2
-                if (status == 2) and signal == Signal.SELL:
+                elif (status == 2) and signal == Signal.SELL:
                     trade_pots.append((dt, cur_price, "S"))
-                    logging.info("Sell at Price [" + str(cur_price) + "] At Day [" + str(dt) + ']')
+                    sig_action = Signal.SELL.name
                     status = 1
-            self.draw_survery(stock_id, price.loc[self.bt_sdt:self.bt_edt], trade_pots, is_draw)
+                if sig_action == "KEEP" and reason == "Nothing":
+                    continue
+                logging.info("[%s][%s][%s]" % (str(dt), sig_action, reason))
+            self.draw_survey(stock_id, price.loc[self.bt_sdt:self.bt_edt], trade_pots, is_draw)
 
     def backtest(self):
         # 载入benchmark
@@ -203,7 +188,7 @@ class BaseStrategy:
             print(dt)
             action_log = {'Buy': [], 'Sell': [], 'Hold': []}
             position = self.position
-            pre_dt = get_preN_tds(self.all_trade_days, dt, 1)
+            [pre_dt] = get_preN_tds(self.all_trade_days, dt, 1)
             # Check当前Hold是否需要卖出
             for stock_id in list(position.hold.keys()):
                 price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
@@ -229,6 +214,18 @@ class BaseStrategy:
             self._fill_daily_status(dt, action_log)
         self.cache_tool.set(RES_KEY, self.daily_status, COMMON_CACHE_ID, serialize=True)
 
+    def draw_survey(self, stock_id, price, pots, is_draw):
+        """
+        这个函数需要被子类重写
+        :param stock_id:
+        :param price:
+        :param pots:
+        :param is_draw:
+        :return:
+        """
+        print("This is Base draw_survery().IF you don't rewirte it,NOTHING will happend.")
+        pass
+
     def signal(self, stock_id, dt, price):
         """
         这个函数需要被子类重写
@@ -237,7 +234,6 @@ class BaseStrategy:
         :param price:
         :return:
         """
-        print(stock_id, dt, price)
         print("This is Base Signal().IF you don't rewirte it,NOTHING will happend.")
         return Signal.KEEP
 
