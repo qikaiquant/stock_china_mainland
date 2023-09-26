@@ -67,6 +67,6 @@ class MacdStrategy(BaseStrategy):
         return Signal.KEEP, "Nothing"
 
     def run(self):
-        # self.survey(["002112.XSHE"], False)
-        self.survey([], False)
-    # self.backtest()
+        # self.survey(["688439.XSHG"], True)
+        # self.survey([], False)
+        self.backtest()

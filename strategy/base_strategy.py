@@ -175,8 +175,6 @@ class BaseStrategy:
                     trade_pots.append((dt, cur_price, "S"))
                     sig_action = Signal.SELL.name
                     status = 1
-                if sig_action == "KEEP" and reason == "Nothing":
-                    continue
                 logging.info("[%s][%s][%s]" % (str(dt), sig_action, reason))
             self.draw_survey(stock_id, price.loc[self.bt_sdt:self.bt_edt], trade_pots, is_draw)
 
@@ -185,33 +183,35 @@ class BaseStrategy:
         self.cache_tool.set(BENCHMARK_KEY, self.daily_benchmark, COMMON_CACHE_ID, serialize=True)
         # 遍历所有回测交易日
         for dt in self.bt_tds:
-            print(dt)
+            logging.info("+++++++++++++++++++" + str(dt) + "++++++++++++++++++++")
             action_log = {'Buy': [], 'Sell': [], 'Hold': []}
             position = self.position
             [pre_dt] = get_preN_tds(self.all_trade_days, dt, 1)
             # Check当前Hold是否需要卖出
             for stock_id in list(position.hold.keys()):
                 price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
-                if self.signal(stock_id, pre_dt, price) == Signal.SELL:
+                signal, _ = self.signal(stock_id, pre_dt, price)
+                if signal == Signal.SELL:
                     position.sell(stock_id, price.loc[dt, 'open'], sell_all=True)
                     action_log['Sell'].append((stock_id, price.loc[dt, 'open']))
             # 不满仓，补足
             if position.can_buy():
                 # 遍历所有股票，补足持仓
                 candidate = []
-                for stock in self.all_stocks:
-                    price = self.cache_tool.get(stock, self.cache_no, serialize=True)
-                    if (dt not in price.index) or (pre_dt not in price.index):
+                for stock_id in self.all_stocks:
+                    price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
+                    if (price is None) or (dt not in price.index) or (pre_dt not in price.index):
                         continue
-                    if self.signal(stock, pre_dt, price) == Signal.BUY:
-                        candidate.append((stock, price.loc[pre_dt, 'money'], price.loc[dt, 'open']))
+                    signal, _ = self.signal(stock_id, pre_dt, price)
+                    if signal == Signal.BUY:
+                        candidate.append((stock_id, price.loc[pre_dt, 'money'], price.loc[dt, 'open']))
                 candidate.sort(key=lambda x: x[1], reverse=True)
                 for can in candidate:
                     if position.buy(can[0], can[2]):
                         action_log['Buy'].append((can[0], can[2]))
                     if not position.can_buy():
                         break
-            self._fill_daily_status(dt, action_log)
+            self._fill_daily_status(pre_dt, action_log)
         self.cache_tool.set(RES_KEY, self.daily_status, COMMON_CACHE_ID, serialize=True)
 
     def draw_survey(self, stock_id, price, pots, is_draw):
@@ -223,7 +223,7 @@ class BaseStrategy:
         :param is_draw:
         :return:
         """
-        print("This is Base draw_survery().IF you don't rewirte it,NOTHING will happend.")
+        print("This is Base draw_survery().IF you don't rewrite it,NOTHING will happen.")
         pass
 
     def signal(self, stock_id, dt, price):
@@ -234,7 +234,7 @@ class BaseStrategy:
         :param price:
         :return:
         """
-        print("This is Base Signal().IF you don't rewirte it,NOTHING will happend.")
+        print("This is Base Signal().IF you don't rewrite it,NOTHING will happen.")
         return Signal.KEEP
 
     def run(self):
@@ -242,5 +242,5 @@ class BaseStrategy:
         这个函数需要被子类重写
         :return:
         """
-        print("This is Base Run().IF you don't rewirte it,NOTHING will happend.")
+        print("This is Base Run().IF you don't rewrite it,NOTHING will happen.")
         pass
