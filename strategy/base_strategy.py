@@ -65,7 +65,7 @@ class Position:
 
 
 class BaseStrategy:
-    def __init__(self, sdt, edt, dbt, ct, cno, total_budget, max_hold, stg_id):
+    def __init__(self, sdt, edt, dbt, ct, cno):
         # 存储相关字段
         self.db_tool = dbt
         self.cache_tool = ct
@@ -74,13 +74,17 @@ class BaseStrategy:
         self.bt_sdt = sdt
         self.bt_edt = edt
         self.bt_tds = self._expand_trads_days(sdt, edt)
+        # 策略基础字段
+        self.max_hold = conf_dict['STG']["Base"]['MaxHold']
+        self.stop_loss_point = conf_dict['STG']['Base']['StopLossPoint']  # 止损点，-1表示不设置
+        self.stop_surplus_point = conf_dict['STG']['Base']['StopSurplusPoint']  # 止盈点，-1表示不设置
         # 持仓相关字段
-        self.total_budget = total_budget
-        self.position = Position(total_budget, max_hold)  # 持仓变化
+        self.total_budget = conf_dict['Backtest']['Budget']
+        self.position = Position(self.total_budget, self.max_hold)  # 持仓变化
         self.daily_benchmark = self._init_daily_benchmark()  # 分日明细
         self.daily_status = pandas.DataFrame(columns=['dt', 'stg_nw', 'details'])
         self.daily_status.set_index('dt', inplace=True)
-        # 载入股票全量信息
+        # 股票/交易日全量信息
         self.all_stocks = []
         self.all_trade_days = []
         res = self.db_tool.get_stock_info(['stock_id'])
@@ -89,13 +93,6 @@ class BaseStrategy:
         res = self.db_tool.get_trade_days()
         for (td,) in res:
             self.all_trade_days.append(td)
-        # 设置止损止盈点
-        self.stop_loss_point = -1  # 止损点，-1表示不设置
-        self.stop_surplus_point = -1  # 止盈点，-1表示不设置
-        if "StopLossPoint" in conf_dict['STG'][stg_id]:
-            self.stop_loss_point = conf_dict['STG'][stg_id]['StopLossPoint']
-        if "StopSurplusPoint" in conf_dict['STG'][stg_id]:
-            self.stop_surplus_point = conf_dict['STG'][stg_id]['StopSurplusPoint']
 
     def _init_daily_benchmark(self):
         df = pandas.DataFrame()
@@ -236,11 +233,3 @@ class BaseStrategy:
         """
         print("This is Base Signal().IF you don't rewrite it,NOTHING will happen.")
         return Signal.KEEP
-
-    def run(self):
-        """
-        这个函数需要被子类重写
-        :return:
-        """
-        print("This is Base Run().IF you don't rewrite it,NOTHING will happen.")
-        pass

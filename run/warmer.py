@@ -112,6 +112,7 @@ if __name__ == '__main__':
     Stock_Redis_Tool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'], conf_dict['Redis']['Passwd'])
     # 预热缓存
     cache_map = conf_dict['STG']
+    del cache_map['Base']
     opts, args = getopt.getopt(sys.argv[1:], "an:")
     for k, v in opts:
         # 预热所有db

@@ -32,29 +32,18 @@
     ]
   },
   "STG": {
+    "Base": {
+      "StopLossPoint": 15,
+      "StopSurplusPoint": -1,
+      "MaxHold": 1
+    },
     "MACD": {
       "Module_Path": "strategy.macd_strategy",
       "Class_Name": "MacdStrategy",
       "DB_NO": 0,
       "PreHandler": "ph_macd",
-      "StopLossPoint": 15,
-      "StopSurplusPoint": -1
-    },
-    "KDJ": {
-      "Module_Path": "strategy.kdj_strategy",
-      "Class_Name": "KdjStrategy",
-      "DB_NO": 1,
-      "PreHandler": "ph_kdj",
-      "StopLossPoint": 15,
-      "StopSurplusPoint": -1
-    },
-    "EMA": {
-      "Module_Path": "strategy.ema_strategy",
-      "Class_Name": "EMAStrategy",
-      "DB_NO": 2,
-      "PreHandler": "ph_ema",
-      "StopLossPoint": 15,
-      "StopSurplusPoint": -1
+      "Adhesion_Period": 12,
+      "Adhesion_Cross_Num": 3
     }
   },
   "Backtest": {
@@ -62,7 +51,6 @@
     "Start_Date": "2022-07-15",
     "End_Date": "2023-07-14",
     "Budget": 100000,
-    "MaxHold": 1,
     "Risk_Free_Rate": 0.026
   }
 }

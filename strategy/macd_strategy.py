@@ -1,10 +1,14 @@
-import logging
-
 import matplotlib.pyplot as plt
+
 from strategy.base_strategy import *
 
 
 class MacdStrategy(BaseStrategy):
+    def __init__(self, sdt, edt, dbt, ct, cno):
+        super().__init__(sdt, edt, dbt, ct, cno)
+        self.adhesion_period = conf_dict["STG"]["MACD"]["Adhesion_Period"]
+        self.adhesion_cross_num = conf_dict["STG"]["MACD"]["Adhesion_Cross_Num"]
+
     def draw_survey(self, stock_id, price, pots, is_draw):
         fig, ax1 = plt.subplots(figsize=(10, 6), dpi=100)
         plt.title(stock_id)
@@ -40,7 +44,7 @@ class MacdStrategy(BaseStrategy):
             return Signal.KEEP, "d0/d1 NULL"
         # 过去12天出现了超过3个x，说明黏着，不做交易
         cross_num = 0
-        pre10_tds = get_preN_tds(self.all_trade_days, dt, 12)
+        pre10_tds = get_preN_tds(self.all_trade_days, dt, self.adhesion_period)
         for i in range(1, len(pre10_tds)):
             if pre10_tds[i - 1] not in price.index or pre10_tds[i] not in price.index:
                 continue
@@ -52,7 +56,7 @@ class MacdStrategy(BaseStrategy):
             dif2 = day1_f - day1_s
             if dif1 * dif2 < 0:
                 cross_num += 1
-        if cross_num >= 3:
+        if cross_num >= self.adhesion_cross_num:
             return Signal.KEEP, "Too Many Crossed"
         # 寻找交易信号，简单的金叉死叉
         day0_fast = price.loc[d0, 'dif']
@@ -65,8 +69,3 @@ class MacdStrategy(BaseStrategy):
         if (day0_slow < day0_fast) and (day1_slow > day1_fast):
             return Signal.SELL, "Cross"
         return Signal.KEEP, "Nothing"
-
-    def run(self):
-        # self.survey(["688439.XSHG"], True)
-        # self.survey([], False)
-        self.backtest()

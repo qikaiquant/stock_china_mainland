@@ -1,3 +1,4 @@
+import getopt
 import os
 import sys
 import importlib
@@ -20,7 +21,20 @@ if __name__ == '__main__':
     cache_tool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'], conf_dict['Redis']['Passwd'])
     # 开始回测
     stg = cls(conf_dict['Backtest']['Start_Date'], conf_dict['Backtest']['End_Date'], db_tool, cache_tool,
-              conf_dict['STG'][stg_id]['DB_NO'],
-              conf_dict['Backtest']['Budget'], conf_dict['Backtest']['MaxHold'], stg_id)
-    stg.run()
+              conf_dict['STG'][stg_id]['DB_NO'])
+    opts, args = getopt.getopt(sys.argv[1:], "",
+                               longopts=["survey", "backtest", "param-search"])
+    for opt, _ in opts:
+        if opt == '--survey':
+            # 调研分支
+            stg.survey([], False)
+        elif opt == '--backtest':
+            # 单回测分支
+            stg.backtest()
+        elif opt == '--param-search':
+            # 搜参分支
+            pass
+        else:
+            logging.error("Usage Error")
+            sys.exit(1)
     logging.info("End Backtest")
