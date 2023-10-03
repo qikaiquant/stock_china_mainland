@@ -21,7 +21,7 @@
     "Host": "121.37.118.127",
     "Port": 3235,
     "User": "qikai",
-    "Passwd": "cmo0@A#Q12",
+    "Passwd": "wds(#F#)SFV4-2",
     "LocalBase": "D:\\stock",
     "RemoteBase": "/home/qikai/stock_china_mainland",
     "SyncDir": [
@@ -51,6 +51,7 @@
     "Start_Date": "2022-07-15",
     "End_Date": "2023-07-14",
     "Budget": 100000,
-    "Risk_Free_Rate": 0.026
+    "Risk_Free_Rate": 0.026,
+    "Search_Param_Process_Num": 2
   }
 }

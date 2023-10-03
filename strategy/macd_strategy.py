@@ -1,3 +1,5 @@
+import itertools
+
 import matplotlib.pyplot as plt
 
 from strategy.base_strategy import *
@@ -69,3 +71,20 @@ class MacdStrategy(BaseStrategy):
         if (day0_slow < day0_fast) and (day1_slow > day1_fast):
             return Signal.SELL, "Cross"
         return Signal.KEEP, "Nothing"
+
+    def build_param_space(self):
+        max_hold_space = range(1, 11, 1)
+        stop_loss_space = range(10, 21, 1)
+        stop_surplus_space = range(10, 21, 1)
+        adhesion_period_space = range(5, 31, 2)
+        adhesion_cross_num_space = range(2, 10, 1)
+        param_space = itertools.product(max_hold_space, stop_loss_space, stop_surplus_space, adhesion_period_space,
+                                        adhesion_cross_num_space)
+        return param_space
+
+    def reset_param(self, param):
+        self.max_hold = param[0]
+        self.stop_loss_point = param[1]
+        self.stop_surplus_point = param[2]
+        self.adhesion_period = param[3]
+        self.adhesion_cross_num = param[4]

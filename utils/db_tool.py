@@ -108,6 +108,42 @@ class DBTool:
         res = self._cursor.fetchall()
         return res
 
+    def init_param_space(self, param_space):
+        self.clear_table("search_param.param_space")
+        commit_count = 0
+        for ps in param_space:
+            param_str_list = []
+            for i in ps:
+                param_str_list.append(str(i))
+            sql = 'insert into search_param.param_space values(\'' + "_".join(param_str_list) + '\', 0)'
+            self._cursor.execute(sql)
+            commit_count += 1
+            if commit_count == 100:
+                self._conn.commit()
+                commit_count = 0
+        self._conn.commit()
+
+    def get_param(self, status, count):
+        sql = "select param_id from search_param.param_space where status=" + str(
+            status) + " order by rand() limit " + str(count)
+        self._cursor.execute(sql)
+        raw_res = self._cursor.fetchall()
+        if len(raw_res) == 0:
+            return None
+        res_total = []
+        for (i,) in raw_res:
+            pids = i.split("_")
+            res = []
+            for pid in pids:
+                res.append(int(pid))
+            res_total.append((i, res))
+        return res_total
+
+    def updata_param_status(self, pid, status):
+        sql = "update search_param.param_space set status=" + str(status) + " where param_id=\'" + pid + "\'"
+        self._cursor.execute(sql)
+        self._conn.commit()
+
     def __del__(self):
         self._cursor.close()
         self._conn.close()

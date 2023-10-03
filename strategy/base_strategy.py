@@ -211,6 +211,21 @@ class BaseStrategy:
             self._fill_daily_status(pre_dt, action_log)
         self.cache_tool.set(RES_KEY, self.daily_status, COMMON_CACHE_ID, serialize=True)
 
+    def build_param_space(self):
+        """
+        这个函数需要被子类重写
+        :return:
+        """
+        print("This is Base build_param_space().IF you don't rewrite it,NOTHING will happen.")
+
+    def reset_param(self, param):
+        """
+        这个函数需要被子类重写
+        :param param:
+        :return:
+        """
+        print("This is Base reset_param().IF you don't rewrite it,NOTHING will happen.")
+
     def draw_survey(self, stock_id, price, pots, is_draw):
         """
         这个函数需要被子类重写
@@ -221,7 +236,6 @@ class BaseStrategy:
         :return:
         """
         print("This is Base draw_survery().IF you don't rewrite it,NOTHING will happen.")
-        pass
 
     def signal(self, stock_id, dt, price):
         """
