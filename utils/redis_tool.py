@@ -29,5 +29,12 @@ class RedisTool:
         else:
             return res
 
+    def get_keys(self, db_no, pattern):
+        self._conn.select(db_no)
+        res = []
+        for key in self._conn.scan_iter(pattern):
+            res.append(key)
+        return res
+
     def __del__(self):
         self._conn.close()

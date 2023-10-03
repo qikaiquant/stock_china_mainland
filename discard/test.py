@@ -79,9 +79,10 @@ def test_config():
 def test_redis_db_type():
     _conn = redis.Redis(host=conf_dict['Redis']['Host'], port=conf_dict['Redis']['Port'],
                         password=conf_dict['Redis']['Passwd'])
-    _conn.select(12)
-    _conn.set("name", 'zhangsan')
-    print(_conn.get('name'))
+    _conn.select(15)
+    keys = _conn.scan_iter(match="RES_KEY:MACD:*")
+    for key in keys:
+        print(key)
 
 
 def _get_stock_info():
@@ -95,6 +96,7 @@ def _get_stock_info():
 
 
 if __name__ == '__main__':
-    time_str = datetime.now().strftime("%Y%m%d_%H_%M_%S")
+    # time_str = datetime.now().strftime("%Y%m%d_%H_%M_%S")
     # draw_stock_price("300142.XSHE", '2018-01-01', '2022-08-01')
     # test_mpf("300142.XSHE", '2022-01-01', '2023-07-01')
+    test_redis_db_type()

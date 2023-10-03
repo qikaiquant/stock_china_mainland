@@ -4,7 +4,7 @@ import pandas
 from utils.common import *
 
 # 策略结果Key
-RES_KEY = "RES_KEY"
+RES_KEY = "RES_KEY:"
 # 基准结果Key
 BENCHMARK_KEY = "BENCHMARK_KEY"
 # 调研用的随机Stock ID
@@ -65,15 +65,16 @@ class Position:
 
 
 class BaseStrategy:
-    def __init__(self, sdt, edt, dbt, ct, cno):
+    def __init__(self, sdt, edt, dbt, ct, stg_id):
         # 存储相关字段
         self.db_tool = dbt
         self.cache_tool = ct
-        self.cache_no = cno
+        self.cache_no = conf_dict['STG'][stg_id]['DB_NO']
         # 回测日期相关字段
         self.bt_sdt = sdt
         self.bt_edt = edt
         self.bt_tds = self._expand_trads_days(sdt, edt)
+        self.stg_id = stg_id
         # 策略基础字段
         self.max_hold = conf_dict['STG']["Base"]['MaxHold']
         self.stop_loss_point = conf_dict['STG']['Base']['StopLossPoint']  # 止损点，-1表示不设置
@@ -175,7 +176,7 @@ class BaseStrategy:
                 logging.info("[%s][%s][%s]" % (str(dt), sig_action, reason))
             self.draw_survey(stock_id, price.loc[self.bt_sdt:self.bt_edt], trade_pots, is_draw)
 
-    def backtest(self):
+    def backtest(self, pid=""):
         # 载入benchmark
         self.cache_tool.set(BENCHMARK_KEY, self.daily_benchmark, COMMON_CACHE_ID, serialize=True)
         # 遍历所有回测交易日
@@ -209,7 +210,7 @@ class BaseStrategy:
                     if not position.can_buy():
                         break
             self._fill_daily_status(pre_dt, action_log)
-        self.cache_tool.set(RES_KEY, self.daily_status, COMMON_CACHE_ID, serialize=True)
+        self.cache_tool.set(RES_KEY + self.stg_id + ":" + pid, self.daily_status, COMMON_CACHE_ID, serialize=True)
 
     def build_param_space(self):
         """

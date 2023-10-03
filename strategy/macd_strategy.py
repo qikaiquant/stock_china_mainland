@@ -6,8 +6,8 @@ from strategy.base_strategy import *
 
 
 class MacdStrategy(BaseStrategy):
-    def __init__(self, sdt, edt, dbt, ct, cno):
-        super().__init__(sdt, edt, dbt, ct, cno)
+    def __init__(self, sdt, edt, dbt, ct, stg_id):
+        super().__init__(sdt, edt, dbt, ct, stg_id)
         self.adhesion_period = conf_dict["STG"]["MACD"]["Adhesion_Period"]
         self.adhesion_cross_num = conf_dict["STG"]["MACD"]["Adhesion_Cross_Num"]
 

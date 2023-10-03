@@ -30,7 +30,7 @@ def search_param(tid, dbtool, lo):
         logging.info("Process " + str(tid) + " Get Param " + pid)
         s = init_strategy()
         s.reset_param(param)
-        s.backtest()
+        s.backtest(pid=pid)
         lo.acquire()
         dbtool.updata_param_status(pid, Param_Status.FINISHED.value)
         lo.release()
@@ -50,8 +50,7 @@ def init_strategy():
                     conf_dict['Mysql']['Passwd'])
     cache_tool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'], conf_dict['Redis']['Passwd'])
     # 新建实例
-    return cls(conf_dict['Backtest']['Start_Date'], conf_dict['Backtest']['End_Date'], dbtool, cache_tool,
-               conf_dict['STG'][stg_id]['DB_NO'])
+    return cls(conf_dict['Backtest']['Start_Date'], conf_dict['Backtest']['End_Date'], dbtool, cache_tool, stg_id)
 
 
 if __name__ == '__main__':
@@ -68,7 +67,7 @@ if __name__ == '__main__':
             stg = init_strategy()
             stg.backtest()
         elif opt == '--init-param-space':
-            # 初始化参数空间
+            # 初始化参数空间分支
             stg = init_strategy()
             ps = stg.build_param_space()
             stg.db_tool.init_param_space(ps)

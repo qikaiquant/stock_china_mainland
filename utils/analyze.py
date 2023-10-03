@@ -1,12 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy
+from dateutil import relativedelta
 
 from redis_tool import *
 from strategy.base_strategy import *
-from dateutil import relativedelta
 
 
-def _draw_backtest(df, id_dict):
+def _draw_backtest(df, id_dict, title):
     fig = plt.figure(figsize=(10, 6), dpi=100)
     plt.rc('font', family='FangSong', size=14)
     # 左侧折线图
@@ -21,7 +21,6 @@ def _draw_backtest(df, id_dict):
     ax1.annotate(text='', xytext=(id_dict['策略']['最大回撤'][0], df.loc[id_dict['策略']['最大回撤'][0], 'stg_nw']),
                  xy=(id_dict['策略']['最大回撤'][1], df.loc[id_dict['策略']['最大回撤'][1], 'stg_nw']),
                  arrowprops=dict(arrowstyle='->', color='r', linewidth=2))
-    # plt.title("000023.SZ")
     ax1.legend(loc='best')
     # 右侧数据指标表格
     left, bottom, width, height = 0.76, 0.2, 0.2, 0.6
@@ -37,8 +36,8 @@ def _draw_backtest(df, id_dict):
     tb = ax2.table(cellText=celltext, colLabels=columns, loc='lower left', cellLoc='center', rowLoc='bottom')
     tb.scale(1.1, 1.3)
 
-    # plt.savefig("/home/qikai/aaa.jpg", dpi=600)
-    plt.show()
+    plt.title(title)
+    plt.savefig("D:\\test\\" + title, dpi=600)
 
 
 def _parse_stg_detail(df):
@@ -182,13 +181,20 @@ def _get_index(result):
 if __name__ == '__main__':
     cachetool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'],
                           conf_dict['Redis']['Passwd'])
-    stg_res = cachetool.get(RES_KEY, COMMON_CACHE_ID, serialize=True)
     benchmark_res = pandas.DataFrame(cachetool.get(BENCHMARK_KEY, COMMON_CACHE_ID, serialize=True))
-    if len(stg_res) != len(benchmark_res):
-        print("EEEERROR!!!")
-        sys.exit(1)
-    res = pandas.merge(benchmark_res, stg_res, left_index=True, right_index=True)
-    index = _get_index(res)
-    _draw_backtest(res, index)
-    # _get_max_loss(res, conf_dict['Backtest']['Start_Date'], conf_dict['Backtest']['End_Date'])
-    # _parse_stg_detail(res)
+    stg_id = conf_dict["Backtest"]['STG']
+    pattern = RES_KEY + stg_id + ":*"
+    keys = cachetool.get_keys(COMMON_CACHE_ID, pattern)
+    for key in keys:
+        str_key = key.decode()
+        logging.info(str_key)
+        stg_res = cachetool.get(key, COMMON_CACHE_ID, serialize=True)
+        if len(stg_res) != len(benchmark_res):
+            logging.error("Key[" + str_key + "] Error.PLS Check.")
+            continue
+        res = pandas.merge(benchmark_res, stg_res, left_index=True, right_index=True)
+        index = _get_index(res)
+        pid = str_key.split(":")[2]
+        _draw_backtest(res, index, pid)
+        # _get_max_loss(res, conf_dict['Backtest']['Start_Date'], conf_dict['Backtest']['End_Date'])
+        # _parse_stg_detail(res)
