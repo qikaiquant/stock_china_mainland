@@ -10,7 +10,7 @@ def _draw_backtest(df, id_dict, title):
     fig = plt.figure(figsize=(10, 6), dpi=100)
     plt.rc('font', family='FangSong', size=14)
     # 左侧折线图
-    left, bottom, width, height = 0.05, 0.2, 0.7, 0.6
+    left, bottom, width, height = 0.07, 0.2, 0.7, 0.6
     ax1 = fig.add_axes([left, bottom, width, height])
     ax1.plot(df.index, df['HS300'], color='slategrey', label="基线")
     ax1.plot(df.index, df['stg_nw'], color='darkred', label="策略")
@@ -23,7 +23,7 @@ def _draw_backtest(df, id_dict, title):
                  arrowprops=dict(arrowstyle='->', color='r', linewidth=2))
     ax1.legend(loc='best')
     # 右侧数据指标表格
-    left, bottom, width, height = 0.76, 0.2, 0.2, 0.6
+    left, bottom, width, height = 0.77, 0.2, 0.2, 0.6
     ax2 = fig.add_axes([left, bottom, width, height])
 
     celltext = [['收益', '{:.1%}'.format(id_dict['策略']['收益率']), '{:.1%}'.format(id_dict['基准']['收益率'])],

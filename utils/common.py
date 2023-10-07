@@ -3,7 +3,6 @@ import logging
 import platform
 import sys
 from datetime import datetime, timedelta
-from enum import Enum
 from hashlib import md5
 from urllib import request
 from urllib.parse import urlencode
@@ -12,26 +11,19 @@ _Msg_Base_Url = 'http://www.pushplus.plus/send?token=dbe8cc80aa704ae88e48e8769b7
 _OS_TYPE = platform.system()
 
 
-class BenchMark(Enum):
-    HS300 = "000300.XSHG"  # 沪深300
-
-
 def _init_logger():
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
-    prod_formatter = logging.Formatter('[%(asctime)s][%(levelname)s][%(filename)s:%(lineno)d]%(message)s',
-                                       datefmt='%Y-%m-%d %H:%M:%S')
-    debug_formatter = logging.Formatter('[%(asctime)s][%(levelname)s]%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    log_formatter = logging.Formatter('[%(asctime)s][%(levelname)s][%(filename)s:%(lineno)d]%(message)s',
+                                      datefmt='%Y-%m-%d %H:%M:%S')
     # 生产环境，输出到log文件
     if _OS_TYPE == 'Linux':
-        fh = logging.FileHandler("../log/quant_stock.log")
-        fh.setFormatter(prod_formatter)
-        logger.addHandler(fh)
+        handler = logging.FileHandler("../log/quant_stock.log")
     # 测试环境，输出到标准输出
     else:
-        sh = logging.StreamHandler(sys.stdout)
-        sh.setFormatter(debug_formatter)
-        logger.addHandler(sh)
+        handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(log_formatter)
+    logger.addHandler(handler)
 
 
 def send_wechat_message(title, content):
@@ -75,5 +67,5 @@ def _load_config(file):
     return cd
 
 
-_init_logger()
 conf_dict = _load_config("../config/config.json")
+_init_logger()

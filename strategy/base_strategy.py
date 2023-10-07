@@ -1,4 +1,6 @@
 import random
+from enum import Enum
+
 import pandas
 
 from utils.common import *
@@ -20,6 +22,10 @@ class Signal(Enum):
     KEEP = 2
 
 
+class BenchMark(Enum):
+    HS300 = "000300.XSHG"  # 沪深300
+
+
 class Position:
     def __init__(self, bib, mh):
         self.hold = {}
@@ -32,6 +38,21 @@ class Position:
             return True
         return False
 
+    @staticmethod
+    def _trade_cost(action, money):
+        # 佣金（包括规费）,最低5元
+        commission = money * 0.0002
+        if commission < 5:
+            commission = 5
+        # 过户费
+        transfer_fee = money * 0.00001
+        # 印花税（只卖出时征收）
+        stamp_tax = 0
+        if action == Signal.SELL:
+            stamp_tax = money * 0.0005
+        logging.info("Cost Detail[" + str(commission) + "][" + str(transfer_fee) + "][" + str(stamp_tax) + "]")
+        return commission + transfer_fee + stamp_tax
+
     def buy(self, stock_id, jiage):
         if len(self.hold) >= self.max_hold:
             logging.info("Too Many Holds!")
@@ -39,22 +60,28 @@ class Position:
         budget = self._budget if self._budget < self.spare else self.spare
         volumn = int(budget / (jiage * 100)) * 100
         if volumn == 0:
-            logging.info("Too Expensive, Fail to Buy")
+            logging.info("Too Expensive because of PRICE, Fail to Buy")
             return False
         money = jiage * volumn
+        cost = self._trade_cost(Signal.BUY, money)
+        if money + cost > self.spare:
+            logging.info("Too Expensive because of COST, Fail to Buy")
+            return False
         if stock_id not in self.hold:
             self.hold[stock_id] = [jiage, volumn]
         else:
             new_volumn = volumn + self.hold[stock_id][2]
             new_jiage = (money + self.hold[stock_id][1] * self.hold[stock_id][2]) / new_volumn
             self.hold[stock_id].append(new_jiage, new_volumn)
-        self.spare -= money
+        self.spare -= (money + cost)
+        logging.info("Trader Cost is :[" + str(cost) + "]")
         return True
 
     def sell(self, stock_id, jiage, volumn=None, sell_all=False):
         if stock_id not in self.hold:
             logging.info("Nothing to Be Sold.")
             return
+        before = self.spare
         cur_volumn = self.hold[stock_id][1]
         if sell_all or volumn >= cur_volumn:
             del self.hold[stock_id]
@@ -62,6 +89,11 @@ class Position:
         else:
             self.hold[stock_id][1] -= volumn
             self.spare += jiage * volumn
+        cost = self._trade_cost(Signal.SELL, (self.spare - before))
+        self.spare -= cost
+        logging.info("Trader Cost is :[" + str(cost) + "]")
+        if self.spare < 0:
+            logging.error("Spare Below ZERO, GAME OVER")
 
 
 class BaseStrategy:

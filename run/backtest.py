@@ -2,6 +2,7 @@ import getopt
 import importlib
 import os
 import sys
+from enum import Enum
 
 sys.path.append(os.path.dirname(sys.path[0]))
 from utils.db_tool import *
