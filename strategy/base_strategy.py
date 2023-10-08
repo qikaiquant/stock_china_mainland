@@ -27,19 +27,21 @@ class BenchMark(Enum):
 
 
 class Position:
-    def __init__(self, bib, mh):
+    def __init__(self, bib, mh, tc_switch):
         self.hold = {}
         self.spare = bib
         self.max_hold = mh
         self._budget = float(bib / mh)
+        self._trade_cost_switch = tc_switch
 
     def can_buy(self):
         if self.max_hold > len(self.hold):
             return True
         return False
 
-    @staticmethod
-    def _trade_cost(action, money):
+    def _trade_cost(self, action, money):
+        if not self._trade_cost_switch:
+            return 0
         # 佣金（包括规费）,最低5元
         commission = money * 0.0002
         if commission < 5:
@@ -108,12 +110,12 @@ class BaseStrategy:
         self.bt_tds = self._expand_trads_days(sdt, edt)
         self.stg_id = stg_id
         # 策略基础字段
-        self.max_hold = conf_dict['STG']["Base"]['MaxHold']
         self.stop_loss_point = conf_dict['STG']['Base']['StopLossPoint']  # 止损点，-1表示不设置
         self.stop_surplus_point = conf_dict['STG']['Base']['StopSurplusPoint']  # 止盈点，-1表示不设置
         # 持仓相关字段
         self.total_budget = conf_dict['Backtest']['Budget']
-        self.position = Position(self.total_budget, self.max_hold)  # 持仓变化
+        self.position = Position(self.total_budget, conf_dict['STG']["Base"]['MaxHold'],
+                                 conf_dict['Backtest']['Trade_Cost_Switch'])  # 持仓变化
         self.daily_benchmark = self._init_daily_benchmark()  # 分日明细
         self.daily_status = pandas.DataFrame(columns=['dt', 'stg_nw', 'details'])
         self.daily_status.set_index('dt', inplace=True)

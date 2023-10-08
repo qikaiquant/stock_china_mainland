@@ -52,6 +52,7 @@
     "End_Date": "2023-07-14",
     "Budget": 100000,
     "Risk_Free_Rate": 0.026,
-    "Search_Param_Process_Num": 2
+    "Search_Param_Process_Num": 2,
+    "Trade_Cost_Switch": true
   }
 }
