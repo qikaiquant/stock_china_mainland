@@ -166,7 +166,7 @@ class BaseStrategy:
                     "Stop Loss For Stock " + stock_id + " At Price[" + str(jiage) + "](Buy:[" + str(buy_jiage) + "])")
                 return True
         if self.stop_surplus_point != -1:
-            max_jiage = buy_jiage * (100 + self.stop_loss_point) / 100.0
+            max_jiage = buy_jiage * (100 + self.stop_surplus_point) / 100.0
             if jiage > max_jiage:
                 logging.info(
                     "Stop Surplus For Stock " + stock_id + " At Price[" + str(jiage) + "](Buy:[" + str(

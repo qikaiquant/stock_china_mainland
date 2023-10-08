@@ -74,8 +74,10 @@ class MacdStrategy(BaseStrategy):
 
     def build_param_space(self):
         max_hold_space = range(1, 11, 1)
-        stop_loss_space = range(10, 21, 1)
-        stop_surplus_space = range(10, 21, 1)
+        stop_loss_space = list(range(8, 21, 2))
+        stop_loss_space.append(-1)
+        stop_surplus_space = list(range(15, 31, 2))
+        stop_surplus_space.append(-1)
         adhesion_period_space = range(5, 31, 2)
         adhesion_cross_num_space = range(2, 10, 1)
         param_space = itertools.product(max_hold_space, stop_loss_space, stop_surplus_space, adhesion_period_space,

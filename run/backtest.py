@@ -32,11 +32,11 @@ def search_param(tid, dbtool, lo):
         s = init_strategy()
         s.reset_param(param)
         s.backtest(pid=pid)
+        del s
         lo.acquire()
         dbtool.updata_param_status(pid, Param_Status.FINISHED.value)
         lo.release()
         logging.info("Process " + str(tid) + " Finish Param " + pid)
-        break
 
 
 def init_strategy():
