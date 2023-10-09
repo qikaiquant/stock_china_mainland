@@ -3,7 +3,7 @@
     "JK_User": "17896008784",
     "JK_Token": "SSpyjjrdhl1983",
     "WIN_TBF_Dir": "D:\\test",
-    "LINUX_TBF_DIR": "/home/qikai/TBF"
+    "LINUX_TBF_Dir": "/home/qikai/TBF"
   },
   "Mysql": {
     "Host": "121.37.118.127",
@@ -23,13 +23,7 @@
     "User": "qikai",
     "Passwd": "wds(#F#)SFV4-2",
     "LocalBase": "D:\\stock",
-    "RemoteBase": "/home/qikai/stock_china_mainland",
-    "SyncDir": [
-      "config",
-      "run",
-      "strategy",
-      "utils"
-    ]
+    "RemoteBase": "/home/qikai/stock_china_mainland"
   },
   "STG": {
     "Base": {

@@ -167,7 +167,7 @@ if __name__ == '__main__':
     JK_Token = conf_dict['DataSource']['JK_Token']
     # 行情抓取相关配置
     if OS_TYPE == 'Linux':
-        TBF_Dir = conf_dict['DataSource']['LINUX_TBF_DIR']
+        TBF_Dir = conf_dict['DataSource']['LINUX_TBF_Dir']
     else:
         TBF_Dir = conf_dict['DataSource']['WIN_TBF_Dir']
 

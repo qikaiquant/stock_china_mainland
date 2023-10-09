@@ -5,6 +5,7 @@ import traceback
 from common import *
 
 SFTP_Client = None
+SYNC_Root = ["config", "run", "strategy", "utils"]
 DIR_Except = {"__pycache__"}
 FILE_Except = {"analyze.py", 'deployer.py', 'test.py'}
 
@@ -53,14 +54,13 @@ if __name__ == '__main__':
         ssh.connect(hostname=conf_dict['SFTP']['Host'], port=conf_dict['SFTP']['Port'],
                     username=conf_dict['SFTP']['User'], password=conf_dict['SFTP']['Passwd'])
         # 清除远端待同步目录
-        syncdirs = conf_dict['SFTP']['SyncDir']
-        for d in syncdirs:
+        for d in SYNC_Root:
             abspath = remotebase + "/" + d
             command = 'rm -rf ' + abspath
             ssh.exec_command(command)
         # 递归同步本地文件
         SFTP_Client = paramiko.SFTPClient.from_transport(ssh.get_transport())
-        for d in syncdirs:
+        for d in SYNC_Root:
             recur_put(localbase, remotebase, d)
     except FileExistsError:
         traceback.print_exc()
