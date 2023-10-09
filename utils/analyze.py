@@ -1,9 +1,15 @@
+import os.path
+import sys
+
 import matplotlib.pyplot as plt
 import numpy
 from dateutil import relativedelta
 
+sys.path.append(os.path.dirname(sys.path[0]))
 from redis_tool import *
 from strategy.base_strategy import *
+
+Res_Dir = conf_dict["Backtest"]["Res_Dir"]
 
 
 def _draw_backtest(df, id_dict, title):
@@ -37,7 +43,7 @@ def _draw_backtest(df, id_dict, title):
     tb.scale(1.1, 1.3)
 
     plt.title(title)
-    plt.savefig("D:\\test\\" + title, dpi=600)
+    plt.savefig(os.path.join(Res_Dir, title), dpi=600)
 
 
 def _parse_stg_detail(df):
@@ -185,16 +191,22 @@ if __name__ == '__main__':
     stg_id = conf_dict["Backtest"]['STG']
     pattern = RES_KEY + stg_id + ":*"
     keys = cachetool.get_keys(COMMON_CACHE_ID, pattern)
+    files = os.listdir(Res_Dir)
     for key in keys:
         str_key = key.decode()
-        logging.info(str_key)
+        pid = str_key.split(":")[2]
+        f_name = pid + ".png"
+        if f_name in files:
+            logging.info(f_name + " HAS been Drawed, Ignore.")
+            continue
         stg_res = cachetool.get(key, COMMON_CACHE_ID, serialize=True)
         if len(stg_res) != len(benchmark_res):
             logging.error("Key[" + str_key + "] Error.PLS Check.")
             continue
         res = pandas.merge(benchmark_res, stg_res, left_index=True, right_index=True)
         index = _get_index(res)
-        pid = str_key.split(":")[2]
         _draw_backtest(res, index, pid)
+        logging.info(f_name + " Finished")
+        cachetool.delete(key, COMMON_CACHE_ID)
         # _get_max_loss(res, conf_dict['Backtest']['Start_Date'], conf_dict['Backtest']['End_Date'])
         # _parse_stg_detail(res)

@@ -20,7 +20,7 @@ JK_Token = None
 
 Stock_DB_Tool = None
 
-OS_TYPE = platform.system()
+
 TBF_Dir = None
 File_Locked = 'TBF.Locked'
 File_TBF = 'price.TBF.txt'

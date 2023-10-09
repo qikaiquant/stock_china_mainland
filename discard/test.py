@@ -79,10 +79,8 @@ def test_config():
 def test_redis_db_type():
     _conn = redis.Redis(host=conf_dict['Redis']['Host'], port=conf_dict['Redis']['Port'],
                         password=conf_dict['Redis']['Passwd'])
-    _conn.select(15)
-    keys = _conn.scan_iter(match="RES_KEY:MACD:*")
-    for key in keys:
-        print(key)
+    _conn.select(12)
+    _conn.delete("HHH")
 
 
 def _get_stock_info():

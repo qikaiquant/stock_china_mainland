@@ -8,7 +8,7 @@ from urllib import request
 from urllib.parse import urlencode
 
 _Msg_Base_Url = 'http://www.pushplus.plus/send?token=dbe8cc80aa704ae88e48e8769b786cc2&'
-_OS_TYPE = platform.system()
+OS_TYPE = platform.system()
 
 
 def _init_logger():
@@ -17,7 +17,7 @@ def _init_logger():
     log_formatter = logging.Formatter('[%(asctime)s][%(levelname)s][%(filename)s:%(lineno)d]%(message)s',
                                       datefmt='%Y-%m-%d %H:%M:%S')
     # 生产环境，输出到log文件
-    if _OS_TYPE == 'Linux':
+    if OS_TYPE == 'Linux':
         handler = logging.FileHandler("../log/quant_stock.log")
     # 测试环境，输出到标准输出
     else:
@@ -56,7 +56,7 @@ def _load_config(file):
     with open(file) as config_file:
         cd = json.load(config_file)
     # 整理操作系统
-    if _OS_TYPE == 'Linux':
+    if OS_TYPE == 'Linux':
         cd['Mysql']['Host'] = 'localhost'
         cd['Redis']['Host'] = 'localhost'
     # 整理日期

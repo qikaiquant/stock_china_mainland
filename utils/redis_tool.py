@@ -36,5 +36,9 @@ class RedisTool:
             res.append(key)
         return res
 
+    def delete(self, key, db_no):
+        self._conn.select(db_no)
+        self._conn.delete(key)
+
     def __del__(self):
         self._conn.close()
