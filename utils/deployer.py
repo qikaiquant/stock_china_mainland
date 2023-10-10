@@ -15,7 +15,7 @@ def _check_local_file():
         print(localbase + ' ERROR.')
         return False
 
-    for item in conf_dict['SFTP']['SyncDir']:
+    for item in SYNC_Root:
         if not os.path.exists(os.path.join(localbase, item)):
             print(item + " Error")
             return False

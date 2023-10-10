@@ -114,8 +114,8 @@ class BaseStrategy:
         self.stop_surplus_point = conf_dict['STG']['Base']['StopSurplusPoint']  # 止盈点，-1表示不设置
         # 持仓相关字段
         self.total_budget = conf_dict['Backtest']['Budget']
-        self.position = Position(self.total_budget, conf_dict['STG']["Base"]['MaxHold'],
-                                 conf_dict['Backtest']['Trade_Cost_Switch'])  # 持仓变化
+        self.max_hold = conf_dict['STG']["Base"]['MaxHold']
+        self.position = Position(self.total_budget, self.max_hold, conf_dict['Backtest']['Trade_Cost_Switch'])  # 持仓变化
         self.daily_benchmark = self._init_daily_benchmark()  # 分日明细
         self.daily_status = pandas.DataFrame(columns=['dt', 'stg_nw', 'details'])
         self.daily_status.set_index('dt', inplace=True)
