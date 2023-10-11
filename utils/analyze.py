@@ -12,7 +12,7 @@ from strategy.base_strategy import *
 Res_Dir = conf_dict["Backtest"]["Res_Dir"]
 
 
-def _draw_backtest(df, id_dict, title, is_valuable):
+def _draw_backtest(df, id_dict, title):
     fig = plt.figure(figsize=(10, 6), dpi=100)
     plt.rc('font', family='FangSong', size=14)
     # 左侧折线图
@@ -219,7 +219,7 @@ if __name__ == '__main__':
         index = _get_index(res)
         is_valueable = _get_valuable(index)
         if is_valueable:
-            _draw_backtest(res, index, pid, is_valueable)
+            _draw_backtest(res, index, pid)
             logging.info(f_name + " Finished")
         else:
             logging.info(pid + " is Worthless, Ignore.")
