@@ -1,16 +1,14 @@
-import logging
-import time
 import getopt
-import datetime
-import platform
-import sys
 import os
-import pandas
+import sys
+import time
 import traceback as tb
+
+import pandas
+import xlrd
 
 sys.path.append(os.path.dirname(sys.path[0]))
 
-from datetime import timedelta
 from jqdatasdk import *
 from utils.db_tool import *
 from utils.common import *
@@ -19,7 +17,6 @@ JK_User = None
 JK_Token = None
 
 Stock_DB_Tool = None
-
 
 TBF_Dir = None
 File_Locked = 'TBF.Locked'
@@ -32,10 +29,62 @@ def _get_trade_days():
     logout()
 
 
+def _get_sw_class():
+    f = xlrd.open_workbook(conf_dict["DataSource"]["SW_Industry_Code_File"])
+    t = f.sheets()[0]
+    res = []
+    for row in t:
+        if row[0].value == '行业代码':
+            continue
+        cid = int(row[0].value)
+        indus_level_1 = row[1].value
+        if indus_level_1 == "":
+            indus_level_1 = 'NA'
+        indus_level_2 = row[2].value
+        if indus_level_2 == "":
+            indus_level_2 = 'NA'
+        indus_level_3 = row[3].value
+        if indus_level_3 == "":
+            indus_level_3 = 'NA'
+        detail = indus_level_1 + "|" + indus_level_2 + "|" + indus_level_3
+        res.append((cid, detail))
+    Stock_DB_Tool.refresh_sw_industry_code(res)
+
+
+def _attach_ext_info(stock_info):
+    # load 1：sw分类信息
+    f = xlrd.open_workbook(conf_dict["DataSource"]["SW_Stock_Code_File"])
+    t = f.sheets()[0]
+    stock_industry_map = {}
+    for row in t:
+        stock_id = row[0].value
+        industry_id = row[2].value
+        if stock_id not in stock_industry_map:
+            stock_industry_map[stock_id] = [industry_id]
+        else:
+            stock_industry_map[stock_id].append(industry_id)
+    # attach过程
+    for stock_id, stock_info_item in stock_info.items():
+        ext_dict = stock_info_item['ext']
+        # attach申万分类
+        pure_id = stock_id.split('.')[0]
+        if pure_id in stock_industry_map:
+            ext_dict["SW_Code"] = stock_industry_map[pure_id]
+
+
 def _get_all_stock_info():
     logging.info("Start Get All Stock Info")
     auth(JK_User, JK_Token)
-    Stock_DB_Tool.refresh_stock_info(pandas.DataFrame(get_all_securities(['stock'])))
+    stock_info = {}
+    for index, row in pandas.DataFrame(get_all_securities(['stock'])).iterrows():
+        stock_info[index] = {}
+        stock_info[index]['display_name'] = row['display_name']
+        stock_info[index]['name'] = row['name']
+        stock_info[index]['start_date'] = row['start_date']
+        stock_info[index]['end_date'] = row['end_date']
+        stock_info[index]['ext'] = {}
+    _attach_ext_info(stock_info)
+    Stock_DB_Tool.refresh_stock_info(stock_info)
     logout()
     logging.info("End Get All Stock Info")
 
@@ -154,7 +203,7 @@ def _fetch_price():
 
 def _check_spare():
     auth(JK_User, JK_Token)
-    log(logging.INFO, get_query_count())
+    logging.info(get_query_count())
     logout()
 
 
@@ -172,11 +221,14 @@ if __name__ == '__main__':
         TBF_Dir = conf_dict['DataSource']['WIN_TBF_Dir']
 
     opts, args = getopt.getopt(sys.argv[1:], "",
-                               longopts=["trade_days", "all_stock_info", "scan", "price", "spare"])
+                               longopts=["trade_days", "sw_class", "all_stock_info", "scan", "price", "spare"])
     for opt, _ in opts:
         if opt == '--trade_days':
-            # 获取所有交易日
+            # 获取所有交易日，基本不用跑
             _get_trade_days()
+        if opt == '--sw_class':
+            # 获取申万分类，基本不用跑
+            _get_sw_class()
         elif opt == '--all_stock_info':
             # 获取所有股票的基本信息
             _get_all_stock_info()

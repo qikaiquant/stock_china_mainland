@@ -57,7 +57,7 @@ def init_strategy():
 if __name__ == '__main__':
     logging.info("Start Backtest")
     opts, args = getopt.getopt(sys.argv[1:], "",
-                               longopts=["survey", "backtest", "init-param-space", "search-param"])
+                               longopts=["survey", "backtest", "refresh-param-space", "search-param"])
     for opt, _ in opts:
         if opt == '--survey':
             # 调研分支
@@ -73,8 +73,8 @@ if __name__ == '__main__':
                 param.append(int(p))
             stg.reset_param(param)
             stg.backtest(pid)
-        elif opt == '--init-param-space':
-            # 初始化参数空间分支
+        elif opt == '--refresh-param-space':
+            # 重刷参数空间分支
             stg = init_strategy()
             ps = stg.build_param_space()
             stg.db_tool.refresh_param_space(ps)

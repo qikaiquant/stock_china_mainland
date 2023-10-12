@@ -1,3 +1,5 @@
+import json
+
 import pymysql as pms
 
 from utils.common import *
@@ -79,25 +81,15 @@ class DBTool:
         res = self._cursor.fetchall()
         return res
 
-    def update_stock_info_ext(self, up_dict):
-        commit_count = 0
-        for sid, ext in up_dict.items():
-            sql = 'update quant_stock.stock_info set ext=\'' + ext + '\' where stock_id=\'' + sid + '\''
-            self._cursor.execute(sql)
-            commit_count += 1
-            if commit_count == 100:
-                self._conn.commit()
-                commit_count = 0
-        self._conn.commit()
-
-    def refresh_stock_info(self, all_stock_info):
+    def refresh_stock_info(self, stock_info):
         # 先清空再插入，只支持全量操作
         self.clear_table('quant_stock.stock_info')
         commit_count = 0
-        for index, row in all_stock_info.iterrows():
-            sql = 'insert into quant_stock.stock_info values(\'' + str(index) + '\',\'' + row[
-                'display_name'] + '\',\'' + row['name'] + '\',\'' + str(
-                row['start_date']) + '\',\'' + str(row['end_date']) + '\',\'{}\')'
+        for stock_id, info in stock_info.iterrows():
+            ext_str = json.dumps(info['ext'])
+            sql = 'insert into quant_stock.stock_info values(\'' + stock_id + '\',\'' + info['display_name'] + '\',\'' + \
+                  info['name'] + '\',\'' + str(info['start_date']) + '\',\'' + str(
+                info['end_date']) + '\',\'' + ext_str + '\')'
             self._cursor.execute(sql)
             commit_count += 1
             if commit_count == 100:
