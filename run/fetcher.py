@@ -23,13 +23,13 @@ File_Locked = 'TBF.Locked'
 File_TBF = 'price.TBF.txt'
 
 
-def _get_trade_days():
+def get_trade_days():
     auth(JK_User, JK_Token)
     Stock_DB_Tool.refresh_trade_days(get_all_trade_days())
     logout()
 
 
-def _get_sw_class():
+def get_sw_class():
     f = xlrd.open_workbook(conf_dict["DataSource"]["SW_Industry_Code_File"])
     t = f.sheets()[0]
     res = []
@@ -72,7 +72,7 @@ def _attach_ext_info(stock_info):
             ext_dict["SW_Code"] = stock_industry_map[pure_id]
 
 
-def _get_all_stock_info():
+def get_all_stock_info():
     logging.info("Start Get All Stock Info")
     auth(JK_User, JK_Token)
     stock_info = {}
@@ -89,7 +89,7 @@ def _get_all_stock_info():
     logging.info("End Get All Stock Info")
 
 
-def _scan():
+def scan():
     logging.info("Start Scan")
     if not os.path.exists(TBF_Dir):
         os.mkdir(TBF_Dir)
@@ -134,7 +134,7 @@ def _scan():
     logging.info("End Scan")
 
 
-def _fetch_price():
+def fetch_price():
     logging.info("Start Fetch Price")
     if not os.path.exists(TBF_Dir):
         logging.info("TBF Dir NOT Exit")
@@ -201,7 +201,7 @@ def _fetch_price():
         logging.info("End Fetch Price")
 
 
-def _check_spare():
+def check_spare():
     auth(JK_User, JK_Token)
     logging.info(get_query_count())
     logout()
@@ -225,21 +225,21 @@ if __name__ == '__main__':
     for opt, _ in opts:
         if opt == '--trade_days':
             # 获取所有交易日，基本不用跑
-            _get_trade_days()
+            get_trade_days()
         if opt == '--sw_class':
             # 获取申万分类，基本不用跑
-            _get_sw_class()
+            get_sw_class()
         elif opt == '--all_stock_info':
             # 获取所有股票的基本信息
-            _get_all_stock_info()
+            get_all_stock_info()
         elif opt == '--scan':
             # 获取待抓取的列表
-            _scan()
+            scan()
         elif opt == '--price':
             # 抓取行情
-            _fetch_price()
+            fetch_price()
         elif opt == '--spare':
-            _check_spare()
+            check_spare()
         else:
             logging.error("Usage Error")
             sys.exit(1)
