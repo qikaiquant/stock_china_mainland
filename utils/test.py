@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import mplfinance as mpf
 import numpy
 import pandas
+import xlrd
 
 sys.path.append(os.path.dirname(sys.path[0]))
 
@@ -93,8 +94,26 @@ def _get_stock_info():
         break
 
 
+def _test_excel():
+    f = xlrd.open_workbook("D:\\SwClassCode_2021.xls")
+    table = f.sheets()[0]
+    name = f.sheet_names()
+    print(name)
+    print(table.nrows)
+    for i in table:
+        if i[0].value == '行业代码':
+            continue
+        cid = int(i[0].value)
+        indus_level_1 = i[1].value
+        indus_level_2 = i[2].value
+        indus_level_3 = i[3].value
+        print(cid, indus_level_1, type(indus_level_2), type(indus_level_3))
+    pass
+
+
 if __name__ == '__main__':
     # time_str = datetime.now().strftime("%Y%m%d_%H_%M_%S")
     # draw_stock_price("300142.XSHE", '2018-01-01', '2022-08-01')
     # test_mpf("300142.XSHE", '2022-01-01', '2023-07-01')
-    test_redis_db_type()
+    # test_redis_db_type()
+    _test_excel()

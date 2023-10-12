@@ -66,12 +66,18 @@ if __name__ == '__main__':
         elif opt == '--backtest':
             # 单回测分支
             stg = init_strategy()
-            stg.backtest()
+            pid = "1_-1_27_19_2"
+            str_param = pid.split("_")
+            param = []
+            for p in str_param:
+                param.append(int(p))
+            stg.reset_param(param)
+            stg.backtest(pid)
         elif opt == '--init-param-space':
             # 初始化参数空间分支
             stg = init_strategy()
             ps = stg.build_param_space()
-            stg.db_tool.init_param_space(ps)
+            stg.db_tool.refresh_param_space(ps)
         elif opt == '--search-param':
             # 搜参分支
             process_num = conf_dict['Backtest']['Search_Param_Process_Num']

@@ -60,7 +60,7 @@ class DBTool:
                 commit_count = 0
         self._conn.commit()
 
-    def insert_trade_days(self, ds):
+    def refresh_trade_days(self, ds):
         # 先清空再插入，只支持全量操作
         self.clear_table("quant_stock.stock_trade_days")
         for day in ds:
@@ -79,7 +79,18 @@ class DBTool:
         res = self._cursor.fetchall()
         return res
 
-    def insert_stock_info(self, all_stock_info):
+    def update_stock_info_ext(self, up_dict):
+        commit_count = 0
+        for sid, ext in up_dict.items():
+            sql = 'update quant_stock.stock_info set ext=\'' + ext + '\' where stock_id=\'' + sid + '\''
+            self._cursor.execute(sql)
+            commit_count += 1
+            if commit_count == 100:
+                self._conn.commit()
+                commit_count = 0
+        self._conn.commit()
+
+    def refresh_stock_info(self, all_stock_info):
         # 先清空再插入，只支持全量操作
         self.clear_table('quant_stock.stock_info')
         commit_count = 0
@@ -108,7 +119,7 @@ class DBTool:
         res = self._cursor.fetchall()
         return res
 
-    def init_param_space(self, param_space):
+    def refresh_param_space(self, param_space):
         self.clear_table("search_param.param_space")
         commit_count = 0
         for ps in param_space:
@@ -142,6 +153,20 @@ class DBTool:
     def updata_param_status(self, pid, status):
         sql = "update search_param.param_space set status=" + str(status) + " where param_id=\'" + pid + "\'"
         self._cursor.execute(sql)
+        self._conn.commit()
+
+    def refresh_sw_industry_code(self, sw_codes):
+        # 先清空再插入，只支持全量操作
+        table_name = "quant_stock.sw_industry_code"
+        self.clear_table(table_name)
+        commit_count = 0
+        for (iid, detail) in sw_codes:
+            sql = 'insert into ' + table_name + ' values(' + str(iid) + ', \'' + detail + '\')'
+            self._cursor.execute(sql)
+            commit_count += 1
+            if commit_count == 100:
+                self._conn.commit()
+                commit_count = 0
         self._conn.commit()
 
     def __del__(self):

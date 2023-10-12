@@ -9,7 +9,7 @@ sys.path.append(os.path.dirname(sys.path[0]))
 from redis_tool import *
 from strategy.base_strategy import *
 
-Res_Dir = conf_dict["Backtest"]["Res_Dir"]
+Res_Dir = conf_dict["Backtest"]["Analyze_Res_Dir"]
 
 
 def _draw_backtest(df, id_dict, title):

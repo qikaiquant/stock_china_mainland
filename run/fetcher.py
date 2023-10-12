@@ -28,14 +28,14 @@ File_TBF = 'price.TBF.txt'
 
 def _get_trade_days():
     auth(JK_User, JK_Token)
-    Stock_DB_Tool.insert_trade_days(get_all_trade_days())
+    Stock_DB_Tool.refresh_trade_days(get_all_trade_days())
     logout()
 
 
 def _get_all_stock_info():
     logging.info("Start Get All Stock Info")
     auth(JK_User, JK_Token)
-    Stock_DB_Tool.insert_stock_info(pandas.DataFrame(get_all_securities(['stock'])))
+    Stock_DB_Tool.refresh_stock_info(pandas.DataFrame(get_all_securities(['stock'])))
     logout()
     logging.info("End Get All Stock Info")
 

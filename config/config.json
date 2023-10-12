@@ -3,7 +3,9 @@
     "JK_User": "17896008784",
     "JK_Token": "SSpyjjrdhl1983",
     "WIN_TBF_Dir": "D:\\test",
-    "LINUX_TBF_Dir": "/home/qikai/TBF"
+    "LINUX_TBF_Dir": "/home/qikai/TBF",
+    "SW_Industry_Code_File": "../data/SwClassCode_2021.xls",
+    "SW_Stock_Code_File": "../data/StockClassifyUse_stock.xls"
   },
   "Mysql": {
     "Host": "121.37.118.127",
@@ -48,6 +50,6 @@
     "Risk_Free_Rate": 0.026,
     "Search_Param_Process_Num": 2,
     "Trade_Cost_Switch": true,
-    "Res_Dir": "D:\\test\\"
+    "Analyze_Res_Dir": "D:\\test\\"
   }
 }
