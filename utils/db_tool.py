@@ -1,9 +1,6 @@
-import json
-
 import pymysql as pms
 
 from utils.common import *
-from datetime import datetime
 
 
 class DBTool:

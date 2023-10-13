@@ -165,7 +165,7 @@ def fetch_price():
                 fetch_map[stock_id] = [dt]
 
         if len(fetch_map) == 0:
-            raise ("NO Price TBF.")
+            raise "NO Price TBF."
         else:
             logging.info("Load To-Be-Fetched File Done.")
 
