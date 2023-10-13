@@ -82,7 +82,7 @@ class DBTool:
         # 先清空再插入，只支持全量操作
         self.clear_table('quant_stock.stock_info')
         commit_count = 0
-        for stock_id, info in stock_info.iterrows():
+        for stock_id, info in stock_info.items():
             ext_str = json.dumps(info['ext'])
             sql = 'insert into quant_stock.stock_info values(\'' + stock_id + '\',\'' + info['display_name'] + '\',\'' + \
                   info['name'] + '\',\'' + str(info['start_date']) + '\',\'' + str(
