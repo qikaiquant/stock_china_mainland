@@ -7,6 +7,7 @@ import mplfinance as mpf
 import numpy
 import pandas
 import xlrd
+import multiprocessing
 
 sys.path.append(os.path.dirname(sys.path[0]))
 
@@ -116,4 +117,5 @@ if __name__ == '__main__':
     # draw_stock_price("300142.XSHE", '2018-01-01', '2022-08-01')
     # test_mpf("300142.XSHE", '2022-01-01', '2023-07-01')
     # test_redis_db_type()
-    _test_excel()
+    # _test_excel()
+    print(multiprocessing.cpu_count())

@@ -8,7 +8,9 @@ from enum import Enum
 sys.path.append(os.path.dirname(sys.path[0]))
 from utils.db_tool import *
 from utils.redis_tool import *
-from multiprocessing import Process, Lock, Pipe
+from multiprocessing import *
+
+Parent_Conn_List = []
 
 
 class Param_Status(Enum):
@@ -18,7 +20,10 @@ class Param_Status(Enum):
 
 
 def notice_handler(sig, stack):
-    logging.fatal("Get Exit Signal, Notify Sub Process:")
+    logging.fatal("Get Exit Signal, Notify SubProcess:")
+    # 通知子进程优雅退出
+    for c in Parent_Conn_List:
+        c.send(1)
 
 
 def search_param(tid, dbtool, lo, conn):
@@ -89,23 +94,16 @@ if __name__ == '__main__':
             stg.db_tool.refresh_param_space(ps)
         elif opt == '--search-param':
             # 搜参分支
+            lock = Lock()
             signal.signal(signal.SIGUSR1, notice_handler)
-            process_num = conf_dict['Backtest']['Search_Param_Process_Num']
             db_tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
                              conf_dict['Mysql']['Passwd'])
-            process_list = []
-            parent_conn_list = []
-            lock = Lock()
-            for i in range(0, process_num):
+            for i in range(0, cpu_count()):
                 (p_conn, c_conn) = Pipe()
                 t = Process(target=search_param, args=(i, db_tool, lock, c_conn))
                 t.start()
-                process_list.append(t)
-                parent_conn_list.append(p_conn)
+                Parent_Conn_List.append(p_conn)
             signal.pause()
-            # 通知子进程优雅退出
-            for c in parent_conn_list:
-                c.send(1)
         else:
             logging.error("Usage Error")
             sys.exit(1)
