@@ -7,7 +7,7 @@ import mplfinance as mpf
 import numpy
 import pandas
 import xlrd
-import multiprocessing
+import wget
 
 sys.path.append(os.path.dirname(sys.path[0]))
 
@@ -118,4 +118,6 @@ if __name__ == '__main__':
     # test_mpf("300142.XSHE", '2022-01-01', '2023-07-01')
     # test_redis_db_type()
     # _test_excel()
-    print(multiprocessing.cpu_count())
+    url = "https://www.swsresearch.com/swindex/pdf/SwClass2021/StockClassifyUse_stock.xls"
+    do = wget.download(url)
+    print(do)
