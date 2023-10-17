@@ -107,7 +107,7 @@ class BaseStrategy:
         # 回测日期相关字段
         self.bt_sdt = sdt
         self.bt_edt = edt
-        self.bt_tds = self._expand_trads_days(sdt, edt)
+        self.bt_tds = self.db_tool.get_trade_days(sdt, edt)
         self.stg_id = stg_id
         # 策略基础字段
         self.stop_loss_point = conf_dict['STG']['Base']['StopLossPoint']  # 止损点，-1表示不设置
@@ -120,14 +120,11 @@ class BaseStrategy:
         self.daily_status = pandas.DataFrame(columns=['dt', 'stg_nw', 'details'])
         self.daily_status.set_index('dt', inplace=True)
         # 股票/交易日全量信息
+        self.all_trade_days = self.db_tool.get_trade_days()
         self.all_stocks = []
-        self.all_trade_days = []
         res = self.db_tool.get_stock_info(['stock_id'])
         for (sid,) in res:
             self.all_stocks.append(sid)
-        res = self.db_tool.get_trade_days()
-        for (td,) in res:
-            self.all_trade_days.append(td)
 
     def _init_daily_benchmark(self):
         df = pandas.DataFrame()
@@ -140,13 +137,6 @@ class BaseStrategy:
             df[bm.name] = bmdf['jiage'] * factor
         df.set_index('dt', inplace=True)
         return df
-
-    def _expand_trads_days(self, sdt, edt):
-        tds = []
-        res = self.db_tool.get_trade_days(sdt, edt)
-        for (td,) in res:
-            tds.append(td)
-        return tds
 
     def _fill_daily_status(self, dt, action_log):
         nw = self.position.spare

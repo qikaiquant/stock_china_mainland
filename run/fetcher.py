@@ -2,7 +2,6 @@ import getopt
 import os
 import sys
 import time
-import traceback as tb
 
 import pandas
 import xlrd
@@ -18,9 +17,11 @@ JK_Token = None
 
 Stock_DB_Tool = None
 
-TBF_Dir = None
-File_Locked = 'TBF.Locked'
-File_TBF = 'price.TBF.txt'
+
+def check_spare():
+    auth(JK_User, JK_Token)
+    logging.info(get_query_count())
+    logout()
 
 
 def get_trade_days():
@@ -91,18 +92,6 @@ def get_all_stock_info():
 
 def scan():
     logging.info("Start Scan")
-    if not os.path.exists(TBF_Dir):
-        os.mkdir(TBF_Dir)
-    os.chdir(TBF_Dir)
-    # 确认锁
-    if os.path.exists(File_Locked):
-        logging.info("Last Round NOT Finished,Exit")
-        return
-    # 只能在Linux上运行
-    if OS_TYPE == 'Linux':
-        os.mknod(File_Locked)
-    # 开始Scan，目前只有Daily抓取
-    fp = open(File_TBF, 'w')
     stocks = Stock_DB_Tool.get_stock_info(['stock_id', 'start_date', 'end_date'])
     for stock in stocks:
         stock_id = stock[0]
@@ -119,92 +108,38 @@ def scan():
         # 上市时间晚于2013年1月1日，以上市时间为准
         if ipo_date > start_date:
             start_date = ipo_date
-        tds = set(Stock_DB_Tool.get_trade_days(str(start_date), str(end_date)))
-        suffix = stockid2table(stock_id)
-        table_name = "quant_stock.price_daily_r" + str(suffix)
-        sql = "select dt from " + table_name + " where sid = \'" + stock_id + '\''
-        dt = set(Stock_DB_Tool.exec_raw_select(sql))
-        tbf_fetch_list = tds - dt
-        for tbf in tbf_fetch_list:
-            print(stock_id + ',' +
-                  str(ipo_date) + ',' + str(delist_date) + ',' + str(tbf[0]) + ',Daily', file=fp)
-    fp.close()
-    # 释放锁
-    os.remove(File_Locked)
+        # 获取未被抓取的日期列表
+        all_dt = Stock_DB_Tool.get_trade_days(start_date, end_date)
+        fetched_dt = []
+        for (dt,) in Stock_DB_Tool.get_price(stock_id, ['dt'], start_date, end_date):
+            fetched_dt.append(dt)
+        # 将tbf整理成分段的日期并写库
+        tbf_dt = []
+        for dt in all_dt:
+            if dt not in fetched_dt:
+                tbf_dt.append(dt)
+                continue
+            Stock_DB_Tool.insert_tbf(stock_id, tbf_dt)
+            tbf_dt = []
+        Stock_DB_Tool.insert_tbf(stock_id, tbf_dt)
     logging.info("End Scan")
 
 
 def fetch_price():
     logging.info("Start Fetch Price")
-    if not os.path.exists(TBF_Dir):
-        logging.info("TBF Dir NOT Exit")
-        return
-    os.chdir(TBF_Dir)
-    # 确认锁及抓取文件
-    if os.path.exists(File_Locked) or not os.path.exists(File_TBF):
-        logging.info("Last Round NOT Finished OR NO TBF,Exit")
-        return
-    # 只能在Linux上运行
-    if OS_TYPE == 'Linux':
-        os.mknod(File_Locked)
-    # 取行情
-    fp = None
-    try:
-        auth(JK_User, JK_Token)
-        fp = open(File_TBF, 'r')
-        line = fp.readline()
-        fetch_map = {}
-        while line:
-            segs = line.split(',')
-            stock_id = segs[0]
-            dt = datetime.strptime(segs[3], '%Y-%m-%d').date()
-            line = fp.readline()
-            if stock_id in fetch_map:
-                fetch_map[stock_id].append(dt)
-            else:
-                fetch_map[stock_id] = [dt]
-
-        if len(fetch_map) == 0:
-            raise "NO Price TBF."
-        else:
-            logging.info("Load To-Be-Fetched File Done.")
-
-        for stock_id, dts in fetch_map.items():
-            if len(dts) == 0:
-                logging.info(" All Priced Fetched.")
-                continue
-            list.sort(dts)
-            time_segs = []
-            start_date = dts[0]
-            for i in range(1, len(dts)):
-                if dts[i] - dts[i - 1] < timedelta(days=15):
-                    continue
-                time_segs.append((start_date, dts[i - 1]))
-                start_date = dts[i]
-            time_segs.append((start_date, dts[-1]))
-            for time_seg in time_segs:
-                pi = get_price(stock_id, end_date=time_seg[1], start_date=time_seg[0], frequency='daily',
-                               fields=['open', 'close', 'low', 'high', 'volume', 'money', 'factor', 'high_limit',
-                                       'low_limit', 'avg', 'pre_close', 'paused'])
-                Stock_DB_Tool.insert_price(stock_id, pandas.DataFrame(pi))
-                time.sleep(0.1)
-    except Exception as e:
-        if str(e.args).find("您当天的查询条数超过了每日最大查询限制") != -1:
-            logging.info("Rearch Daily Limited.")
-        else:
-            tb.print_exc()
-    finally:
-        fp.close()
-        logout()
-        # 释放锁
-        os.remove(File_Locked)
-        logging.info("End Fetch Price")
-
-
-def check_spare():
+    # 获取待抓取列表
+    tfb_list = Stock_DB_Tool.get_tbf()
+    # 抓取并入库、修改状态
     auth(JK_User, JK_Token)
-    logging.info(get_query_count())
+    for (stock_id, start_date, end_data) in tfb_list:
+        pi = get_price(stock_id, end_date=end_data, start_date=start_date, frequency='daily',
+                       fields=['open', 'close', 'low', 'high', 'volume', 'money', 'factor', 'high_limit',
+                               'low_limit', 'avg', 'pre_close', 'paused'])
+        Stock_DB_Tool.insert_price(stock_id, pandas.DataFrame(pi))
+        Stock_DB_Tool.remove_tbf((stock_id, start_date, end_data))
+        time.sleep(0.1)
     logout()
+    logging.info("End Fetch Price")
 
 
 if __name__ == '__main__':
@@ -215,18 +150,15 @@ if __name__ == '__main__':
     JK_User = conf_dict['DataSource']['JK_User']
     JK_Token = conf_dict['DataSource']['JK_Token']
     # 行情抓取相关配置
-    if OS_TYPE == 'Linux':
-        TBF_Dir = conf_dict['DataSource']['LINUX_TBF_Dir']
-    else:
-        TBF_Dir = conf_dict['DataSource']['WIN_TBF_Dir']
-
     opts, args = getopt.getopt(sys.argv[1:], "",
-                               longopts=["trade_days", "sw_class", "all_stock_info", "scan", "price", "spare"])
+                               longopts=["spare", "trade_days", "sw_class", "all_stock_info", "scan", "price"])
     for opt, _ in opts:
-        if opt == '--trade_days':
+        if opt == '--spare':
+            check_spare()
+        elif opt == '--trade_days':
             # 获取所有交易日，基本不用跑
             get_trade_days()
-        if opt == '--sw_class':
+        elif opt == '--sw_class':
             # 获取申万分类，基本不用跑
             get_sw_class()
         elif opt == '--all_stock_info':
@@ -238,8 +170,6 @@ if __name__ == '__main__':
         elif opt == '--price':
             # 抓取行情
             fetch_price()
-        elif opt == '--spare':
-            check_spare()
         else:
             logging.error("Usage Error")
             sys.exit(1)

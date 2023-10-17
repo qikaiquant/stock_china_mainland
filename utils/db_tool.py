@@ -14,10 +14,6 @@ class DBTool:
         self._cursor.execute(sql)
         self._conn.commit()
 
-    def exec_raw_select(self, sql):
-        self._cursor.execute(sql)
-        return self._cursor.fetchall()
-
     def get_price(self, stock_id, fields, start_dt=None, end_dt=None):
         fields_str = "*"
         if len(fields) != 0:
@@ -45,7 +41,7 @@ class DBTool:
                 paused = int(float(row["paused"]))
             except ValueError:
                 # 发生这种情况，很可能是这支股票已退市，但数据库里尚未更新
-                print(index, row)
+                logging.info(index, row)
                 continue
             sql = 'insert ignore into ' + table_name + " values(\'" + stock_id + "\',\'" + dt + "\'," + str(
                 row["open"]) + "," + str(row["close"]) + "," + str(row["low"]) + "," + str(row["high"]) + "," + str(
@@ -73,9 +69,11 @@ class DBTool:
         if not end_date:
             end_date = datetime.today().date()
         sql = "select * from quant_stock.stock_trade_days where trade_date >= \'" + str(
-            start_date) + "\' and trade_date <= \'" + str(end_date) + "\'"
+            start_date) + "\' and trade_date <= \'" + str(end_date) + "\' order by trade_date"
         self._cursor.execute(sql)
-        res = self._cursor.fetchall()
+        res = []
+        for (dt,) in self._cursor.fetchall():
+            res.append(dt)
         return res
 
     def refresh_stock_info(self, stock_info):
@@ -107,6 +105,28 @@ class DBTool:
         self._cursor.execute(sql)
         res = self._cursor.fetchall()
         return res
+
+    def insert_tbf(self, stock_id, tbf_list):
+        if len(tbf_list) == 0:
+            return
+        sql = 'insert ignore into search_param.tbf_daily values(\'' + stock_id + '\',\'' + str(
+            tbf_list[0]) + '\',\'' + str(tbf_list[-1]) + '\')'
+        self._cursor.execute(sql)
+        self._conn.commit()
+
+    def get_tbf(self, count=0):
+        sql = "select stock_id,start_date,end_date from search_param.tbf_daily"
+        if count > 0:
+            sql += " limit " + str(count)
+        self._cursor.execute(sql)
+        res = self._cursor.fetchall()
+        return res
+
+    def remove_tbf(self, key_tuple):
+        sql = "delete from search_param.tbf_daily where stock_id=\'" + key_tuple[0] + "\'" + " and start_date=\'" + str(
+            key_tuple[1]) + "\'and end_date=\'" + str(key_tuple[2]) + "\'"
+        self._cursor.execute(sql)
+        self._conn.commit()
 
     def refresh_param_space(self, param_space):
         self.clear_table("search_param.param_space")

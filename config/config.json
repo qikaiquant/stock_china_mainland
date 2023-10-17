@@ -2,8 +2,6 @@
   "DataSource": {
     "JK_User": "17896008784",
     "JK_Token": "SSpyjjrdhl1983",
-    "WIN_TBF_Dir": "D:\\test",
-    "LINUX_TBF_Dir": "/home/qikai/TBF",
     "SW_Industry_Code_File": "../data/SwClassCode_2021.xls",
     "SW_Stock_Code_File": "../data/StockClassifyUse_stock.xls"
   },
