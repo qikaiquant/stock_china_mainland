@@ -93,10 +93,7 @@ def get_all_stock_info():
 def scan():
     logging.info("Start Scan")
     stocks = Stock_DB_Tool.get_stock_info(['stock_id', 'start_date', 'end_date'])
-    for stock in stocks:
-        stock_id = stock[0]
-        ipo_date = stock[1]
-        delist_date = stock[2]
+    for (stock_id, ipo_date, delist_date) in stocks:
         start_date = datetime.strptime('2013-01-01', '%Y-%m-%d').date()
         end_date = datetime.today().date()
         # 退市时间在2013年1月1日之前，不参考

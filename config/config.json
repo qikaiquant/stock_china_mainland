@@ -47,6 +47,7 @@
     "Budget": 100000,
     "Risk_Free_Rate": 0.026,
     "Trade_Cost_Switch": true,
-    "Analyze_Res_Dir": "D:\\test\\"
+    "Analyze_Res_Dir": "D:\\test\\",
+    "Prceoss_Num": -1
   }
 }
