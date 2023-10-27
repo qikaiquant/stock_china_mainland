@@ -40,6 +40,14 @@ def stockid2table(stockid, base=10):
     return int(hc[-4:], 16) % base
 
 
+def pid2param(pid):
+    str_param = pid.split("_")
+    param = []
+    for p in str_param:
+        param.append(int(p))
+    return param
+
+
 def get_preN_tds(all_trade_days, cur_day, days):
     res = []
     for i in range(1, len(all_trade_days)):

@@ -81,11 +81,7 @@ if __name__ == '__main__':
             # 单回测分支
             stg = init_strategy()
             pid = "1_-1_27_19_2"
-            str_param = pid.split("_")
-            param = []
-            for p in str_param:
-                param.append(int(p))
-            stg.reset_param(param)
+            stg.reset_param(pid2param(pid))
             stg.backtest(pid)
         elif opt == '--refresh-param-space':
             # 重刷参数空间分支

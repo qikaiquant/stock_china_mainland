@@ -7,7 +7,6 @@ import mplfinance as mpf
 import numpy
 import pandas
 import xlrd
-import wget
 
 sys.path.append(os.path.dirname(sys.path[0]))
 
@@ -81,8 +80,6 @@ def test_config():
 def test_redis_db_type():
     _conn = redis.Redis(host=conf_dict['Redis']['Host'], port=conf_dict['Redis']['Port'],
                         password=conf_dict['Redis']['Passwd'])
-    _conn.select(12)
-    _conn.delete("HHH")
 
 
 def _get_stock_info():
@@ -93,6 +90,25 @@ def _get_stock_info():
     for (t,) in price:
         print(type(t))
         break
+
+
+def test_redis_dump():
+    redistool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'], conf_dict['Redis']['Passwd'])
+    result = pandas.DataFrame(redistool.get("RES_KEY:MACD:1_16_19_15_5", 15, True))
+
+    df = pandas.DataFrame(pandas.read_csv('test_strategy_data_macd.csv'))
+
+    c1 = result['stg_nw'].to_list()
+    c2 = df['stg_nw'].to_list()
+
+    print(type(c1), type(c2))
+
+    print(len(c1) == len(c2))
+    for i in range(0, len(c1)):
+        i1 = int(c1[i])
+        i2 = int(c2[i])
+        if i1 != i2:
+            print("FFFF")
 
 
 def _test_excel():
@@ -118,6 +134,4 @@ if __name__ == '__main__':
     # test_mpf("300142.XSHE", '2022-01-01', '2023-07-01')
     # test_redis_db_type()
     # _test_excel()
-    url = "https://www.swsresearch.com/swindex/pdf/SwClass2021/StockClassifyUse_stock.xls"
-    do = wget.download(url)
-    print(do)
+    test_redis_dump()
