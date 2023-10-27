@@ -39,7 +39,7 @@ class STGTest(unittest.TestCase):
             self.assertEqual(int(test_res[i]), int(case_res[i]))
 
     def test_macd(self):
-        self._stg_flow("MACD", "1_16_19_15_5", "test_strategy_data_macd.csv")
+        self._stg_flow("MACD", "1_16_19_15_5", "../data/test_strategy_data_macd.csv")
 
 
 if __name__ == '__main__':
