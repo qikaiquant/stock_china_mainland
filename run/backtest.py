@@ -60,12 +60,8 @@ def init_strategy():
         sys.exit(1)
     file = importlib.import_module(conf_dict['STG'][stg_id]['Module_Path'])
     cls = getattr(file, conf_dict['STG'][stg_id]['Class_Name'])
-    # 初始化存储连接
-    dbtool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
-                    conf_dict['Mysql']['Passwd'])
-    cache_tool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'], conf_dict['Redis']['Passwd'])
-    # 新建实例
-    return cls(conf_dict['Backtest']['Start_Date'], conf_dict['Backtest']['End_Date'], dbtool, cache_tool, stg_id)
+    # 初始化实例
+    return cls(stg_id)
 
 
 if __name__ == '__main__':

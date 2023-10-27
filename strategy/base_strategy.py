@@ -1,9 +1,10 @@
 import random
-from enum import Enum
-
 import pandas
 
 from utils.common import *
+from utils.db_tool import DBTool
+from utils.redis_tool import RedisTool
+from enum import Enum
 
 # 策略结果Key
 RES_KEY = "RES_KEY:"
@@ -99,22 +100,23 @@ class Position:
 
 
 class BaseStrategy:
-    def __init__(self, sdt, edt, dbt, ct, stg_id):
-        # 存储相关字段
-        self.db_tool = dbt
-        self.cache_tool = ct
-        self.cache_no = conf_dict['STG'][stg_id]['DB_NO']
-        # 回测日期相关字段
-        self.bt_sdt = sdt
-        self.bt_edt = edt
-        self.bt_tds = self.db_tool.get_trade_days(sdt, edt)
+    def __init__(self, stg_id):
         self.stg_id = stg_id
-        # 策略基础字段
+        # 存储定义
+        self.db_tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
+                              conf_dict['Mysql']['Passwd'])
+        self.cache_tool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'],
+                                    conf_dict['Redis']['Passwd'])
+        self.cache_no = conf_dict['STG'][stg_id]['DB_NO']
+        # 策略参数
+        self._bt_sdt = conf_dict['Backtest']['Start_Date']
+        self._bt_edt = conf_dict['Backtest']['End_Date']
+        self.bt_tds = self.db_tool.get_trade_days(self._bt_sdt, self._bt_edt)
         self.stop_loss_point = conf_dict['STG']['Base']['StopLossPoint']  # 止损点，-1表示不设置
         self.stop_surplus_point = conf_dict['STG']['Base']['StopSurplusPoint']  # 止盈点，-1表示不设置
-        # 持仓相关字段
         self.total_budget = conf_dict['Backtest']['Budget']
         self.max_hold = conf_dict['STG']["Base"]['MaxHold']
+        # 持仓动态
         self.position = Position(self.total_budget, self.max_hold, conf_dict['Backtest']['Trade_Cost_Switch'])  # 持仓变化
         self.daily_benchmark = self._init_daily_benchmark()  # 分日明细
         self.daily_status = pandas.DataFrame(columns=['dt', 'stg_nw', 'details'])
@@ -130,7 +132,7 @@ class BaseStrategy:
         df = pandas.DataFrame()
         # 添加每列
         for bm in BenchMark:
-            res = self.db_tool.get_price(bm.value, ['dt', 'close'], self.bt_sdt, self.bt_edt)
+            res = self.db_tool.get_price(bm.value, ['dt', 'close'], self._bt_sdt, self._bt_edt)
             factor = float(self.total_budget / res[0][1])
             bmdf = pandas.DataFrame(res, columns=['dt', 'jiage'])
             df['dt'] = bmdf['dt']
@@ -198,7 +200,7 @@ class BaseStrategy:
                     sig_action = Signal.SELL.name
                     status = 1
                 logging.info("[%s][%s][%s]" % (str(dt), sig_action, reason))
-            self.draw_survey(stock_id, price.loc[self.bt_sdt:self.bt_edt], trade_pots, is_draw)
+            self.draw_survey(stock_id, price.loc[self._bt_sdt:self._bt_edt], trade_pots, is_draw)
 
     def backtest(self, pid=""):
         # 载入benchmark

@@ -80,7 +80,7 @@ class KdjStrategy(BaseStrategy):
                     trade_pots.append((dt, cur_price, "S"))
                     logging.info("Sell at Price [" + str(cur_price) + "] At Day [" + str(dt) + ']')
                     status = 1
-            _draw_survery(stock_id, price.loc[self.bt_sdt:self.bt_edt], trade_pots)
+            _draw_survery(stock_id, price.loc[self._bt_sdt:self._bt_edt], trade_pots)
 
     def _backtest(self):
         # 载入benchmark
