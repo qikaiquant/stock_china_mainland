@@ -86,6 +86,9 @@ if __name__ == '__main__':
             stg.db_tool.refresh_param_space(ps)
         elif opt == '--search-param':
             # 搜参分支
+            p_id = os.getpid()
+            with open("backtest.searchparam.pid", 'w') as file:
+                file.write(str(p_id))
             lock = Lock()
             signal.signal(signal.SIGUSR1, notice_handler)
             db_tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
@@ -99,6 +102,7 @@ if __name__ == '__main__':
                 t.start()
                 Parent_Conn_List.append(p_conn)
             signal.pause()
+            os.remove("backtest.searchparam.pid")
         else:
             logging.error("Usage Error")
             sys.exit(1)

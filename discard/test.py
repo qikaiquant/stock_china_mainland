@@ -134,4 +134,5 @@ if __name__ == '__main__':
     # test_mpf("300142.XSHE", '2022-01-01', '2023-07-01')
     # test_redis_db_type()
     # _test_excel()
-    test_redis_dump()
+    # test_redis_dump()
+    print(os.getpid())
