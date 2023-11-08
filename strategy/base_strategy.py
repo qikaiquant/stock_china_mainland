@@ -233,6 +233,7 @@ class BaseStrategy:
         这个函数需要被子类重写
         :param stock_id:
         :param dt:
+        :param price:
         :return:
         """
         print("This is Base Signal().IF you don't rewrite it,NOTHING will happen.")

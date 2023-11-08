@@ -4,6 +4,33 @@ import matplotlib.pyplot as plt
 from strategy.base_strategy import *
 
 
+@staticmethod
+def ph_kdj(db_no):
+    Stock_Redis_Tool.clear(int(db_no))
+    stocks = Stock_DB_Tool.get_stock_info(['stock_id'])
+    cols = ['dt', 'high', 'low', 'close', 'avg', 'volumn', 'money']
+    for (stock_id,) in stocks:
+        try:
+            res = Stock_DB_Tool.get_price(stock_id, fields=cols)
+            # 股票在2013-01-01前已退市
+            if len(res) == 0:
+                continue
+            res_df = pandas.DataFrame(res, columns=cols)
+            res_df.set_index('dt', inplace=True)
+            # 计算KDJ指标
+            res_df['K'], res_df['D'] = talib.STOCH(res_df['high'].values, res_df['low'].values,
+                                                   res_df['close'].values, fastk_period=9, slowk_period=5,
+                                                   slowk_matype=1, slowd_period=5, slowd_matype=1)
+            res_df['J'] = 3.0 * res_df['K'] - 2.0 * res_df['D']
+            del res_df['high']
+            del res_df['low']
+            Stock_Redis_Tool.set(stock_id, res_df, db_no, serialize=True)
+        except Exception as e:
+            tb.print_exc()
+            print(stock_id)
+            break
+
+
 def _draw_survery(stock_id, price, pots):
     fig = plt.figure(figsize=(10, 6), dpi=100)
     plt.title(stock_id)

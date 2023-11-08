@@ -25,6 +25,28 @@ def _draw_survery(stock_id, price, pots):
     fn = "D:\\test\\survey\\" + stock_id + ".jpg"
     plt.savefig(fn, dpi=600)
 
+    @staticmethod
+    def ph_ema(db_no):
+        Stock_Redis_Tool.clear(int(db_no))
+        stocks = Stock_DB_Tool.get_stock_info(['stock_id'])
+        cols = ['dt', 'close', 'avg', 'volumn', 'money']
+        for (stock_id,) in stocks:
+            try:
+                res = Stock_DB_Tool.get_price(stock_id, fields=cols)
+                # 股票在2013-01-01前已退市
+                if len(res) == 0:
+                    continue
+                res_df = pandas.DataFrame(res, columns=cols)
+                res_df.set_index('dt', inplace=True)
+                # 计算ema指标
+                res_df['ema50'] = talib.EMA(res_df['close'].values, timeperiod=50)
+                res_df['ema100'] = talib.EMA(res_df['close'].values, timeperiod=100)
+                Stock_Redis_Tool.set(stock_id, res_df, db_no, serialize=True)
+            except Exception as e:
+                tb.print_exc()
+                print(stock_id)
+                break
+
 
 class EMAStrategy(BaseStrategy):
     def __init__(self, sdt, edt, dbt, ct, cno, total_budget, max_hold):
