@@ -1,4 +1,5 @@
 import itertools
+import random
 
 import matplotlib.pyplot as plt
 
@@ -11,7 +12,8 @@ class MacdStrategy(BaseStrategy):
         self.adhesion_period = conf_dict["STG"]["MACD"]["Adhesion_Period"]
         self.adhesion_cross_num = conf_dict["STG"]["MACD"]["Adhesion_Cross_Num"]
 
-    def draw_survey(self, stock_id, price, pots, is_draw):
+    @staticmethod
+    def draw_survey(stock_id, price, pots, is_draw):
         fig, ax1 = plt.subplots(figsize=(10, 6), dpi=100)
         plt.title(stock_id)
         ax2 = ax1.twinx()
@@ -33,10 +35,44 @@ class MacdStrategy(BaseStrategy):
             fn = "D:\\test\\" + stock_id + ".jpg"
             plt.savefig(fn, dpi=600)
 
+    def survey(self, stocks, is_draw):
+        # 如果不显式传入股票代码，则随机选择30支股票做调研
+        if (stocks is None) or (len(stocks) == 0):
+            stocks = self.cache_tool.get(RAND_STOCK, COMMON_CACHE_ID, serialize=True)
+            if not stocks:
+                stocks = random.sample(self.all_stocks, 30)
+                self.cache_tool.set(RAND_STOCK, stocks, COMMON_CACHE_ID, serialize=True)
+        # 调研过程
+        for stock_id in stocks:
+            logging.info("+++++++++++++++++++" + stock_id + "++++++++++++++++++++")
+            price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
+            if price is None:
+                continue
+            status = 1  # 1:空仓，2：满仓
+            trade_pots = []
+            for dt in self.bt_tds:
+                sig_action = Signal.KEEP.name
+                [pre_dt] = get_preN_tds(self.all_trade_days, dt, 1)
+                if (dt not in price.index) or (pre_dt not in price.index):
+                    continue
+                signal, reason = self.signal(stock_id, pre_dt, price)
+                cur_price = price.loc[dt, 'open']
+                # 寻找交易信号
+                if (status == 1) and signal == Signal.BUY:
+                    trade_pots.append((dt, cur_price, "B"))
+                    sig_action = Signal.BUY.name
+                    status = 2
+                elif (status == 2) and signal == Signal.SELL:
+                    trade_pots.append((dt, cur_price, "S"))
+                    sig_action = Signal.SELL.name
+                    status = 1
+                logging.info("[%s][%s][%s]" % (str(dt), sig_action, reason))
+            self.draw_survey(stock_id, price.loc[self._bt_sdt:self._bt_edt], trade_pots, is_draw)
+
     def signal(self, stock_id, dt, price):
-        # check止盈止损
         if (price is None) or (dt not in price.index):
             return Signal.KEEP, "Price Or Dt NULL"
+        # check止盈止损
         cur_jiage = price.loc[dt, 'close']
         if self.stop_loss_surplus(stock_id, cur_jiage):
             return Signal.SELL, "StopLossSurplus"
@@ -85,6 +121,9 @@ class MacdStrategy(BaseStrategy):
         return param_space
 
     def reset_param(self, param):
+        if (param is None) or len(param) != 5:
+            logging.error("Param is Unvalid, Pls Check.")
+            return
         self.max_hold = param[0]
         self.stop_loss_point = param[1]
         self.stop_surplus_point = param[2]

@@ -67,23 +67,23 @@ def init_strategy():
 if __name__ == '__main__':
     logging.info("Start Backtest")
     opts, args = getopt.getopt(sys.argv[1:], "",
-                               longopts=["survey", "backtest", "refresh-param-space", "search-param"])
-    for opt, _ in opts:
-        if opt == '--survey':
-            # 调研分支
-            stg = init_strategy()
-            stg.survey([], False)
-        elif opt == '--backtest':
-            # 单回测分支
-            stg = init_strategy()
-            pid = "1_-1_27_19_2"
-            stg.reset_param(pid2param(pid))
-            stg.backtest(pid)
-        elif opt == '--refresh-param-space':
+                               longopts=["refresh-param-space", "survey", "single=", "search-param"])
+    for opt, arg in opts:
+        if opt == '--refresh-param-space':
             # 重刷参数空间分支
             stg = init_strategy()
             ps = stg.build_param_space()
             stg.db_tool.refresh_param_space(ps)
+        elif opt == '--survey':
+            # 调研分支
+            stg = init_strategy()
+            stg.survey([], False)
+        elif opt == '--single':
+            # 单回测分支
+            stg = init_strategy()
+            if arg != "":
+                stg.reset_param(pid2param(arg))
+            stg.backtest(arg)
         elif opt == '--search-param':
             # 搜参分支
             p_id = os.getpid()

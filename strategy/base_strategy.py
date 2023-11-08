@@ -1,10 +1,10 @@
-import random
+from enum import Enum
+
 import pandas
 
 from utils.common import *
 from utils.db_tool import DBTool
 from utils.redis_tool import RedisTool
-from enum import Enum
 
 # 策略结果Key
 RES_KEY = "RES_KEY:"
@@ -168,40 +168,6 @@ class BaseStrategy:
                 return True
         return False
 
-    def survey(self, stocks, is_draw):
-        # 如果不显式传入股票代码，则随机选择30支股票做调研
-        if (stocks is None) or (len(stocks) == 0):
-            stocks = self.cache_tool.get(RAND_STOCK, COMMON_CACHE_ID, serialize=True)
-            if not stocks:
-                stocks = random.sample(self.all_stocks, 30)
-                self.cache_tool.set(RAND_STOCK, stocks, COMMON_CACHE_ID, serialize=True)
-        # 调研过程
-        for stock_id in stocks:
-            logging.info("+++++++++++++++++++" + stock_id + "++++++++++++++++++++")
-            price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
-            if price is None:
-                continue
-            status = 1  # 1:空仓，2：满仓
-            trade_pots = []
-            for dt in self.bt_tds:
-                sig_action = Signal.KEEP.name
-                [pre_dt] = get_preN_tds(self.all_trade_days, dt, 1)
-                if (dt not in price.index) or (pre_dt not in price.index):
-                    continue
-                signal, reason = self.signal(stock_id, pre_dt, price)
-                cur_price = price.loc[dt, 'open']
-                # 寻找交易信号
-                if (status == 1) and signal == Signal.BUY:
-                    trade_pots.append((dt, cur_price, "B"))
-                    sig_action = Signal.BUY.name
-                    status = 2
-                elif (status == 2) and signal == Signal.SELL:
-                    trade_pots.append((dt, cur_price, "S"))
-                    sig_action = Signal.SELL.name
-                    status = 1
-                logging.info("[%s][%s][%s]" % (str(dt), sig_action, reason))
-            self.draw_survey(stock_id, price.loc[self._bt_sdt:self._bt_edt], trade_pots, is_draw)
-
     def backtest(self, pid=""):
         # 载入benchmark
         self.cache_tool.set(BENCHMARK_KEY, self.daily_benchmark, COMMON_CACHE_ID, serialize=True)
@@ -253,23 +219,20 @@ class BaseStrategy:
         """
         print("This is Base reset_param().IF you don't rewrite it,NOTHING will happen.")
 
-    def draw_survey(self, stock_id, price, pots, is_draw):
+    def survey(self, stocks, is_draw):
         """
         这个函数需要被子类重写
-        :param stock_id:
-        :param price:
-        :param pots:
+        :param stocks:
         :param is_draw:
         :return:
         """
-        print("This is Base draw_survery().IF you don't rewrite it,NOTHING will happen.")
+        print("This is Base survey().IF you don't rewrite it,NOTHING will happen.")
 
     def signal(self, stock_id, dt, price):
         """
         这个函数需要被子类重写
         :param stock_id:
         :param dt:
-        :param price:
         :return:
         """
         print("This is Base Signal().IF you don't rewrite it,NOTHING will happen.")
