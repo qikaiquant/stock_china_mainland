@@ -34,10 +34,16 @@
     "MACD": {
       "Module_Path": "strategy.macd_strategy",
       "Class_Name": "MacdStrategy",
+      "Warm_Class_Name": "MacdWarmer",
       "DB_NO": 0,
-      "PreHandler": "ph_macd",
       "Adhesion_Period": 12,
       "Adhesion_Cross_Num": 3
+    },
+    "SWC": {
+      "Module_Path": "strategy.swc_strategy",
+      "Class_Name": "SWCStrategy",
+      "Warm_Class_Name": "SWCWarmer",
+      "DB_NO": 1
     }
   },
   "Backtest": {

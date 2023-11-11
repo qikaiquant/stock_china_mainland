@@ -27,6 +27,22 @@ class BenchMark(Enum):
     HS300 = "000300.XSHG"  # 沪深300
 
 
+class BaseWarmer:
+    def __init__(self, stg_id):
+        self.db_tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
+                              conf_dict['Mysql']['Passwd'])
+        self.cache_tool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'],
+                                    conf_dict['Redis']['Passwd'])
+        self.cache_no = conf_dict['STG'][stg_id]['DB_NO']
+
+    def warm(self):
+        """
+        这个函数需要子类重写
+        :return:
+        """
+        print("This is Base Warm().IF you don't rewrite it,NOTHING will happen.")
+
+
 class Position:
     def __init__(self, bib, mh, tc_switch):
         self.hold = {}
@@ -77,7 +93,7 @@ class Position:
             new_jiage = (money + self.hold[stock_id][1] * self.hold[stock_id][2]) / new_volumn
             self.hold[stock_id].append(new_jiage, new_volumn)
         self.spare -= (money + cost)
-        logging.info("Trader Cost is :[" + str(cost) + "]")
+        logging.info("Trade Cost is :[" + str(cost) + "]")
         return True
 
     def sell(self, stock_id, jiage, volumn=None, sell_all=False):
@@ -94,7 +110,7 @@ class Position:
             self.spare += jiage * volumn
         cost = self._trade_cost(Signal.SELL, (self.spare - before))
         self.spare -= cost
-        logging.info("Trader Cost is :[" + str(cost) + "]")
+        logging.info("Trade Cost is :[" + str(cost) + "]")
         if self.spare < 0:
             logging.error("Spare Below ZERO, GAME OVER")
 

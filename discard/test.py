@@ -135,4 +135,6 @@ if __name__ == '__main__':
     # test_redis_db_type()
     # _test_excel()
     # test_redis_dump()
-    print(os.getpid())
+    df = pandas.DataFrame(columns=['dt', 'P1', "P2", "STD"])
+    df.loc[len(df)] = ['2012-01-01', 0, 0, 0]
+    print(df)
