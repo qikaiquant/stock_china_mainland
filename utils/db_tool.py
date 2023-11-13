@@ -43,7 +43,7 @@ class DBTool:
                 # 发生这种情况，很可能是这支股票已退市，但数据库里尚未更新
                 logging.info(index, row)
                 continue
-            sql = 'insert ignore into ' + table_name + " values(\'" + stock_id + "\',\'" + dt + "\'," + str(
+            sql = 'replace into ' + table_name + " values(\'" + stock_id + "\',\'" + dt + "\'," + str(
                 row["open"]) + "," + str(row["close"]) + "," + str(row["low"]) + "," + str(row["high"]) + "," + str(
                 row["volume"]) + "," + str(row["money"]) + "," + str(row["factor"]) + "," + str(
                 row["high_limit"]) + "," + str(row["low_limit"]) + "," + str(row["avg"]) + "," + str(

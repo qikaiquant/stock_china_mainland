@@ -1,5 +1,6 @@
 import getopt
 import os
+import random
 import sys
 import time
 
@@ -90,8 +91,37 @@ def get_all_stock_info():
     logging.info("End Get All Stock Info")
 
 
+def _check_price_fq(stock_id, fetched_dt):
+    """
+    因为JK的数据是前复权，所以有可能某支股票的价格会变动。
+    该函数探测这个变动，并返回一个布尔值，决定是否重抓数据
+    """
+    if len(fetched_dt) == 0:
+        return True
+
+    check_points = []
+    if len(fetched_dt) < 4:
+        check_points.extend(fetched_dt)
+    else:
+        check_points = [fetched_dt[0]]
+        check_points.extend(random.sample(fetched_dt, 3))
+
+    need_refresh = False
+    for dt in check_points:
+        db_res = Stock_DB_Tool.get_price(stock_id, ['close'], dt, dt)
+        jk_res = get_price(stock_id, count=1, end_date=dt, frequency='daily', fields=['close'])
+        db_close = db_res[0][0]
+        jk_close = jk_res.loc[str(dt), "close"]
+        if db_close != jk_close:
+            logging.info(
+                stock_id + "[" + str(dt) + "]Close Price DIFF:[DB]" + str(db_close) + " vs. [JK]" + str(jk_close))
+            need_refresh = True
+    return need_refresh
+
+
 def scan():
     logging.info("Start Scan")
+    auth(JK_User, JK_Token)
     stocks = Stock_DB_Tool.get_stock_info(['stock_id', 'start_date', 'end_date'])
     for (stock_id, ipo_date, delist_date) in stocks:
         start_date = datetime.strptime('2013-01-01', '%Y-%m-%d').date()
@@ -105,12 +135,17 @@ def scan():
         # 上市时间晚于2013年1月1日，以上市时间为准
         if ipo_date > start_date:
             start_date = ipo_date
-        # 获取未被抓取的日期列表
         all_dt = Stock_DB_Tool.get_trade_days(start_date, end_date)
         fetched_dt = []
         for (dt,) in Stock_DB_Tool.get_price(stock_id, ['dt'], start_date, end_date):
             fetched_dt.append(dt)
-        # 将tbf整理成分段的日期并写库
+        # 如果股票的复权信息发生变化，需要全部更新
+        if _check_price_fq(stock_id, fetched_dt):
+            Stock_DB_Tool.insert_tbf(stock_id, all_dt)
+            logging.info(stock_id + " FQ info Changed, Will Refresh ALL price For it.")
+            continue
+        # 否则只部分更新：将tbf整理成分段的日期并写库
+        logging.info(stock_id + " Will Refresh Partly.")
         tbf_dt = []
         for dt in all_dt:
             if dt not in fetched_dt:
@@ -119,6 +154,7 @@ def scan():
             Stock_DB_Tool.insert_tbf(stock_id, tbf_dt)
             tbf_dt = []
         Stock_DB_Tool.insert_tbf(stock_id, tbf_dt)
+    logout()
     logging.info("End Scan")
 
 
@@ -129,6 +165,7 @@ def fetch_price():
     # 抓取并入库、修改状态
     auth(JK_User, JK_Token)
     for (stock_id, start_date, end_data) in tfb_list:
+        logging.info("Will fetch " + stock_id + ". Spare is " + str(get_query_count()))
         pi = get_price(stock_id, end_date=end_data, start_date=start_date, frequency='daily',
                        fields=['open', 'close', 'low', 'high', 'volume', 'money', 'factor', 'high_limit',
                                'low_limit', 'avg', 'pre_close', 'paused'])

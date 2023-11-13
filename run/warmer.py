@@ -12,12 +12,7 @@ def warm_cache(stg_map, s_list):
         if s not in stg_map:
             logging.warning("STG " + s + " NOT in STG Config.Please CHECK config.json")
             continue
-        if "Warm_Class_Name" not in stg_map[s]:
-            logging.warning(s + " Has NO PreHandler.Please CHECK config.json")
-            continue
-        db_no = stg_map[s]['DB_NO']
-        logging.info("To Warm Cache for STG " + str(s) + " In DB " + str(db_no))
-
+        logging.info("To Warm Cache for STG " + str(s))
         file = importlib.import_module(stg_map[s]['Module_Path'])
         cls = getattr(file, stg_map[s]['Warm_Class_Name'])
         # 初始化实例并执行函数

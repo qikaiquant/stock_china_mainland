@@ -7,6 +7,7 @@ import mplfinance as mpf
 import numpy
 import pandas
 import xlrd
+from jqdatasdk import auth, logout, get_price, get_query_count
 
 sys.path.append(os.path.dirname(sys.path[0]))
 
@@ -128,13 +129,39 @@ def _test_excel():
     pass
 
 
+def compare_price():
+    db_tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
+                     conf_dict['Mysql']['Passwd'])
+    stocks = db_tool.get_stock_info(['stock_id'])
+    stock_list = []
+    for (stock_id,) in stocks:
+        stock_list.append(stock_id)
+
+    auth(conf_dict['DataSource']['JK_User'], conf_dict['DataSource']['JK_Token'])
+    print(get_query_count())
+    for stock_id in stock_list:
+        print("+++++" + stock_id)
+        res = db_tool.get_price(stock_id, ['dt', 'close', 'factor'])
+        if len(res) == 0:
+            print(stock_id + ' IS NULL')
+            continue
+        start_dt = res[0][0]
+        end_dt = res[-1][0]
+        pi = get_price(stock_id, end_date=end_dt, start_date=start_dt, frequency='daily',
+                       fields=['close', 'factor'])
+        for item in res:
+            dt = item[0]
+            db_close = item[1]
+            db_facotr = item[2]
+            jk_close = pi.loc[str(dt), 'close']
+            jk_factor = pi.loc[str(dt), 'factor']
+            if db_close != jk_close:
+                print("DIFF!!!" + stock_id)
+                print(dt, db_close, jk_close)
+                print(dt, db_facotr, jk_factor)
+                break
+    logout()
+
+
 if __name__ == '__main__':
-    # time_str = datetime.now().strftime("%Y%m%d_%H_%M_%S")
-    # draw_stock_price("300142.XSHE", '2018-01-01', '2022-08-01')
-    # test_mpf("300142.XSHE", '2022-01-01', '2023-07-01')
-    # test_redis_db_type()
-    # _test_excel()
-    # test_redis_dump()
-    df = pandas.DataFrame(columns=['dt', 'P1', "P2", "STD"])
-    df.loc[len(df)] = ['2012-01-01', 0, 0, 0]
-    print(df)
+    compare_price()
