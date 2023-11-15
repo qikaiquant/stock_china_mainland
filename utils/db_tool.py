@@ -9,7 +9,7 @@ class DBTool:
         self._conn = pms.connect(host=host, port=port, user=user, passwd=passwd)
         self._cursor = self._conn.cursor()
 
-    def clear_table(self, table_name):
+    def _clear_table(self, table_name):
         sql = "truncate table " + table_name
         self._cursor.execute(sql)
         self._conn.commit()
@@ -57,7 +57,7 @@ class DBTool:
 
     def refresh_trade_days(self, ds):
         # 先清空再插入，只支持全量操作
-        self.clear_table("quant_stock.stock_trade_days")
+        self._clear_table("quant_stock.stock_trade_days")
         for day in ds:
             sql = "insert ignore into quant_stock.stock_trade_days values(\'" + str(day) + "\')"
             self._cursor.execute(sql)
@@ -78,7 +78,7 @@ class DBTool:
 
     def refresh_stock_info(self, stock_info):
         # 先清空再插入，只支持全量操作
-        self.clear_table('quant_stock.stock_info')
+        self._clear_table('quant_stock.stock_info')
         commit_count = 0
         for stock_id, info in stock_info.items():
             ext_str = json.dumps(info['ext'])
@@ -106,6 +106,9 @@ class DBTool:
         res = self._cursor.fetchall()
         return res
 
+    def clear_tbf(self):
+        self._clear_table("search_param.tbf_daily")
+
     def insert_tbf(self, stock_id, tbf_list):
         if len(tbf_list) == 0:
             return
@@ -129,7 +132,7 @@ class DBTool:
         self._conn.commit()
 
     def refresh_param_space(self, param_space):
-        self.clear_table("search_param.param_space")
+        self._clear_table("search_param.param_space")
         commit_count = 0
         for ps in param_space:
             param_str_list = []
@@ -167,7 +170,7 @@ class DBTool:
     def refresh_sw_industry_code(self, sw_codes):
         # 先清空再插入，只支持全量操作
         table_name = "quant_stock.sw_industry_code"
-        self.clear_table(table_name)
+        self._clear_table(table_name)
         commit_count = 0
         for (iid, detail) in sw_codes:
             sql = 'insert into ' + table_name + ' values(' + str(iid) + ', \'' + detail + '\')'

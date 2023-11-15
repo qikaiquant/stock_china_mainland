@@ -91,25 +91,23 @@ def get_all_stock_info():
     logging.info("End Get All Stock Info")
 
 
-def _check_price_fq(stock_id, fetched_dt):
+def _check_fq(stock_id, fetched_dt):
     """
     因为JK的数据是前复权，所以有可能某支股票的价格会变动。
     该函数探测这个变动，并返回一个布尔值，决定是否重抓数据
     """
     if len(fetched_dt) == 0:
         return True
-
     check_points = []
     if len(fetched_dt) < 4:
         check_points.extend(fetched_dt)
     else:
         check_points = [fetched_dt[0]]
         check_points.extend(random.sample(fetched_dt, 3))
-
     need_refresh = False
     for dt in check_points:
         db_res = Stock_DB_Tool.get_price(stock_id, ['close'], dt, dt)
-        jk_res = get_price(stock_id, count=1, end_date=dt, frequency='daily', fields=['close'])
+        jk_res = get_price(stock_id, end_date=dt, count=1, frequency='daily', fields=['close'])
         db_close = db_res[0][0]
         jk_close = jk_res.loc[str(dt), "close"]
         if db_close != jk_close:
@@ -121,6 +119,7 @@ def _check_price_fq(stock_id, fetched_dt):
 
 def scan():
     logging.info("Start Scan")
+    Stock_DB_Tool.clear_tbf()
     auth(JK_User, JK_Token)
     stocks = Stock_DB_Tool.get_stock_info(['stock_id', 'start_date', 'end_date'])
     for (stock_id, ipo_date, delist_date) in stocks:
@@ -140,7 +139,7 @@ def scan():
         for (dt,) in Stock_DB_Tool.get_price(stock_id, ['dt'], start_date, end_date):
             fetched_dt.append(dt)
         # 如果股票的复权信息发生变化，需要全部更新
-        if _check_price_fq(stock_id, fetched_dt):
+        if _check_fq(stock_id, fetched_dt):
             Stock_DB_Tool.insert_tbf(stock_id, all_dt)
             logging.info(stock_id + " FQ info Changed, Will Refresh ALL price For it.")
             continue
