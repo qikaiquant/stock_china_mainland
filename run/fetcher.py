@@ -1,4 +1,5 @@
 import getopt
+import logging
 import os
 import random
 import sys
@@ -144,7 +145,7 @@ def scan():
             logging.info(stock_id + " FQ info Changed, Will Refresh ALL price For it.")
             continue
         # 否则只部分更新：将tbf整理成分段的日期并写库
-        logging.info(stock_id + " Will Refresh Partly.")
+        logging.debug(stock_id + " Will Refresh Partly.")
         tbf_dt = []
         for dt in all_dt:
             if dt not in fetched_dt:
@@ -164,7 +165,7 @@ def fetch_price():
     # 抓取并入库、修改状态
     auth(JK_User, JK_Token)
     for (stock_id, start_date, end_data) in tfb_list:
-        logging.info("Will fetch " + stock_id + ". Spare is " + str(get_query_count()))
+        logging.debug("Will fetch " + stock_id + ". Spare is " + str(get_query_count()))
         pi = get_price(stock_id, end_date=end_data, start_date=start_date, frequency='daily',
                        fields=['open', 'close', 'low', 'high', 'volume', 'money', 'factor', 'high_limit',
                                'low_limit', 'avg', 'pre_close', 'paused'])
