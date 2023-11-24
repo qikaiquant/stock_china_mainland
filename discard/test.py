@@ -164,4 +164,5 @@ def compare_price():
 
 
 if __name__ == '__main__':
-    compare_price()
+    # compare_price()
+    print(datetime.today().date())

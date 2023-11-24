@@ -1,5 +1,4 @@
 import getopt
-import logging
 import os
 import random
 import sys
