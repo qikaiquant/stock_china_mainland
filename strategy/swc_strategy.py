@@ -44,7 +44,7 @@ class SWCWarmer(BaseWarmer):
         stocks = self.db_tool.get_stock_info(['stock_id', 'ext'])
         cols = ['dt', 'close', 'open', 'money']
         start_dt = datetime.strptime('2018-01-01', '%Y-%m-%d').date()
-        end_dt = datetime.strptime('2023-11-23', '%Y-%m-%d').date()
+        end_dt = datetime.strptime('2023-12-17', '%Y-%m-%d').date()
         # 载入个股行情
         for (stock_id, _) in stocks:
             res = self.db_tool.get_price(stock_id, fields=cols, start_dt=start_dt, end_dt=end_dt)
