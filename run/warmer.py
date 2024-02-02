@@ -25,14 +25,14 @@ if __name__ == '__main__':
     # 预热缓存
     cache_map = conf_dict['STG']
     del cache_map['Base']
-    opts, args = getopt.getopt(sys.argv[1:], "an:")
-    for k, v in opts:
+    opts, args = getopt.getopt(sys.argv[1:], "", longopts=["all", "stg="])
+    for opt, arg in opts:
         # 预热所有db
-        if k == '-a':
+        if opt == '--all':
             warm_cache(cache_map, cache_map.keys())
         # 预热指定db
-        elif k == '-n':
-            stgs = v.split(',')
+        elif opt == '--stg':
+            stgs = arg.split(',')
             stg_list = []
             for stg in stgs:
                 stg_list.append(stg.strip())
