@@ -15,7 +15,7 @@ class SWCWarmer(BaseWarmer):
         super().__init__(stg_id)
         self.dapan_price = self.cache_tool.get("000300.XSHG", self.cache_no, serialize=True)
 
-    def _bulild_cluster_data(self, stock_ids, trade_days):
+    def _build_cluster_data(self, stock_ids, trade_days):
         price_map = {}
         for stock_id in stock_ids:
             price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
@@ -72,7 +72,7 @@ class SWCWarmer(BaseWarmer):
         # 计算末级分类下的P1,P2和STD
         trade_days = self.db_tool.get_trade_days(start_date=start_dt, end_date=end_dt)
         for swc, stock_ids in swc_map.items():
-            res = self._bulild_cluster_data(stock_ids, trade_days)
+            res = self._build_cluster_data(stock_ids, trade_days)
             key = "SWC:" + swc
             self.cache_tool.set(key, res, self.cache_no, serialize=True)
         logging.info("Load SW Class Info Successfully.")
