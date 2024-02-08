@@ -22,7 +22,7 @@
     "Port": 3235,
     "User": "qikai",
     "Passwd": "j9dajf3F2#0",
-    "LocalBase": "D:\\stock",
+    "LocalBase": "D:\\pycharm_project\\stock_china_mainland",
     "RemoteBase": "/home/qikai/stock_china_mainland"
   },
   "STG": {

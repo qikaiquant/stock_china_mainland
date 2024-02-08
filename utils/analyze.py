@@ -6,7 +6,6 @@ import numpy
 from dateutil import relativedelta
 
 sys.path.append(os.path.dirname(sys.path[0]))
-from redis_tool import *
 from strategy.base_strategy import *
 
 Res_Dir = conf_dict["Backtest"]["Analyze_Res_Dir"]
