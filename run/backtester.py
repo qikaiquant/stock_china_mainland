@@ -93,7 +93,7 @@ if __name__ == '__main__':
             signal.signal(signal.SIGUSR1, notice_handler)
             db_tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
                              conf_dict['Mysql']['Passwd'])
-            process_num = conf_dict["Backtest"]["Prceoss_Num"]
+            process_num = conf_dict["Backtest"]["Process_Num"]
             if process_num == -1:
                 process_num = cpu_count()
             for i in range(0, process_num):

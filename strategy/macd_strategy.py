@@ -16,7 +16,8 @@ class MacdWarmer(BaseWarmer):
         cols = ['dt', 'close', 'open', 'money']
         for (stock_id,) in stocks:
             try:
-                res = self.db_tool.get_price(stock_id, fields=cols)
+                res = self.db_tool.get_price(stock_id, fields=cols, start_dt=self.warm_start_date,
+                                             end_dt=self.warm_end_date)
                 # 股票在2013-01-01前已退市
                 if len(res) == 0:
                     continue

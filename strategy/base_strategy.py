@@ -34,6 +34,8 @@ class BaseWarmer:
         self.cache_tool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'],
                                     conf_dict['Redis']['Passwd'])
         self.cache_no = conf_dict['STG'][stg_id]['DB_NO']
+        self.warm_start_date = datetime.strptime(conf_dict['STG']["Base"]['Warm_Start_Date'], '%Y-%m-%d').date()
+        self.warm_end_date = datetime.strptime(conf_dict['STG']["Base"]['Warm_End_Date'], '%Y-%m-%d').date()
 
     def warm(self):
         """

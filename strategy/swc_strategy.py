@@ -1,6 +1,5 @@
 import json
 import logging
-from datetime import datetime
 
 import numpy
 import pandas
@@ -43,11 +42,10 @@ class SWCWarmer(BaseWarmer):
         self.cache_tool.clear(int(self.cache_no))
         stocks = self.db_tool.get_stock_info(['stock_id', 'ext'])
         cols = ['dt', 'close', 'open', 'money']
-        start_dt = datetime.strptime('2018-01-01', '%Y-%m-%d').date()
-        end_dt = datetime.strptime('2023-12-17', '%Y-%m-%d').date()
         # 载入个股行情
         for (stock_id, _) in stocks:
-            res = self.db_tool.get_price(stock_id, fields=cols, start_dt=start_dt, end_dt=end_dt)
+            res = self.db_tool.get_price(stock_id, fields=cols,
+                                         start_dt=self.warm_start_date, end_dt=self.warm_end_date)
             # 股票start_dt前已退市
             if len(res) == 0:
                 continue
@@ -70,7 +68,7 @@ class SWCWarmer(BaseWarmer):
         self.cache_tool.set("SWC_MAP", swc_map, self.cache_no, serialize=True)
         logging.info("Load SW Class Mapping Successfully.")
         # 计算末级分类下的P1,P2和STD
-        trade_days = self.db_tool.get_trade_days(start_date=start_dt, end_date=end_dt)
+        trade_days = self.db_tool.get_trade_days(start_date=self.warm_start_date, end_date=self.warm_end_date)
         for swc, stock_ids in swc_map.items():
             res = self._build_cluster_data(stock_ids, trade_days)
             key = "SWC:" + swc

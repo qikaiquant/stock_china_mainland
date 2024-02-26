@@ -29,6 +29,8 @@
     "Base": {
       "StopLossPoint": 15,
       "StopSurplusPoint": -1,
+      "Warm_Start_Date": "2022-07-15",
+      "Warm_End_Date": "2023-07-15",
       "MaxHold": 1
     },
     "MACD": {
@@ -54,6 +56,6 @@
     "Risk_Free_Rate": 0.026,
     "Trade_Cost_Switch": true,
     "Analyze_Res_Dir": "D:\\test\\",
-    "Prceoss_Num": -1
+    "Process_Num": -1
   }
 }
