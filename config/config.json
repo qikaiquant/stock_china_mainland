@@ -29,8 +29,8 @@
     "Base": {
       "StopLossPoint": 15,
       "StopSurplusPoint": -1,
-      "Warm_Start_Date": "2022-07-15",
-      "Warm_End_Date": "2023-07-15",
+      "Warm_Start_Date": "2022-01-01",
+      "Warm_End_Date": "2024-02-24",
       "MaxHold": 1
     },
     "MACD": {
@@ -49,9 +49,9 @@
     }
   },
   "Backtest": {
-    "STG": "MACD",
-    "Start_Date": "2022-07-15",
-    "End_Date": "2023-07-14",
+    "STG": "SWC",
+    "Start_Date": "2022-01-15",
+    "End_Date": "2024-01-14",
     "Budget": 100000,
     "Risk_Free_Rate": 0.026,
     "Trade_Cost_Switch": true,

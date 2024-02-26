@@ -1,5 +1,7 @@
 import json
 import logging
+import random
+from datetime import datetime
 
 import numpy
 import pandas
@@ -81,7 +83,29 @@ class SWCStrategy(BaseStrategy):
         super().__init__(stg_id)
 
     def survey(self, stocks, is_draw):
-        pass
+        swc_map = self.cache_tool.get("SWC_MAP", self.cache_no, serialize=True)
+        dapan_price = self.cache_tool.get("000300.XSHG", self.cache_no, serialize=True)
+        rand_day = datetime.strptime('2022-02-24', '%Y-%m-%d').date()
+        dapan_roc = dapan_price.loc[rand_day, 'roc']
+        print(rand_day, dapan_roc)
+        for k, v in swc_map.items():
+            if k != '750201':
+                continue
+            cluster_price = self.cache_tool.get("SWC:" + k, self.cache_no, serialize=True)
+            bcount = ccount = ncount = 0
+            for stock_id in v:
+                price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
+                if (price is None) or (rand_day not in price.index):
+                    ncount += 1
+                    continue
+                roc = price.loc[rand_day, 'roc']
+                if roc > dapan_roc:
+                    bcount += 1
+                else:
+                    ccount += 1
+                print(stock_id, roc)
+            print(k, len(v), bcount, ccount, ncount, cluster_price.loc[rand_day, 'P1'],
+                  cluster_price.loc[rand_day, 'P2'])
 
     def signal(self, stock_id, dt, price):
         pass
