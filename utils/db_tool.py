@@ -107,18 +107,18 @@ class DBTool:
         return res
 
     def clear_tbf(self):
-        self._clear_table("search_param.tbf_daily")
+        self._clear_table("quant_stock_status.tbf_daily")
 
     def insert_tbf(self, stock_id, tbf_list):
         if len(tbf_list) == 0:
             return
-        sql = 'insert ignore into search_param.tbf_daily values(\'' + stock_id + '\',\'' + str(
+        sql = 'insert ignore into quant_stock_status.tbf_daily values(\'' + stock_id + '\',\'' + str(
             tbf_list[0]) + '\',\'' + str(tbf_list[-1]) + '\')'
         self._cursor.execute(sql)
         self._conn.commit()
 
     def get_tbf(self, count=0):
-        sql = "select stock_id,start_date,end_date from search_param.tbf_daily"
+        sql = "select stock_id,start_date,end_date from quant_stock_status.tbf_daily"
         if count > 0:
             sql += " limit " + str(count)
         self._cursor.execute(sql)
@@ -126,19 +126,19 @@ class DBTool:
         return res
 
     def remove_tbf(self, key_tuple):
-        sql = "delete from search_param.tbf_daily where stock_id=\'" + key_tuple[0] + "\'" + " and start_date=\'" + str(
+        sql = "delete from quant_stock_status.tbf_daily where stock_id=\'" + key_tuple[0] + "\'" + " and start_date=\'" + str(
             key_tuple[1]) + "\'and end_date=\'" + str(key_tuple[2]) + "\'"
         self._cursor.execute(sql)
         self._conn.commit()
 
     def refresh_param_space(self, param_space):
-        self._clear_table("search_param.param_space")
+        self._clear_table("quant_stock_status.param_space")
         commit_count = 0
         for ps in param_space:
             param_str_list = []
             for i in ps:
                 param_str_list.append(str(i))
-            sql = 'insert into search_param.param_space values(\'' + "_".join(param_str_list) + '\', 0)'
+            sql = 'insert into quant_stock_status.param_space values(\'' + "_".join(param_str_list) + '\', 0)'
             self._cursor.execute(sql)
             commit_count += 1
             if commit_count == 100:
@@ -147,7 +147,7 @@ class DBTool:
         self._conn.commit()
 
     def get_param(self, status, count):
-        sql = "select param_id from search_param.param_space where status=" + str(
+        sql = "select param_id from quant_stock_status.param_space where status=" + str(
             status) + " order by rand() limit " + str(count)
         self._cursor.execute(sql)
         raw_res = self._cursor.fetchall()
@@ -163,7 +163,7 @@ class DBTool:
         return res_total
 
     def updata_param_status(self, pid, status):
-        sql = "update search_param.param_space set status=" + str(status) + " where param_id=\'" + pid + "\'"
+        sql = "update quant_stock_status.param_space set status=" + str(status) + " where param_id=\'" + pid + "\'"
         self._cursor.execute(sql)
         self._conn.commit()
 

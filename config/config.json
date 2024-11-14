@@ -1,28 +1,28 @@
 {
   "DataSource": {
-    "JK_User": "17896008784",
+    "JK_User": "13501148784",
     "JK_Token": "SSpyjjrdhl1983",
     "SW_Industry_Code_File": "../data/SwClassCode_2021.xls",
     "SW_Stock_Code_File": "../data/StockClassifyUse_stock.xls"
   },
   "Mysql": {
-    "Host": "121.37.118.127",
+    "Host": "39.97.5.169",
     "Port": 3306,
     "User": "researcher",
     "Passwd": "32qjUF$eof20#_3n"
   },
   "Redis": {
-    "Host": "121.37.118.127",
+    "Host": "39.97.5.169",
     "Port": 6379,
     "Passwd": "2023cje23_1#23",
     "CommonCache": 15
   },
   "SFTP": {
-    "Host": "121.37.118.127",
-    "Port": 3235,
+    "Host": "39.97.5.169",
+    "Port": 3233,
     "User": "qikai",
-    "Passwd": "j9dajf3F2#0",
-    "LocalBase": "D:\\pycharm_project\\stock_china_mainland",
+    "Passwd": "34#92uF9023",
+    "LocalBase": "D:\\pycharm\\projects\\stock_china_mainland",
     "RemoteBase": "/home/qikai/stock_china_mainland"
   },
   "STG": {

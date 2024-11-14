@@ -95,21 +95,7 @@ def _get_stock_info():
 
 def test_redis_dump():
     redistool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'], conf_dict['Redis']['Passwd'])
-    result = pandas.DataFrame(redistool.get("RES_KEY:MACD:1_16_19_15_5", 15, True))
-
-    df = pandas.DataFrame(pandas.read_csv('test_strategy_data_macd.csv'))
-
-    c1 = result['stg_nw'].to_list()
-    c2 = df['stg_nw'].to_list()
-
-    print(type(c1), type(c2))
-
-    print(len(c1) == len(c2))
-    for i in range(0, len(c1)):
-        i1 = int(c1[i])
-        i2 = int(c2[i])
-        if i1 != i2:
-            print("FFFF")
+    print(redistool.get("key", 0))
 
 
 def _test_excel():
@@ -164,5 +150,4 @@ def compare_price():
 
 
 if __name__ == '__main__':
-    # compare_price()
-    print(datetime.today().date())
+    test_redis_dump()
