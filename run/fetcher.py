@@ -164,7 +164,7 @@ def fetch_price():
     # 抓取并入库、修改状态
     auth(JK_User, JK_Token)
     for (stock_id, start_date, end_data) in tfb_list:
-        logging.info("Will fetch " + stock_id + ". Spare is " + str(get_query_count()))
+        logging.debug("Will fetch " + stock_id + ". Spare is " + str(get_query_count()))
         pi = get_price(stock_id, end_date=end_data, start_date=start_date, frequency='daily',
                        fields=['open', 'close', 'low', 'high', 'volume', 'money', 'factor', 'high_limit',
                                'low_limit', 'avg', 'pre_close', 'paused'])
