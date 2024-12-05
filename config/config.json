@@ -31,6 +31,7 @@
       "StopSurplusPoint": -1,
       "Warm_Start_Date": "2022-01-01",
       "Warm_End_Date": "2024-02-24",
+      "TotalBudget": 200000,
       "MaxHold": 1
     },
     "MACD": {
@@ -40,21 +41,14 @@
       "DB_NO": 0,
       "Adhesion_Period": 12,
       "Adhesion_Cross_Num": 3
-    },
-    "SWC": {
-      "Module_Path": "strategy.swc_strategy",
-      "Class_Name": "SWCStrategy",
-      "Warm_Class_Name": "SWCWarmer",
-      "DB_NO": 1
     }
   },
   "Backtest": {
-    "STG": "SWC",
+    "STG": "MACD",
     "Start_Date": "2022-01-15",
     "End_Date": "2024-01-14",
-    "Budget": 100000,
     "Risk_Free_Rate": 0.026,
-    "Trade_Cost_Switch": true,
+    "Price_DB_NO": 0,
     "Analyze_Res_Dir": "D:\\test\\",
     "Process_Num": -1
   }

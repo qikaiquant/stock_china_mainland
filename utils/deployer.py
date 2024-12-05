@@ -5,7 +5,7 @@ import traceback
 from common import *
 
 SFTP_Client = None
-SYNC_Root = ["config", "run", "strategy", "utils", "data", 'tests']
+SYNC_Root = ["config", "run", "strategy", "utils", "data", 'tests', 'trade']
 DIR_Except = {"__pycache__"}
 FILE_Except = {"analyze.py", 'deployer.py'}
 

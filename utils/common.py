@@ -3,12 +3,41 @@ import logging
 import platform
 import sys
 from datetime import datetime, timedelta
+from enum import Enum, auto
 from hashlib import md5
 from urllib import request
 from urllib.parse import urlencode
 
 _Msg_Base_Url = 'http://www.pushplus.plus/send?token=dbe8cc80aa704ae88e48e8769b786cc2&'
 OS_TYPE = platform.system()
+
+
+class Signal(Enum):
+    BUY = 0
+    SELL = 1
+    KEEP = 2
+
+
+class PositionStatus(Enum):
+    INIT = auto()
+    NEED_CHECK = auto()
+    EMPTY = auto()
+    WAIT_SELL = auto()
+    WAIT_BUY = auto()
+    SELL_FAIL = auto()
+    BUY_FAIL = auto()
+    KEEP = auto()
+
+# 策略结果Key
+RES_KEY = "RES_KEY:"
+# 基准结果Key
+BENCHMARK_KEY = "BENCHMARK_KEY"
+# 调研用的随机Stock ID
+RAND_STOCK = 'RAND_STOCK'
+
+
+class BenchMark(Enum):
+    HS300 = "000300.XSHG"  # 沪深300
 
 
 def _init_logger():
@@ -77,3 +106,5 @@ def _load_config(file):
 
 conf_dict = _load_config("../config/config.json")
 _init_logger()
+# 存放回测结果的Redis DB
+COMMON_CACHE_ID = conf_dict["Redis"]["CommonCache"]

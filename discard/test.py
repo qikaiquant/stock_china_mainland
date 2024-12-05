@@ -1,6 +1,8 @@
+import abc
 import os
 import sys
 import time
+from abc import abstractmethod
 
 import matplotlib.pyplot as plt
 import mplfinance as mpf
@@ -149,5 +151,32 @@ def compare_price():
     logout()
 
 
+class VirtualBase(abc.ABC):
+    def __init__(self, a):
+        self.a = a
+
+    def output(self):
+        print("HHHHH", self.a)
+
+    @abstractmethod
+    def virtualoutput(self):
+        pass
+
+
+class RealBase(VirtualBase):
+
+    def virtualoutput(self):
+        print("VVVVV", self.a)
+
+
 if __name__ == '__main__':
-    test_redis_dump()
+    vb = RealBase(12)
+    vb.output()
+    vb.virtualoutput()
+
+    t1 = None
+    t2 = []
+    if t1 is None:
+        print("t1 is None")
+    if t2 is None:
+        print("t2 is None")
