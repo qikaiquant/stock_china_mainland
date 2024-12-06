@@ -3,6 +3,7 @@ import sys
 
 import matplotlib.pyplot as plt
 import numpy
+import pandas
 from dateutil import relativedelta
 
 sys.path.append(os.path.dirname(sys.path[0]))

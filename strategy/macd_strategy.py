@@ -1,23 +1,24 @@
 import itertools
+import random
 import time
 import traceback
-
 import matplotlib.pyplot as plt
 import numpy
 import pandas
 import talib
+from sqlalchemy.testing.plugin.plugin_base import logging
 
 from strategy.base_strategy import *
 
 
-def _macde_draw_survey(stock_id, price, pots, is_draw):
+def _macd_draw_survey(stock_id, price, pots, is_draw):
     fig, ax1 = plt.subplots(figsize=(10, 6), dpi=100)
     plt.title(stock_id)
     ax2 = ax1.twinx()
 
-    ax1.plot(price.index, price['open'], color='black', label='Open Price')
-    for (dt, jiage, BuyOrSell) in pots:
-        ax1.annotate(xy=(dt, price.loc[dt, 'open']), text=BuyOrSell)
+    ax1.plot(price.index, price['close'], color='black', label='Open Price')
+    for (dt, BuyOrSell) in pots:
+        ax1.annotate(xy=(dt, price.loc[dt, 'close']), text=BuyOrSell)
     ax1.grid(linestyle='--')
     ax1.legend(loc=1)
 
@@ -63,7 +64,7 @@ class MacdStrategy(BaseStrategy):
         self.adhesion_cross_num = conf_dict["STG"]["MACD"]["Adhesion_Cross_Num"]
 
     def signal(self, stock_id, cur_dt):
-        pre_dt = get_preN_tds(self.all_trade_days, cur_dt, days=1)
+        [pre_dt] = get_preN_tds(self.all_trade_days, cur_dt, days=1)
         price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
         if (price is None) or (pre_dt not in price.index):
             return [Signal.KEEP, None, "Price Or Dt NULL", None]
@@ -158,40 +159,6 @@ class MacdStrategy(BaseStrategy):
                 break
             time.sleep(60)
 
-    def survey(self):
-        # 如果不显式传入股票代码，则随机选择30支股票做调研
-        if (stocks is None) or (len(stocks) == 0):
-            stocks = self.cache_tool.get(RAND_STOCK, COMMON_CACHE_ID, serialize=True)
-            if not stocks:
-                stocks = random.sample(self.all_stocks, 30)
-                self.cache_tool.set(RAND_STOCK, stocks, COMMON_CACHE_ID, serialize=True)
-        # 调研过程
-        for stock_id in stocks:
-            logging.info("+++++++++++++++++++" + stock_id + "++++++++++++++++++++")
-            price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
-            if price is None:
-                continue
-            status = 1  # 1:空仓，2：满仓
-            trade_pots = []
-            for dt in self.bt_tds:
-                sig_action = Signal.KEEP.name
-                [pre_dt] = get_preN_tds(self.all_trade_days, dt, 1)
-                if (dt not in price.index) or (pre_dt not in price.index):
-                    continue
-                signal, reason = self.signal(stock_id, pre_dt, price)
-                cur_price = price.loc[dt, 'open']
-                # 寻找交易信号
-                if (status == 1) and signal == Signal.BUY:
-                    trade_pots.append((dt, cur_price, "B"))
-                    sig_action = Signal.BUY.name
-                    status = 2
-                elif (status == 2) and signal == Signal.SELL:
-                    trade_pots.append((dt, cur_price, "S"))
-                    sig_action = Signal.SELL.name
-                    status = 1
-                logging.info("[%s][%s][%s]" % (str(dt), sig_action, reason))
-            self.draw_survey(stock_id, price.loc[self._bt_sdt:self._bt_edt], trade_pots, is_draw)
-
     def build_param_space(self):
         max_hold_space = range(1, 11, 1)
         stop_loss_space = list(range(8, 21, 2))
@@ -213,3 +180,37 @@ class MacdStrategy(BaseStrategy):
         self.stop_surplus_point = param[2]
         self.adhesion_period = param[3]
         self.adhesion_cross_num = param[4]
+
+    def survey(self):
+        # 选30支股票做调研
+        stocks = self.cache_tool.get(RAND_STOCK, COMMON_CACHE_ID, serialize=True)
+        if (stocks is None) or (len(stocks) == 0):
+            if not stocks:
+                stocks = random.sample(self.all_stocks, 30)
+                self.cache_tool.set(RAND_STOCK, stocks, COMMON_CACHE_ID, serialize=True)
+        # 调研过程
+        for stock_id in stocks:
+            logging.info("+++++++++++++++++++" + stock_id + "++++++++++++++++++++")
+            price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
+            if price is None:
+                continue
+            status = 1  # 1:空仓，2：满仓
+            trade_pots = []
+            start_date = datetime.strptime('2024-09-01', '%Y-%m-%d').date()
+            end_date = datetime.strptime('2024-11-30', '%Y-%m-%d').date()
+            survey_days = get_trade_days(self.all_trade_days, start_date, end_date)
+            for dt in survey_days:
+                [pre_dt] = get_preN_tds(self.all_trade_days, dt, 1)
+                if (dt not in price.index) or (pre_dt not in price.index):
+                    continue
+                [sig, _, info, _] = self.signal(stock_id, dt)
+                # 寻找交易信号
+                if (status == 1) and sig == Signal.BUY:
+                    trade_pots.append((dt, "B"))
+                    status = 2
+                elif (status == 2) and sig == Signal.SELL:
+                    trade_pots.append((dt, "S"))
+                    status = 1
+                logging.info("[%s][%s][%s]" % (str(dt), sig.name, info))
+            _macd_draw_survey(stock_id, price, trade_pots, False)
+

@@ -28,6 +28,7 @@ class PositionStatus(Enum):
     BUY_FAIL = auto()
     KEEP = auto()
 
+
 # 策略结果Key
 RES_KEY = "RES_KEY:"
 # 基准结果Key
@@ -53,6 +54,30 @@ def _init_logger():
         handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(log_formatter)
     logger.addHandler(handler)
+
+
+def get_trade_days(all_trade_days, start_date, end_date):
+    start_idx = end_idx = None
+    dt = start_date
+    while True:
+        try:
+            start_idx = all_trade_days.index(dt)
+            break
+        except ValueError:
+            dt += timedelta(days=1)
+            continue
+    dt = end_date
+    while True:
+        try:
+            end_idx = all_trade_days.index(dt)
+            break
+        except ValueError:
+            dt -= timedelta(days=1)
+            continue
+    res = []
+    if (start_idx is not None) and (end_idx is not None) and (start_idx < end_idx):
+        res.extend(all_trade_days[start_idx:end_idx + 1])
+    return res
 
 
 def send_wechat_message(title, content):

@@ -1,3 +1,4 @@
+import copy
 import getopt
 import importlib
 import os
@@ -23,7 +24,7 @@ def warm_cache(stg_map, s_list):
 if __name__ == '__main__':
     logging.info("Start Warmer")
     # 预热缓存
-    cache_map = conf_dict['STG']
+    cache_map = copy.deepcopy(conf_dict['STG'])
     del cache_map['Base']
     opts, args = getopt.getopt(sys.argv[1:], "", longopts=["all", "stg="])
     for opt, arg in opts:
