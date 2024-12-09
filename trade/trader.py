@@ -10,7 +10,9 @@ from utils.redis_tool import RedisTool
 class Position:
     def __init__(self, total_budget, max_hold):
         # 每个槽位的4个元素表示：0-股票id，1-购入价格，2-购入数量，3-状态
-        self.hold = [[None, None, None, PositionStatus.INIT]] * max_hold
+        self.hold = []
+        for i in range(0, max_hold):
+            self.hold.append([None, None, None, PositionStatus.INIT])
         self.spare = total_budget
         self.max_hold = max_hold
         self.single_budget = float(total_budget / max_hold)
@@ -32,11 +34,11 @@ class Trader(abc.ABC):
     """
 
     @abstractmethod
-    def buy(self, position, slot, dt, stock_id, jiage):
+    def buy(self, position, slot, dt, stock_id, jiage=None):
         pass
 
     @abstractmethod
-    def sell(self, position, slot, dt, jiage):
+    def sell(self, position, slot, dt, jiage=None):
         pass
 
 
@@ -58,10 +60,10 @@ class Backtest_Trader(Trader):
         stamp_tax = 0
         if sig == Signal.SELL:
             stamp_tax = money * 0.0005
-        logging.info("Cost Detail[" + str(commission) + "][" + str(transfer_fee) + "][" + str(stamp_tax) + "]")
+        logging.debug("Cost Detail[" + str(commission) + "][" + str(transfer_fee) + "][" + str(stamp_tax) + "]")
         return commission + transfer_fee + stamp_tax
 
-    def buy(self, position, slot, dt, stock_id, jiage):
+    def buy(self, position, slot, dt, stock_id, jiage=None):
         # 以市价买入，在回测时采用当天的开盘价
         if jiage is None:
             price = self.cache_tool.get(stock_id, self.price_db_no, True)
@@ -89,7 +91,7 @@ class Backtest_Trader(Trader):
         position.spare -= (money + cost)
         logging.info("Trade Cost is :[" + str(cost) + "]")
 
-    def sell(self, position, dt, slot, jiage):
+    def sell(self, position, slot, dt, jiage=None):
         # 以市价卖出，在回测时采用当天的开盘价
         stock_id = slot[0]
         if jiage is None:
@@ -105,5 +107,5 @@ class Backtest_Trader(Trader):
         slot[1] = None
         slot[2] = None
         slot[3] = PositionStatus.EMPTY
-        position.spare -= (money + cost)
+        position.spare += (money - cost)
         logging.info("Trade Cost is :[" + str(cost) + "]")

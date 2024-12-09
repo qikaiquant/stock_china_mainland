@@ -3,12 +3,12 @@ import importlib
 import os
 import signal
 import sys
-
 import pandas
-
-from trade.trader import Backtest_Trader
+from sqlalchemy.testing.plugin.plugin_base import logging
 
 sys.path.append(os.path.dirname(sys.path[0]))
+
+from trade.trader import Backtest_Trader
 from utils.db_tool import *
 from utils.redis_tool import *
 from multiprocessing import *
@@ -63,7 +63,7 @@ def init_strategy():
     cls = getattr(f, conf_dict['STG'][stg_id]['Class_Name'])
     # 初始化实例
     inst = cls(stg_id)
-    inst.position.set_trader(Backtest_Trader)
+    inst.position.set_trader(Backtest_Trader())
     return inst
 
 
@@ -79,7 +79,7 @@ def backtest(stg, pid=""):
         daily_benchmark['dt'] = bmdf['dt']
         daily_benchmark[bm.name] = bmdf['jiage'] * factor
     daily_benchmark.set_index('dt', inplace=True)
-    stg.cache_tool.set(BENCHMARK_KEY, stg.daily_benchmark, COMMON_CACHE_ID, serialize=True)
+    stg.cache_tool.set(BENCHMARK_KEY, daily_benchmark, COMMON_CACHE_ID, serialize=True)
     # 刷参数
     if pid != "":
         stg.reset_param(pid2param(pid))
@@ -94,7 +94,7 @@ def backtest(stg, pid=""):
 if __name__ == '__main__':
     logging.info("Start Backtest")
     opts, args = getopt.getopt(sys.argv[1:], "",
-                               longopts=["refresh-param-space", "survey", "single=", "search-param"])
+                               longopts=["refresh-param-space", "survey", "single", "search-param"])
     for opt, arg in opts:
         if opt == '--refresh-param-space':
             # 重刷参数空间分支
@@ -108,7 +108,7 @@ if __name__ == '__main__':
         elif opt == '--single':
             # 单回测分支
             stg = init_strategy()
-            backtest(stg, arg)
+            backtest(stg, "")
         elif opt == '--search-param':
             # 搜参分支
             p_id = os.getpid()

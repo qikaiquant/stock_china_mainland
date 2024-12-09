@@ -170,13 +170,7 @@ class RealBase(VirtualBase):
 
 
 if __name__ == '__main__':
-    vb = RealBase(12)
-    vb.output()
-    vb.virtualoutput()
-
-    t1 = None
-    t2 = []
-    if t1 is None:
-        print("t1 is None")
-    if t2 is None:
-        print("t2 is None")
+    aa = [[None, None], [None, None]]
+    for a in aa:
+        a[0] = 2
+        print(aa)

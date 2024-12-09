@@ -26,7 +26,7 @@ def _macd_draw_survey(stock_id, price, pots, is_draw):
     ax2.plot(price.index, price['dea'], color='blue', label='DEA-Slow')
     ax2.grid(linestyle='--')
     ax2.legend(loc=2)
-
+    print(pots)
     if is_draw:
         plt.show()
     else:
@@ -76,7 +76,7 @@ class MacdStrategy(BaseStrategy):
         d1, d0 = get_preN_tds(self.all_trade_days, cur_dt, 2)
         if (d1 not in price.index) or (d0 not in price.index):
             return [Signal.KEEP, None, "d0/d1 NULL", None]
-        # 过去12天出现了超过3个x，说明黏着，不做交易
+        # 过去A天出现了超过B个x，说明黏着，不做交易
         cross_num = 0
         pre10_tds = get_preN_tds(self.all_trade_days, cur_dt, self.adhesion_period)
         for i in range(1, len(pre10_tds)):
@@ -106,11 +106,12 @@ class MacdStrategy(BaseStrategy):
 
     def pick_candidate(self, dt):
         candidates = []
+        logging.info("     Pick Candidates....")
         for stockid in self.all_stocks:
             [sig, jiage, _, rank_score] = self.signal(stockid, dt)
             if sig == Signal.BUY:
                 candidates.append((stockid, jiage, rank_score))
-        candidates.sort(key=lambda x: x[1], reverse=True)
+        candidates.sort(key=lambda x: x[2], reverse=False)
         return candidates
 
     def adjust_position(self, dt):
@@ -122,7 +123,8 @@ class MacdStrategy(BaseStrategy):
             slot[3] = PositionStatus.INIT
         # 是个很复杂的状态机，见笔记
         while True:
-            for slot in position.hold:
+            for i in range(0, len(position.hold)):
+                slot = position.hold[i]
                 stock_id = slot[0]
                 match slot[3]:
                     case PositionStatus.INIT:
@@ -150,14 +152,14 @@ class MacdStrategy(BaseStrategy):
                     case PositionStatus.BUY_FAIL:
                         # 买入失败，置空重新开始
                         slot[3] = PositionStatus.EMPTY
-            # 每分钟轮询一次状态；如果所有槽位都进入终止状态，退出循环
             keep_count = 0
             for slot in position.hold:
                 if slot[3] == PositionStatus.KEEP:
                     keep_count += 1
             if keep_count == len(position.hold):
                 break
-            time.sleep(60)
+            logging.info(str(position.hold))
+            time.sleep(1)
 
     def build_param_space(self):
         max_hold_space = range(1, 11, 1)
@@ -186,7 +188,7 @@ class MacdStrategy(BaseStrategy):
         stocks = self.cache_tool.get(RAND_STOCK, COMMON_CACHE_ID, serialize=True)
         if (stocks is None) or (len(stocks) == 0):
             if not stocks:
-                stocks = random.sample(self.all_stocks, 30)
+                stocks = random.sample(self.all_stocks, 3)
                 self.cache_tool.set(RAND_STOCK, stocks, COMMON_CACHE_ID, serialize=True)
         # 调研过程
         for stock_id in stocks:
@@ -194,7 +196,6 @@ class MacdStrategy(BaseStrategy):
             price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
             if price is None:
                 continue
-            status = 1  # 1:空仓，2：满仓
             trade_pots = []
             start_date = datetime.strptime('2024-09-01', '%Y-%m-%d').date()
             end_date = datetime.strptime('2024-11-30', '%Y-%m-%d').date()
@@ -205,12 +206,9 @@ class MacdStrategy(BaseStrategy):
                     continue
                 [sig, _, info, _] = self.signal(stock_id, dt)
                 # 寻找交易信号
-                if (status == 1) and sig == Signal.BUY:
+                if sig == Signal.BUY:
                     trade_pots.append((dt, "B"))
-                    status = 2
-                elif (status == 2) and sig == Signal.SELL:
+                elif sig == Signal.SELL:
                     trade_pots.append((dt, "S"))
-                    status = 1
                 logging.info("[%s][%s][%s]" % (str(dt), sig.name, info))
             _macd_draw_survey(stock_id, price, trade_pots, False)
-

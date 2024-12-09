@@ -29,10 +29,10 @@
     "Base": {
       "StopLossPoint": 15,
       "StopSurplusPoint": -1,
-      "Warm_Start_Date": "2022-01-01",
-      "Warm_End_Date": "2024-02-24",
+      "Warm_Start_Date": "2024-06-20",
+      "Warm_End_Date": "2024-12-06",
       "TotalBudget": 200000,
-      "MaxHold": 1
+      "MaxHold": 2
     },
     "MACD": {
       "Module_Path": "strategy.macd_strategy",
@@ -45,8 +45,8 @@
   },
   "Backtest": {
     "STG": "MACD",
-    "Start_Date": "2022-01-15",
-    "End_Date": "2024-01-14",
+    "Start_Date": "2024-10-05",
+    "End_Date": "2024-12-05",
     "Risk_Free_Rate": 0.026,
     "Price_DB_NO": 0,
     "Analyze_Res_Dir": "D:\\test\\",

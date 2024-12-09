@@ -1,6 +1,8 @@
 import abc
 from abc import abstractmethod
 
+from sqlalchemy.testing.plugin.plugin_base import logging
+
 from trade.trader import Position
 from utils.common import *
 from utils.db_tool import DBTool
