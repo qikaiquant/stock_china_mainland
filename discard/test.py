@@ -9,6 +9,7 @@ import mplfinance as mpf
 import numpy
 import pandas
 import xlrd
+from Tools.scripts.dutree import display
 from jqdatasdk import auth, logout, get_price, get_query_count
 
 sys.path.append(os.path.dirname(sys.path[0]))
@@ -170,22 +171,7 @@ class RealBase(VirtualBase):
 
 
 if __name__ == '__main__':
-    d1 = datetime.strptime('2024-09-01', '%Y-%m-%d').date()
-    d2 = datetime.strptime('2024-09-02', '%Y-%m-%d').date()
-    s1 = '600986.XSHE'
-    s2 = '600984.XSHE'
-
-    df = pandas.DataFrame()
-
-    if s1 not in df.columns:
-        df[s1] = ""
-    df.at[d1, s1] = (1, 2)
-    df.at[d2, s1] = (3, 4)
-
-    if s2 not in df.columns:
-        df[s2] = None
-    df.at[d1, s2] = (5, 6)
-    df.at[d2, s2] = (7, 8)
-
-    print(df)
-    print(df.info())
+    cachetool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'],
+                          conf_dict['Redis']['Passwd'])
+    res = cachetool.get(RES_KEY + ":", COMMON_CACHE_ID, serialize=True)
+    print(res.to_string())

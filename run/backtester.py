@@ -3,6 +3,7 @@ import importlib
 import os
 import signal
 import sys
+
 import pandas
 from sqlalchemy.testing.plugin.plugin_base import logging
 
@@ -85,10 +86,11 @@ def backtest(stg, pid=""):
     if pid != "":
         stg.reset_param(pid2param(pid))
     # 遍历所有回测交易日
-    daily_snapshot = pandas.DataFrame()
+    daily_snapshot = pandas.DataFrame(columns=['Spare'])
     bt_tds = stg.db_tool.get_trade_days(bt_start_date, bt_end_date)
     for dt in bt_tds:
         logging.info("+++++++++++++++++++" + str(dt) + "++++++++++++++++++++")
+        daily_snapshot.loc[dt] = None
         # 调整仓位
         stg.adjust_position(dt)
         # 记录持仓状态
@@ -99,8 +101,6 @@ def backtest(stg, pid=""):
             if stock_id not in daily_snapshot.columns:
                 daily_snapshot[stock_id] = ""
             daily_snapshot.at[dt, stock_id] = (dt_jiage, slot[2])
-        if "Spare" not in daily_snapshot.columns:
-            daily_snapshot['Spare'] = 0.0
         daily_snapshot.at[dt, 'Spare'] = stg.position.spare
     stg.cache_tool.set(RES_KEY + ":" + pid, daily_snapshot, COMMON_CACHE_ID, serialize=True)
 

@@ -78,6 +78,7 @@ class MacdStrategy(BaseStrategy):
         return [Signal.KEEP, None, "Nothing", None]
 
     def pick_candidate(self, dt):
+        logging.info("Start Pick....")
         candidates = []
         for stockid in self.all_stocks:
             [sig, jiage, _, rank_score] = self.signal(stockid, dt)
@@ -104,13 +105,16 @@ class MacdStrategy(BaseStrategy):
                             slot[3] = PositionStatus.EMPTY
                         else:
                             slot[3] = PositionStatus.NEED_CHECK
+                        logging.info("Slot " + str(i) + " Status Change From Init to " + slot[3].name)
                     case PositionStatus.NEED_CHECK:
-                        [sig, jiage, _, _] = self.signal(stock_id, dt)
+                        [sig, jiage, info, _] = self.signal(stock_id, dt)
                         if sig == Signal.SELL:
                             slot[3] = PositionStatus.WAIT_SELL
                             trader.sell(position, slot, dt, jiage)
                         else:
                             slot[3] = PositionStatus.KEEP
+                        logging.info("Slot " + str(i) + " Status Change From NEED_CHECK to " + slot[
+                            3].name + " with info[" + info + "]")
                     case PositionStatus.EMPTY:
                         # 算一遍候选集合，注意只算一遍
                         if candidates is None:
@@ -121,9 +125,12 @@ class MacdStrategy(BaseStrategy):
                             slot[3] = PositionStatus.WAIT_BUY
                             [stock_id, jiage, _] = candidates.pop()
                             trader.buy(position, slot, dt, stock_id, jiage)
+                            logging.info("Pick " + stock_id)
+                        logging.info("Slot " + str(i) + " Status Change From EMPTY to " + slot[3].name)
                     case PositionStatus.BUY_FAIL:
                         # 买入失败，置空重新开始
                         slot[3] = PositionStatus.EMPTY
+                        logging.info("Slot " + str(i) + " Status Change From BUY_FAIL to " + slot[3].name)
             keep_count = 0
             for slot in position.hold:
                 if slot[3] == PositionStatus.KEEP:
@@ -157,11 +164,14 @@ class MacdStrategy(BaseStrategy):
 
     def survey(self):
         # 选30支股票做调研
-        stocks = self.cache_tool.get(RAND_STOCK, COMMON_CACHE_ID, serialize=True)
-        if (stocks is None) or (len(stocks) == 0):
-            if not stocks:
-                stocks = random.sample(self.all_stocks, 3)
-                self.cache_tool.set(RAND_STOCK, stocks, COMMON_CACHE_ID, serialize=True)
+        if True:
+            stocks = self.cache_tool.get(RAND_STOCK, COMMON_CACHE_ID, serialize=True)
+            if (stocks is None) or (len(stocks) == 0):
+                if not stocks:
+                    stocks = random.sample(self.all_stocks, 3)
+                    self.cache_tool.set(RAND_STOCK, stocks, COMMON_CACHE_ID, serialize=True)
+        else:
+            stocks = ["002600.XSHE", "600390.XSHG", "601138.XSHG", "605117.XSHG"]
         # 调研过程
         for stock_id in stocks:
             logging.info("+++++++++++++++++++" + stock_id + "++++++++++++++++++++")

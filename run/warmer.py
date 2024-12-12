@@ -4,12 +4,10 @@ import importlib
 import os
 import sys
 
-from sqlalchemy.testing.plugin.plugin_base import logging
-
 sys.path.append(os.path.dirname(sys.path[0]))
 
 from utils.common import *
-from warmup.warmup import BacktestWarmer
+from warm.warmup import BacktestWarmer
 
 
 def warm_backtest_cache():

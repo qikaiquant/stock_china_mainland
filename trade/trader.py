@@ -89,7 +89,7 @@ class Backtest_Trader(Trader):
         slot[2] = volume
         slot[3] = PositionStatus.KEEP
         position.spare -= (money + cost)
-        logging.info("Trade Cost is :[" + str(cost) + "]")
+        logging.debug("Trade Cost is :[" + str(cost) + "]")
 
     def sell(self, position, slot, dt, jiage=None):
         # 以市价卖出，在回测时采用当天的开盘价
@@ -108,4 +108,4 @@ class Backtest_Trader(Trader):
         slot[2] = None
         slot[3] = PositionStatus.EMPTY
         position.spare += (money - cost)
-        logging.info("Trade Cost is :[" + str(cost) + "]")
+        logging.debug("Trade Cost is :[" + str(cost) + "]")
