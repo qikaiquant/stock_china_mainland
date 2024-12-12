@@ -70,6 +70,7 @@ def init_strategy():
 def backtest(stg, pid=""):
     bt_start_date = conf_dict['Backtest']['Start_Date']
     bt_end_date = conf_dict['Backtest']['End_Date']
+    bt_db_no = conf_dict['Backtest']['Backtest_DB_NO']
     # 设置benchmark
     daily_benchmark = pandas.DataFrame()
     for bm in BenchMark:
@@ -80,15 +81,28 @@ def backtest(stg, pid=""):
         daily_benchmark[bm.name] = bmdf['jiage'] * factor
     daily_benchmark.set_index('dt', inplace=True)
     stg.cache_tool.set(BENCHMARK_KEY, daily_benchmark, COMMON_CACHE_ID, serialize=True)
-    # 刷参数
+    # 重刷策略参数
     if pid != "":
         stg.reset_param(pid2param(pid))
     # 遍历所有回测交易日
+    daily_snapshot = pandas.DataFrame()
     bt_tds = stg.db_tool.get_trade_days(bt_start_date, bt_end_date)
     for dt in bt_tds:
         logging.info("+++++++++++++++++++" + str(dt) + "++++++++++++++++++++")
         # 调整仓位
         stg.adjust_position(dt)
+        # 记录持仓状态
+        for slot in stg.position.hold:
+            stock_id = slot[0]
+            price = stg.cache_tool.get(stock_id, bt_db_no, True)
+            dt_jiage = price.loc[dt, 'close']
+            if stock_id not in daily_snapshot.columns:
+                daily_snapshot[stock_id] = ""
+            daily_snapshot.at[dt, stock_id] = (dt_jiage, slot[2])
+        if "Spare" not in daily_snapshot.columns:
+            daily_snapshot['Spare'] = 0.0
+        daily_snapshot.at[dt, 'Spare'] = stg.position.spare
+    stg.cache_tool.set(RES_KEY + ":" + pid, daily_snapshot, COMMON_CACHE_ID, serialize=True)
 
 
 if __name__ == '__main__':

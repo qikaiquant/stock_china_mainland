@@ -1,12 +1,8 @@
 import itertools
 import random
 import time
-import traceback
+
 import matplotlib.pyplot as plt
-import numpy
-import pandas
-import talib
-from sqlalchemy.testing.plugin.plugin_base import logging
 
 from strategy.base_strategy import *
 
@@ -32,29 +28,6 @@ def _macd_draw_survey(stock_id, price, pots, is_draw):
     else:
         fn = "D:\\test\\" + stock_id + ".jpg"
         plt.savefig(fn, dpi=600)
-
-
-class MacdWarmer(BaseWarmer):
-    def warm(self):
-        self.cache_tool.clear(int(self.cache_no))
-        stocks = self.db_tool.get_stock_info(['stock_id'])
-        cols = ['dt', 'close', 'open', 'money']
-        for (stock_id,) in stocks:
-            try:
-                res = self.db_tool.get_price(stock_id, fields=cols, start_dt=self.warm_start_date,
-                                             end_dt=self.warm_end_date)
-                # 股票在2013-01-01前已退市
-                if len(res) == 0:
-                    continue
-                res_df = pandas.DataFrame(res, columns=cols)
-                res_df.set_index('dt', inplace=True)
-                # 计算MACD指标
-                res_df['dif'], res_df['dea'], res_df['hist'] = talib.MACD(numpy.array(res_df['close']), fastperiod=12,
-                                                                          slowperiod=26, signalperiod=9)
-                self.cache_tool.set(stock_id, res_df, self.cache_no, serialize=True)
-            except Exception as e:
-                traceback.print_exc()
-                break
 
 
 class MacdStrategy(BaseStrategy):
@@ -106,7 +79,6 @@ class MacdStrategy(BaseStrategy):
 
     def pick_candidate(self, dt):
         candidates = []
-        logging.info("     Pick Candidates....")
         for stockid in self.all_stocks:
             [sig, jiage, _, rank_score] = self.signal(stockid, dt)
             if sig == Signal.BUY:

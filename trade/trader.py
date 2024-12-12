@@ -44,7 +44,7 @@ class Trader(abc.ABC):
 
 class Backtest_Trader(Trader):
     def __init__(self):
-        self.price_db_no = conf_dict['Backtest']['Price_DB_NO']
+        self.backtest_db_no = conf_dict['Backtest']['Backtest_DB_NO']
         self.cache_tool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'],
                                     conf_dict['Redis']['Passwd'])
 
@@ -66,7 +66,7 @@ class Backtest_Trader(Trader):
     def buy(self, position, slot, dt, stock_id, jiage=None):
         # 以市价买入，在回测时采用当天的开盘价
         if jiage is None:
-            price = self.cache_tool.get(stock_id, self.price_db_no, True)
+            price = self.cache_tool.get(stock_id, self.backtest_db_no, True)
             if (price is None) or (dt not in price.index):
                 logging.error("No price in date[" + str(dt) + "] for stock[" + stock_id + "]")
                 slot[3] = PositionStatus.BUY_FAIL
@@ -95,7 +95,7 @@ class Backtest_Trader(Trader):
         # 以市价卖出，在回测时采用当天的开盘价
         stock_id = slot[0]
         if jiage is None:
-            price = self.cache_tool.get(stock_id, self.price_db_no, True)
+            price = self.cache_tool.get(stock_id, self.backtest_db_no, True)
             if (price is None) or (dt not in price.index):
                 logging.error("No price in date[" + str(dt) + "] for stock[" + stock_id + "]")
                 slot[3] = PositionStatus.KEEP

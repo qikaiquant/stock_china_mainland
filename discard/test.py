@@ -170,7 +170,22 @@ class RealBase(VirtualBase):
 
 
 if __name__ == '__main__':
-    aa = [[None, None], [None, None]]
-    for a in aa:
-        a[0] = 2
-        print(aa)
+    d1 = datetime.strptime('2024-09-01', '%Y-%m-%d').date()
+    d2 = datetime.strptime('2024-09-02', '%Y-%m-%d').date()
+    s1 = '600986.XSHE'
+    s2 = '600984.XSHE'
+
+    df = pandas.DataFrame()
+
+    if s1 not in df.columns:
+        df[s1] = ""
+    df.at[d1, s1] = (1, 2)
+    df.at[d2, s1] = (3, 4)
+
+    if s2 not in df.columns:
+        df[s2] = None
+    df.at[d1, s2] = (5, 6)
+    df.at[d2, s2] = (7, 8)
+
+    print(df)
+    print(df.info())
