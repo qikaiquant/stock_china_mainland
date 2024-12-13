@@ -138,7 +138,7 @@ class KdjStrategy(BaseStrategy):
                     if not position.can_buy():
                         break
             self.fill_daily_status(i, action_log)
-        self.cache_tool.set(RES_KEY, self.daily_status, COMMON_CACHE_ID, serialize=True)
+        self.cache_tool.set(RES_KEY_PREFIX, self.daily_status, COMMON_CACHE_ID, serialize=True)
 
     def backtest(self):
         self._backtest()

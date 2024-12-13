@@ -173,5 +173,5 @@ class RealBase(VirtualBase):
 if __name__ == '__main__':
     cachetool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'],
                           conf_dict['Redis']['Passwd'])
-    res = cachetool.get(RES_KEY + ":", COMMON_CACHE_ID, serialize=True)
+    res = cachetool.get(RES_KEY_PREFIX + ":", COMMON_CACHE_ID, serialize=True)
     print(res.to_string())

@@ -30,7 +30,7 @@ class PositionStatus(Enum):
 
 
 # 策略结果Key
-RES_KEY = "RES_KEY:"
+RES_KEY_PREFIX = "RES_KEY:"
 # 基准结果Key
 BENCHMARK_KEY = "BENCHMARK_KEY"
 # 调研用的随机Stock ID

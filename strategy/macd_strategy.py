@@ -131,13 +131,13 @@ class MacdStrategy(BaseStrategy):
                         # 买入失败，置空重新开始
                         slot[3] = PositionStatus.EMPTY
                         logging.info("Slot " + str(i) + " Status Change From BUY_FAIL to " + slot[3].name)
+            logging.info(str(position.hold))
             keep_count = 0
             for slot in position.hold:
                 if slot[3] == PositionStatus.KEEP:
                     keep_count += 1
             if keep_count == len(position.hold):
                 break
-            logging.info(str(position.hold))
             time.sleep(1)
 
     def build_param_space(self):
@@ -171,7 +171,7 @@ class MacdStrategy(BaseStrategy):
                     stocks = random.sample(self.all_stocks, 3)
                     self.cache_tool.set(RAND_STOCK, stocks, COMMON_CACHE_ID, serialize=True)
         else:
-            stocks = ["002600.XSHE", "600390.XSHG", "601138.XSHG", "605117.XSHG"]
+            stocks = []
         # 调研过程
         for stock_id in stocks:
             logging.info("+++++++++++++++++++" + stock_id + "++++++++++++++++++++")

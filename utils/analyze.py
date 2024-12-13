@@ -1,3 +1,4 @@
+import getopt
 import os.path
 import sys
 
@@ -9,10 +10,8 @@ from dateutil import relativedelta
 sys.path.append(os.path.dirname(sys.path[0]))
 from strategy.base_strategy import *
 
-Res_Dir = conf_dict["Backtest"]["Analyze_Res_Dir"]
 
-
-def _draw_backtest(df, id_dict, title):
+def _draw_res(df, id_dict, title):
     fig = plt.figure(figsize=(10, 6), dpi=100)
     plt.rc('font', family='FangSong', size=14)
     # 左侧折线图
@@ -43,54 +42,7 @@ def _draw_backtest(df, id_dict, title):
     tb.scale(1.1, 1.3)
 
     plt.title(title)
-    plt.savefig(os.path.join(Res_Dir, title), dpi=600)
-
-
-def _parse_stg_detail(df):
-    fp = open("D:\\test\\backtest\\details.txt", 'w')
-    for _, row in df.iterrows():
-        print(str(row['dt']) + '\t' + str(row['stg_networth']), file=fp)
-        print("\tAction : ", file=fp)
-        if len(row['details']['Buy']) != 0:
-            print("\t\tBuy : ", file=fp)
-            for item in row['details']['Buy']:
-                print("\t\t\t" + str(item), file=fp)
-        if len(row['details']['Sell']) != 0:
-            print("\t\tSell : ", file=fp)
-            for item in row['details']['Sell']:
-                print("\t\t\t" + str(item), file=fp)
-
-        print("\tHold : ", file=fp)
-        print("\t\tSpare - " + str(row['details']['Spare']), file=fp)
-        if len(row['details']['Hold']) != 0:
-            print("\t\tHold : ", file=fp)
-            for item in row['details']['Hold']:
-                print("\t\t\t" + str(item), file=fp)
-    fp.close()
-
-
-def _get_max_loss(df, start_dt, end_dt):
-    loss_list = []
-    loss_dict = {}
-    seg = df.loc[start_dt:end_dt]
-    for dt, row in seg.iterrows():
-        detail = row['details']
-        for item in detail['Hold']:
-            stock_id = item[0]
-            if stock_id not in loss_dict:
-                loss_dict[stock_id] = (item[1], item[2], item[3], dt)
-        for item in detail['Sell']:
-            stock_id = item[0]
-            jiage = item[1]
-            if stock_id not in loss_dict:
-                print("FFFFuck!")
-            (b_jiage, b_volumn, b_total, b_dt) = loss_dict[stock_id]
-            loss = (jiage - b_jiage) * b_volumn
-            loss_list.append((stock_id, loss, b_volumn, (str(b_dt), b_jiage), (str(dt), jiage)))
-            del loss_dict[stock_id]
-    loss_list.sort(key=lambda x: x[1], reverse=False)
-    for item in loss_list:
-        print(item)
+    plt.savefig(os.path.join(conf_dict["Backtest"]["Analyze_Res_Dir"], title), dpi=600)
 
 
 def _get_sharp_ratio(df, col):
@@ -120,7 +72,7 @@ def _get_sharp_ratio(df, col):
     # 平均月收益率
     avg_monthly_rr = ((df.loc[seg_points[-1], col] - df.loc[seg_points[0], col]) / df.loc[seg_points[0], col]) / seg_num
     # 平均月无风险收益率
-    avg_monthly_rfr = conf_dict['Backtest']['Risk_Free_Rate'] / seg_num
+    avg_monthly_rfr = conf_dict['Backtest']['Risk_Free_Rate'] / 12
     # 计算标准差
     monthly_rr = []
     for i in range(0, seg_num):
@@ -196,20 +148,20 @@ def _get_index(result):
     return index_dict
 
 
-if __name__ == '__main__':
+def batch_analyze():
     cachetool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'],
                           conf_dict['Redis']['Passwd'])
     benchmark_res = pandas.DataFrame(cachetool.get(BENCHMARK_KEY, COMMON_CACHE_ID, serialize=True))
     stg_id = conf_dict["Backtest"]['STG']
-    pattern = RES_KEY + stg_id + ":*"
+    pattern = RES_KEY_PREFIX + stg_id + ":*"
     keys = cachetool.get_keys(COMMON_CACHE_ID, pattern)
-    files = os.listdir(Res_Dir)
+    files = os.listdir(conf_dict["Backtest"]["Analyze_Res_Dir"])
     for key in keys:
         str_key = key.decode()
         pid = str_key.split(":")[2]
         f_name = pid + ".png"
         if f_name in files:
-            logging.info(f_name + " HAS been Drawed, Ignore.")
+            logging.info(f_name + " HAS been Drew, Ignore.")
             continue
         stg_res = cachetool.get(key, COMMON_CACHE_ID, serialize=True)
         if len(stg_res) != len(benchmark_res):
@@ -217,12 +169,36 @@ if __name__ == '__main__':
             continue
         res = pandas.merge(benchmark_res, stg_res, left_index=True, right_index=True)
         index = _get_index(res)
-        is_valueable = _get_valuable(index)
-        if is_valueable:
-            _draw_backtest(res, index, pid)
+        is_valuable = _get_valuable(index)
+        if is_valuable:
+            _draw_res(res, index, pid)
             logging.info(f_name + " Finished")
         else:
             logging.info(pid + " is Worthless, Ignore.")
         cachetool.delete(key, COMMON_CACHE_ID)
-        # _get_max_loss(res, conf_dict['Backtest']['Start_Date'], conf_dict['Backtest']['End_Date'])
-        # _parse_stg_detail(res)
+
+
+def single_analyze():
+    cachetool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'],
+                          conf_dict['Redis']['Passwd'])
+    benchmark_res = pandas.DataFrame(cachetool.get(BENCHMARK_KEY, COMMON_CACHE_ID, serialize=True))
+    res_key = "RES_KEY:"
+    stg_res = cachetool.get(res_key, COMMON_CACHE_ID, serialize=True)
+    if len(stg_res) != len(benchmark_res):
+        logging.error("Key[" + res_key + "] Error.PLS Check.")
+        return
+    res = pandas.merge(benchmark_res, stg_res, left_index=True, right_index=True)
+    index = _get_index(res)
+    _draw_res(res, index, "analyze")
+
+
+if __name__ == '__main__':
+    opts, args = getopt.getopt(sys.argv[1:], "", longopts=["batch", "single"])
+    for opt, arg in opts:
+        if opt == '--batch':
+            batch_analyze()
+        elif opt == '--single':
+            single_analyze()
+        else:
+            logging.error("Usage Error")
+            sys.exit(1)
