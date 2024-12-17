@@ -73,6 +73,8 @@ def add_snapshot(snapshot, stg, dt):
     nw = stg.position.spare
     for slot in stg.position.hold:
         stock_id = slot[0]
+        if stock_id is None:
+            continue
         price = stg.cache_tool.get(stock_id, conf_dict['Backtest']['Backtest_DB_NO'], True)
         dt_jiage = price.loc[dt, 'close']
         if stock_id not in snapshot.columns:
@@ -108,7 +110,7 @@ def backtest(stg, pid=""):
         stg.adjust_position(dt)
         # 记录持仓状态
         add_snapshot(daily_snapshot, stg, dt)
-    stg.cache_tool.set(RES_KEY_PREFIX + pid, daily_snapshot, COMMON_CACHE_ID, serialize=True)
+    stg.cache_tool.set(RES_KEY_PREFIX + stg.stg_id + ":" + pid, daily_snapshot, COMMON_CACHE_ID, serialize=True)
 
 
 if __name__ == '__main__':

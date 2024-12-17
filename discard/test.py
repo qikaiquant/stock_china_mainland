@@ -171,7 +171,7 @@ class RealBase(VirtualBase):
 
 
 if __name__ == '__main__':
-    cachetool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'],
-                          conf_dict['Redis']['Passwd'])
-    res = cachetool.get(RES_KEY_PREFIX + ":", COMMON_CACHE_ID, serialize=True)
-    print(res.to_string())
+    output_dir = os.path.join(conf_dict["Backtest"]["Analyze_Res_Dir"], "good")
+    print(output_dir)
+    aaa = os.path.join(output_dir, "fda.jpd")
+    print(aaa)

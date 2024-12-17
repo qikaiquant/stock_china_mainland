@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from strategy.base_strategy import *
 
 
-def _macd_draw_survey(stock_id, price, pots, is_draw):
+def _draw_survey(stock_id, price, pots, is_draw):
     fig, ax1 = plt.subplots(figsize=(10, 6), dpi=100)
     plt.title(stock_id)
     ax2 = ax1.twinx()
@@ -138,7 +138,6 @@ class MacdStrategy(BaseStrategy):
                     keep_count += 1
             if keep_count == len(position.hold):
                 break
-            time.sleep(1)
 
     def build_param_space(self):
         max_hold_space = range(1, 11, 1)
@@ -193,4 +192,4 @@ class MacdStrategy(BaseStrategy):
                 elif sig == Signal.SELL:
                     trade_pots.append((dt, "S"))
                 logging.info("[%s][%s][%s]" % (str(dt), sig.name, info))
-            _macd_draw_survey(stock_id, price, trade_pots, False)
+            _draw_survey(stock_id, price, trade_pots, False)

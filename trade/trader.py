@@ -60,7 +60,7 @@ class Backtest_Trader(Trader):
         stamp_tax = 0
         if sig == Signal.SELL:
             stamp_tax = money * 0.0005
-        logging.debug("Cost Detail[" + str(commission) + "][" + str(transfer_fee) + "][" + str(stamp_tax) + "]")
+        logging.info("Cost Detail[" + str(commission) + "][" + str(transfer_fee) + "][" + str(stamp_tax) + "]")
         return commission + transfer_fee + stamp_tax
 
     def buy(self, position, slot, dt, stock_id, jiage=None):
@@ -89,11 +89,15 @@ class Backtest_Trader(Trader):
         slot[2] = volume
         slot[3] = PositionStatus.KEEP
         position.spare -= (money + cost)
-        logging.debug("Trade Cost is :[" + str(cost) + "]")
+        logging.info(
+            "Buy " + stock_id + ", Price " + str(jiage) + ", Volume " + str(volume) + ", Total Price " + str(money))
+        logging.info("Trade Cost is :[" + str(cost) + "]")
+        logging.info("Spare is :[" + str(position.spare) + "]")
 
     def sell(self, position, slot, dt, jiage=None):
         # 以市价卖出，在回测时采用当天的开盘价
         stock_id = slot[0]
+        volume = slot[2]
         if jiage is None:
             price = self.cache_tool.get(stock_id, self.backtest_db_no, True)
             if (price is None) or (dt not in price.index):
@@ -101,11 +105,14 @@ class Backtest_Trader(Trader):
                 slot[3] = PositionStatus.KEEP
                 return
             jiage = price.loc[dt, 'open']
-        money = jiage * slot[2]
+        money = jiage * volume
         cost = Backtest_Trader.trade_cost(Signal.SELL, money)
         slot[0] = None
         slot[1] = None
         slot[2] = None
         slot[3] = PositionStatus.EMPTY
         position.spare += (money - cost)
-        logging.debug("Trade Cost is :[" + str(cost) + "]")
+        logging.info(
+            "Sell " + stock_id + ", Price " + str(jiage) + ", Volume " + str(volume) + ", Total Price " + str(money))
+        logging.info("Trade Cost is :[" + str(cost) + "]")
+        logging.info("Spare is :[" + str(position.spare) + "]")

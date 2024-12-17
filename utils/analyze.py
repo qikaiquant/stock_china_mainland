@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(sys.path[0]))
 from strategy.base_strategy import *
 
 
-def _draw_res(df, id_dict, title):
+def _draw_res(df, id_dict, output_dir, title):
     fig = plt.figure(figsize=(10, 6), dpi=100)
     plt.rc('font', family='FangSong', size=14)
     # 左侧折线图
@@ -42,7 +42,7 @@ def _draw_res(df, id_dict, title):
     tb.scale(1.1, 1.3)
 
     plt.title(title)
-    plt.savefig(os.path.join(conf_dict["Backtest"]["Analyze_Res_Dir"], title), dpi=600)
+    plt.savefig(os.path.join(output_dir, title), dpi=600)
 
 
 def _get_sharp_ratio(df, col):
@@ -153,12 +153,15 @@ def batch_analyze():
                           conf_dict['Redis']['Passwd'])
     benchmark_res = pandas.DataFrame(cachetool.get(BENCHMARK_KEY, COMMON_CACHE_ID, serialize=True))
     stg_id = conf_dict["Backtest"]['STG']
-    pattern = RES_KEY_PREFIX + stg_id + ":*"
+    # pattern = RES_KEY_PREFIX + stg_id + ":*"
+    pattern = RES_KEY_PREFIX + "*"
     keys = cachetool.get_keys(COMMON_CACHE_ID, pattern)
+    print(len(keys))
     files = os.listdir(conf_dict["Backtest"]["Analyze_Res_Dir"])
     for key in keys:
         str_key = key.decode()
-        pid = str_key.split(":")[2]
+        # pid = str_key.split(":")[2]
+        pid = str_key.split(":")[1]
         f_name = pid + ".png"
         if f_name in files:
             logging.info(f_name + " HAS been Drew, Ignore.")
@@ -171,11 +174,11 @@ def batch_analyze():
         index = _get_index(res)
         is_valuable = _get_valuable(index)
         if is_valuable:
-            _draw_res(res, index, pid)
-            logging.info(f_name + " Finished")
+            output_dir = os.path.join(conf_dict["Backtest"]["Analyze_Res_Dir"], "good")
         else:
-            logging.info(pid + " is Worthless, Ignore.")
-        cachetool.delete(key, COMMON_CACHE_ID)
+            output_dir = os.path.join(conf_dict["Backtest"]["Analyze_Res_Dir"], "bad")
+        _draw_res(res, index, output_dir, pid)
+        # cachetool.delete(key, COMMON_CACHE_ID)
 
 
 def single_analyze():
@@ -189,7 +192,7 @@ def single_analyze():
         return
     res = pandas.merge(benchmark_res, stg_res, left_index=True, right_index=True)
     index = _get_index(res)
-    _draw_res(res, index, "analyze")
+    _draw_res(res, index, conf_dict["Backtest"]["Analyze_Res_Dir"], "analyze")
 
 
 if __name__ == '__main__':
