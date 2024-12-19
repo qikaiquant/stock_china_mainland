@@ -30,17 +30,36 @@ def _draw_survey(stock_id, price, pots, is_draw):
         plt.savefig(fn, dpi=600)
 
 
+def _parse_pid(pid):
+    str_param = pid.split("_")
+    pdict = {"max_hold": int(str_param[0]), "stop_loss_point": int(str_param[1]),
+             "stop_surplus_point": int(str_param[2]),
+             "adhesion_period": int(str_param[3]), "adhesion_cross_num": int(str_param[4])}
+    return pdict
+
+
 class MacdStrategy(BaseStrategy):
-    def __init__(self, stg_id):
-        super().__init__(stg_id)
-        self.adhesion_period = conf_dict["STG"]["MACD"]["Adhesion_Period"]
-        self.adhesion_cross_num = conf_dict["STG"]["MACD"]["Adhesion_Cross_Num"]
+    def __init__(self, stg_id, pid):
+        stg_param_dict = _parse_pid(pid)
+        super().__init__(stg_id, stg_param_dict)
+        if "adhesion_period" not in stg_param_dict:
+            self.adhesion_period = conf_dict["STG"]["MACD"]["Adhesion_Period"]
+        else:
+            self.adhesion_period = stg_param_dict["adhesion_period"]
+        if "adhesion_cross_num" not in stg_param_dict:
+            self.adhesion_cross_num = conf_dict["STG"]["MACD"]["Adhesion_Cross_Num"]
+        else:
+            self.adhesion_cross_num = stg_param_dict["adhesion_cross_num"]
 
     def signal(self, stock_id, cur_dt):
         [pre_dt] = get_preN_tds(self.all_trade_days, cur_dt, days=1)
         price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
         if (price is None) or (pre_dt not in price.index):
             return [Signal.KEEP, None, "Price Or Dt NULL", None]
+        # 今日退市，卖出
+        delist_dt = self.cache_tool.get(DELIST_PRE + stock_id, self.cache_no, serialize=True)
+        if delist_dt <= cur_dt:
+            return [Signal.SELL, None, "Delist", None]
         # check止盈止损
         cur_jiage = price.loc[pre_dt, 'close']
         if self.stop_loss_surplus(stock_id, cur_jiage):
@@ -150,16 +169,6 @@ class MacdStrategy(BaseStrategy):
         param_space = itertools.product(max_hold_space, stop_loss_space, stop_surplus_space, adhesion_period_space,
                                         adhesion_cross_num_space)
         return param_space
-
-    def reset_param(self, param):
-        if (param is None) or len(param) != 5:
-            logging.error("Param is Invalid, Pls Check.")
-            raise Exception("Param is Invalid")
-        self.max_hold = param[0]
-        self.stop_loss_point = param[1]
-        self.stop_surplus_point = param[2]
-        self.adhesion_period = param[3]
-        self.adhesion_cross_num = param[4]
 
     def survey(self):
         # 选30支股票做调研

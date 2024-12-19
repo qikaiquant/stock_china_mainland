@@ -31,6 +31,8 @@ class PositionStatus(Enum):
 
 # 策略结果Key
 RES_KEY_PREFIX = "RES_KEY:"
+# 退市日期前缀
+DELIST_PRE = "DELIST:"
 # 基准结果Key
 BENCHMARK_KEY = "BENCHMARK_KEY"
 # 调研用的随机Stock ID
@@ -92,14 +94,6 @@ def stockid2table(stockid, base=10):
     obj.update(stockid.encode("UTF-8"))
     hc = obj.hexdigest()
     return int(hc[-4:], 16) % base
-
-
-def pid2param(pid):
-    str_param = pid.split("_")
-    param = []
-    for p in str_param:
-        param.append(int(p))
-    return param
 
 
 def get_preN_tds(all_trade_days, cur_day, days):

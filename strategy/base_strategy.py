@@ -14,7 +14,7 @@ class BaseStrategy(abc.ABC):
     当策略由于仿真/实盘时，运行时间必须在交易日的零点之后，因为具体策略里的dt，和当前时间紧密相关
     """
 
-    def __init__(self, stg_id):
+    def __init__(self, stg_id, stg_param_dict):
         self.stg_id = stg_id
         # 存储定义
         self.db_tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
@@ -23,10 +23,19 @@ class BaseStrategy(abc.ABC):
                                     conf_dict['Redis']['Passwd'])
         self.cache_no = conf_dict['STG'][stg_id]['DB_NO']
         # 策略基础参数
-        self.stop_loss_point = conf_dict['STG']['Base']['StopLossPoint']  # 止损点，-1表示不设置
-        self.stop_surplus_point = conf_dict['STG']['Base']['StopSurplusPoint']  # 止盈点，-1表示不设置
         self.total_budget = conf_dict['STG']['Base']['TotalBudget']
-        self.max_hold = conf_dict['STG']["Base"]['MaxHold']
+        if "stop_loss_point" not in stg_param_dict:
+            self.stop_loss_point = conf_dict['STG']['Base']['StopLossPoint']  # 止损点，-1表示不设置
+        else:
+            self.stop_loss_point = stg_param_dict["stop_loss_point"]
+        if "stop_surplus_point" not in stg_param_dict:
+            self.stop_surplus_point = conf_dict['STG']['Base']['StopSurplusPoint']  # 止盈点，-1表示不设置
+        else:
+            self.stop_surplus_point = stg_param_dict["stop_surplus_point"]
+        if "max_hold" not in stg_param_dict:
+            self.max_hold = conf_dict['STG']["Base"]['MaxHold']
+        else:
+            self.max_hold = stg_param_dict["max_hold"]
         # 持仓状况
         self.position = Position(self.total_budget, self.max_hold)  # 持仓变化
         # 股票/交易日全量信息
@@ -60,15 +69,6 @@ class BaseStrategy(abc.ABC):
     def build_param_space(self):
         """
         这个函数需要被子类重写
-        :return:
-        """
-        pass
-
-    @abstractmethod
-    def reset_param(self, param):
-        """
-        这个函数需要被子类重写
-        :param param:
         :return:
         """
         pass

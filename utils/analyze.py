@@ -153,15 +153,13 @@ def batch_analyze():
                           conf_dict['Redis']['Passwd'])
     benchmark_res = pandas.DataFrame(cachetool.get(BENCHMARK_KEY, COMMON_CACHE_ID, serialize=True))
     stg_id = conf_dict["Backtest"]['STG']
-    # pattern = RES_KEY_PREFIX + stg_id + ":*"
-    pattern = RES_KEY_PREFIX + "*"
+    pattern = RES_KEY_PREFIX + stg_id + ":*"
     keys = cachetool.get_keys(COMMON_CACHE_ID, pattern)
     print(len(keys))
     files = os.listdir(conf_dict["Backtest"]["Analyze_Res_Dir"])
     for key in keys:
         str_key = key.decode()
-        # pid = str_key.split(":")[2]
-        pid = str_key.split(":")[1]
+        pid = str_key.split(":")[2]
         f_name = pid + ".png"
         if f_name in files:
             logging.info(f_name + " HAS been Drew, Ignore.")

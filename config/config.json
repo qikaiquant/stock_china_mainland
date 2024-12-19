@@ -37,7 +37,7 @@
     "MACD": {
       "Module_Path": "strategy.macd_strategy",
       "Class_Name": "MacdStrategy",
-      "Warm_Module_Path": "warmup.warmup",
+      "Warm_Module_Path": "warm.warmup",
       "Warm_Class_Name": "MacdWarmer",
       "DB_NO": 0,
       "Adhesion_Period": 12,
@@ -46,8 +46,8 @@
   },
   "Backtest": {
     "STG": "MACD",
-    "Start_Date": "2022-06-01",
-    "End_Date": "2023-05-31",
+    "Start_Date": "2023-06-01",
+    "End_Date": "2024-05-31",
     "Risk_Free_Rate": 0.026,
     "Backtest_DB_NO": 14,
     "Analyze_Res_Dir": "D:\\test\\",

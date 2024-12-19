@@ -9,8 +9,7 @@ import mplfinance as mpf
 import numpy
 import pandas
 import xlrd
-from Tools.scripts.dutree import display
-from jqdatasdk import auth, logout, get_price, get_query_count
+from jqdatasdk import auth, logout, get_price, get_query_count, get_extras
 
 sys.path.append(os.path.dirname(sys.path[0]))
 
@@ -170,8 +169,16 @@ class RealBase(VirtualBase):
         print("VVVVV", self.a)
 
 
+class Father:
+    def __init__(self, aa):
+        print("Father:" + aa)
+
+
+class Son(Father):
+    def __init__(self, aa, bb):
+        super().__init__(aa)
+        print("Son:" + bb)
+
+
 if __name__ == '__main__':
-    output_dir = os.path.join(conf_dict["Backtest"]["Analyze_Res_Dir"], "good")
-    print(output_dir)
-    aaa = os.path.join(output_dir, "fda.jpd")
-    print(aaa)
+    son = Son("aa", "bb")

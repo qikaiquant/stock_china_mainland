@@ -33,9 +33,9 @@ class BaseWarmer(abc.ABC):
 class MacdWarmer(BaseWarmer):
     def warm(self):
         self.cache_tool.clear(int(self.cache_no))
-        stocks = self.db_tool.get_stock_info(['stock_id'])
+        stocks = self.db_tool.get_stock_info(['stock_id', 'end_date'])
         cols = ['dt', 'close', 'open', 'money']
-        for (stock_id,) in stocks:
+        for (stock_id, end_date) in stocks:
             try:
                 res = self.db_tool.get_price(stock_id, fields=cols, start_dt=self.warm_start_date,
                                              end_dt=self.warm_end_date)
@@ -48,6 +48,7 @@ class MacdWarmer(BaseWarmer):
                 res_df['dif'], res_df['dea'], res_df['hist'] = talib.MACD(numpy.array(res_df['close']), fastperiod=12,
                                                                           slowperiod=26, signalperiod=9)
                 self.cache_tool.set(stock_id, res_df, self.cache_no, serialize=True)
+                self.cache_tool.set(DELIST_PRE + stock_id, end_date, self.cache_no, serialize=True)
             except Exception as e:
                 traceback.print_exc()
                 break

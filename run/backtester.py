@@ -42,9 +42,7 @@ def search_param(tid, dbtool, lo, conn):
         dbtool.updata_param_status(pid, ParamStatus.CHECKING.value)
         lo.release()
         logging.info("Process " + str(tid) + " Get Param " + pid)
-        s = init_strategy()
-        backtest(s, pid)
-        del s
+        backtest(pid)
         lo.acquire()
         dbtool.updata_param_status(pid, ParamStatus.FINISHED.value)
         lo.release()
@@ -55,7 +53,28 @@ def search_param(tid, dbtool, lo, conn):
             break
 
 
-def init_strategy():
+def add_snapshot(snapshot, stg, dt):
+    snapshot.loc[dt] = None
+    try:
+        nw = stg.position.spare
+        for slot in stg.position.hold:
+            stock_id = slot[0]
+            if stock_id is None:
+                continue
+            price = stg.cache_tool.get(stock_id, conf_dict['Backtest']['Backtest_DB_NO'], True)
+            dt_jiage = price.loc[dt, 'close']
+            if stock_id not in snapshot.columns:
+                snapshot[stock_id] = ""
+            snapshot.at[dt, stock_id] = (dt_jiage, slot[2])
+            nw += (dt_jiage * slot[2])
+        snapshot.at[dt, 'Spare'] = stg.position.spare
+        snapshot.at[dt, 'stg_nw'] = nw
+    except Exception as e:
+        logging.info("Add SnapShot Error")
+        snapshot.drop([dt])
+
+
+def init_strategy(pid):
     stg_id = conf_dict['Backtest']['STG']
     if stg_id not in conf_dict['STG']:
         logging.error("No " + stg_id + " Settled in STG Seg.")
@@ -63,31 +82,15 @@ def init_strategy():
     f = importlib.import_module(conf_dict['STG'][stg_id]['Module_Path'])
     cls = getattr(f, conf_dict['STG'][stg_id]['Class_Name'])
     # 初始化实例
-    inst = cls(stg_id)
+    inst = cls(stg_id, pid)
     inst.position.set_trader(Backtest_Trader())
     return inst
 
 
-def add_snapshot(snapshot, stg, dt):
-    snapshot.loc[dt] = None
-    nw = stg.position.spare
-    for slot in stg.position.hold:
-        stock_id = slot[0]
-        if stock_id is None:
-            continue
-        price = stg.cache_tool.get(stock_id, conf_dict['Backtest']['Backtest_DB_NO'], True)
-        dt_jiage = price.loc[dt, 'close']
-        if stock_id not in snapshot.columns:
-            snapshot[stock_id] = ""
-        snapshot.at[dt, stock_id] = (dt_jiage, slot[2])
-        nw += (dt_jiage * slot[2])
-    snapshot.at[dt, 'Spare'] = stg.position.spare
-    snapshot.at[dt, 'stg_nw'] = nw
-
-
-def backtest(stg, pid=""):
+def backtest(pid=""):
     bt_start_date = conf_dict['Backtest']['Start_Date']
     bt_end_date = conf_dict['Backtest']['End_Date']
+    stg = init_strategy(pid)
     # 设置benchmark
     daily_benchmark = pandas.DataFrame()
     for bm in BenchMark:
@@ -98,9 +101,6 @@ def backtest(stg, pid=""):
         daily_benchmark[bm.name] = bmdf['jiage'] * factor
     daily_benchmark.set_index('dt', inplace=True)
     stg.cache_tool.set(BENCHMARK_KEY, daily_benchmark, COMMON_CACHE_ID, serialize=True)
-    # 重刷策略参数
-    if pid != "":
-        stg.reset_param(pid2param(pid))
     # 遍历所有回测交易日
     daily_snapshot = pandas.DataFrame(columns=['Spare', 'stg_nw'])
     bt_tds = stg.db_tool.get_trade_days(bt_start_date, bt_end_date)
@@ -120,17 +120,16 @@ if __name__ == '__main__':
     for opt, arg in opts:
         if opt == '--refresh-param-space':
             # 重刷参数空间分支
-            stg = init_strategy()
+            stg = init_strategy("")
             ps = stg.build_param_space()
             stg.db_tool.refresh_param_space(ps)
         elif opt == '--survey':
             # 调研分支
-            stg = init_strategy()
+            stg = init_strategy("")
             stg.survey()
         elif opt == '--single':
             # 单回测分支
-            stg = init_strategy()
-            backtest(stg, "")
+            backtest("")
         elif opt == '--search-param':
             # 搜参分支
             p_id = os.getpid()
