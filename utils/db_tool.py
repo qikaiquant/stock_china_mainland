@@ -84,6 +84,7 @@ class DBTool:
                 row["pcf_ratio2"]) + "," + str(row["dividend_ratio"]) + "," + str(row["free_cap"]) + "," + str(
                 row["free_market_cap"]) + "," + str(row["a_cap"]) + "," + str(row["a_market_cap"]) + ")")
             sql = sql.replace("nan", "NULL")
+            sql = sql.replace("None", "NULL")
             self._cursor.execute(sql)
             commit_count += 1
             if commit_count == 100:
