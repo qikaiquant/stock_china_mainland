@@ -55,6 +55,42 @@ class DBTool:
                 commit_count = 0
         self._conn.commit()
 
+    def get_valuation(self, stock_id, fields, start_dt=None, end_dt=None):
+        fields_str = "*"
+        if len(fields) != 0:
+            fields_str = ",".join(fields)
+        suffix = stockid2table(stock_id)
+        table_name = "quant_stock.valuation_daily_r" + str(suffix)
+        if not start_dt:
+            start_dt = datetime.strptime('2013-01-01', '%Y-%m-%d').date()
+        if not end_dt:
+            end_dt = datetime.today().date()
+        sql = "select " + fields_str + " from " + table_name + " where sid = \'" + stock_id + "\' and dt >= \'" + str(
+            start_dt) + "\' and dt <= \'" + str(end_dt) + "\' order by dt"
+        self._cursor.execute(sql)
+        res = self._cursor.fetchall()
+        return res
+
+    def insert_valuation(self, stock_id, valuation):
+        suffix = stockid2table(stock_id)
+        table_name = "quant_stock.valuation_daily_r" + str(suffix)
+        commit_count = 0
+        for _, row in valuation.iterrows():
+            sql = ('replace into ' + table_name + " values(\'" + stock_id + "\',\'" + str(row['day']) + "\'," + str(
+                row["pe_ratio"]) + "," + str(row["turnover_ratio"]) + "," + str(row["pb_ratio"]) + "," + str(
+                row["ps_ratio"]) + "," + str(row["pcf_ratio"]) + "," + str(row["capitalization"]) + "," + str(
+                row["market_cap"]) + "," + str(row["circulating_cap"]) + "," + str(
+                row["circulating_market_cap"]) + "," + str(row["pe_ratio_lyr"]) + "," + str(
+                row["pcf_ratio2"]) + "," + str(row["dividend_ratio"]) + "," + str(row["free_cap"]) + "," + str(
+                row["free_market_cap"]) + "," + str(row["a_cap"]) + "," + str(row["a_market_cap"]) + ")")
+            sql = sql.replace("nan", "NULL")
+            self._cursor.execute(sql)
+            commit_count += 1
+            if commit_count == 100:
+                self._conn.commit()
+                commit_count = 0
+        self._conn.commit()
+
     def refresh_trade_days(self, ds):
         # 先清空再插入，只支持全量操作
         self._clear_table("quant_stock.stock_trade_days")
@@ -109,16 +145,16 @@ class DBTool:
     def clear_tbf(self):
         self._clear_table("quant_stock_status.tbf_daily")
 
-    def insert_tbf(self, stock_id, tbf_list):
+    def insert_tbf(self, stock_id, tbf_type, tbf_list):
         if len(tbf_list) == 0:
             return
         sql = 'insert ignore into quant_stock_status.tbf_daily values(\'' + stock_id + '\',\'' + str(
-            tbf_list[0]) + '\',\'' + str(tbf_list[-1]) + '\')'
+            tbf_list[0]) + '\',\'' + str(tbf_list[-1]) + "\'," + str(tbf_type.value) + ')'
         self._cursor.execute(sql)
         self._conn.commit()
 
     def get_tbf(self, count=0):
-        sql = "select stock_id,start_date,end_date from quant_stock_status.tbf_daily"
+        sql = "select * from quant_stock_status.tbf_daily"
         if count > 0:
             sql += " limit " + str(count)
         self._cursor.execute(sql)
@@ -126,8 +162,9 @@ class DBTool:
         return res
 
     def remove_tbf(self, key_tuple):
-        sql = "delete from quant_stock_status.tbf_daily where stock_id=\'" + key_tuple[0] + "\'" + " and start_date=\'" + str(
-            key_tuple[1]) + "\'and end_date=\'" + str(key_tuple[2]) + "\'"
+        sql = "delete from quant_stock_status.tbf_daily where stock_id=\'" + key_tuple[
+            0] + "\'" + " and start_date=\'" + str(key_tuple[1]) + "\' and end_date=\'" + str(
+            key_tuple[2]) + "\' and type=" + str(key_tuple[3])
         self._cursor.execute(sql)
         self._conn.commit()
 

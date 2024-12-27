@@ -29,6 +29,11 @@ class PositionStatus(Enum):
     KEEP = auto()
 
 
+class ToBeFetchType(Enum):
+    PRICE = 0
+    VALUATION = 1
+
+
 # 策略结果Key
 RES_KEY_PREFIX = "RES_KEY:"
 # 退市日期前缀

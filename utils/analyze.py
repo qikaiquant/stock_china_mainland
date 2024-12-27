@@ -183,7 +183,7 @@ def single_analyze():
     cachetool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'],
                           conf_dict['Redis']['Passwd'])
     benchmark_res = pandas.DataFrame(cachetool.get(BENCHMARK_KEY, COMMON_CACHE_ID, serialize=True))
-    res_key = "RES_KEY:"
+    res_key = "RES_KEY:MACD:10_16_-1_29_2"
     stg_res = cachetool.get(res_key, COMMON_CACHE_ID, serialize=True)
     if len(stg_res) != len(benchmark_res):
         logging.error("Key[" + res_key + "] Error.PLS Check.")

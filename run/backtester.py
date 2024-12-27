@@ -129,7 +129,7 @@ if __name__ == '__main__':
             stg.survey()
         elif opt == '--single':
             # 单回测分支
-            backtest("")
+            backtest("10_16_-1_29_2")
         elif opt == '--search-param':
             # 搜参分支
             p_id = os.getpid()

@@ -9,7 +9,7 @@ import mplfinance as mpf
 import numpy
 import pandas
 import xlrd
-from jqdatasdk import auth, logout, get_price, get_query_count, get_extras
+from jqdatasdk import auth, logout, get_price, get_query_count, query, valuation, get_fundamentals, get_valuation
 
 sys.path.append(os.path.dirname(sys.path[0]))
 
@@ -181,4 +181,14 @@ class Son(Father):
 
 
 if __name__ == '__main__':
-    son = Son("aa", "bb")
+    auth(conf_dict['DataSource']['JK_User'], conf_dict['DataSource']['JK_Token'])
+    db_tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
+                     conf_dict['Mysql']['Passwd'])
+    stock_id = '000001.XSHE'
+    # q = query(valuation).filter(valuation.code == stock_id)
+    # df = get_fundamentals(q, '2024-12-23')
+    df = get_valuation(stock_id, "2024-12-25", "2024-12-25", [])
+    print(df.to_string())
+    # db_tool.insert_valuation(stock_id, df)
+    # 打印出总市值
+    logout()
