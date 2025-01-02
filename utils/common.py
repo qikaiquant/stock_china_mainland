@@ -32,6 +32,7 @@ class PositionStatus(Enum):
 class ToBeFetchType(Enum):
     PRICE = 0
     VALUATION = 1
+    ST = 2
 
 
 # 策略结果Key

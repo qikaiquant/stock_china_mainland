@@ -158,7 +158,6 @@ def scan_price():
 
 def scan_valuation():
     logging.info("Start Scan Valuation")
-    auth(JK_User, JK_Token)
     stocks = Stock_DB_Tool.get_stock_info(['stock_id', 'start_date', 'end_date'])
     for (stock_id, ipo_date, delist_date) in stocks:
         start_date = datetime.strptime('2013-01-01', '%Y-%m-%d').date()
@@ -174,7 +173,9 @@ def scan_valuation():
             start_date = ipo_date
         all_dt = Stock_DB_Tool.get_trade_days(start_date, end_date)
         fetched_dt = []
-        for (dt,) in Stock_DB_Tool.get_valuation(stock_id, ['dt'], start_date, end_date):
+        for (dt, mc) in Stock_DB_Tool.get_valuation_st(stock_id, ['dt', 'market_cap'], start_date, end_date):
+            if mc is None:
+                continue
             fetched_dt.append(dt)
         # 合并分段
         tbf_dt = []
@@ -185,8 +186,40 @@ def scan_valuation():
             Stock_DB_Tool.insert_tbf(stock_id, ToBeFetchType.VALUATION, tbf_dt)
             tbf_dt = []
         Stock_DB_Tool.insert_tbf(stock_id, ToBeFetchType.VALUATION, tbf_dt)
-    logout()
     logging.info("End Scan Valuation")
+
+
+def scan_st():
+    logging.info("Start Scan ST")
+    stocks = Stock_DB_Tool.get_stock_info(['stock_id', 'start_date', 'end_date'])
+    for (stock_id, ipo_date, delist_date) in stocks:
+        start_date = datetime.strptime('2013-01-01', '%Y-%m-%d').date()
+        end_date = datetime.today().date()
+        # 退市时间在2013年1月1日之前，不参考
+        if delist_date < start_date:
+            continue
+        # 已退市股票，以退市时间为准
+        if delist_date < end_date:
+            end_date = delist_date
+        # 上市时间晚于2013年1月1日，以上市时间为准
+        if ipo_date > start_date:
+            start_date = ipo_date
+        all_dt = Stock_DB_Tool.get_trade_days(start_date, end_date)
+        fetched_dt = []
+        for (dt, st) in Stock_DB_Tool.get_valuation_st(stock_id, ['dt', "st"], start_date, end_date):
+            if st is None:
+                continue
+            fetched_dt.append(dt)
+        # 合并分段
+        tbf_dt = []
+        for dt in all_dt:
+            if dt not in fetched_dt:
+                tbf_dt.append(dt)
+                continue
+            Stock_DB_Tool.insert_tbf(stock_id, ToBeFetchType.ST, tbf_dt)
+            tbf_dt = []
+        Stock_DB_Tool.insert_tbf(stock_id, ToBeFetchType.ST, tbf_dt)
+    logging.info("End Scan ST")
 
 
 def fetch_all():
@@ -205,6 +238,9 @@ def fetch_all():
         elif tbf_type == ToBeFetchType.VALUATION.value:
             pi = get_valuation(stock_id, start_date=start_date, end_date=end_data, fields=[])
             Stock_DB_Tool.insert_valuation(stock_id, pandas.DataFrame(pi))
+        elif tbf_type == ToBeFetchType.ST.value:
+            pi = get_extras('is_st', [stock_id], start_date=start_date, end_date=end_data)
+            Stock_DB_Tool.insert_st(stock_id, pandas.DataFrame(pi))
         Stock_DB_Tool.remove_tbf((stock_id, start_date, end_data, tbf_type))
         time.sleep(0.1)
     logout()
@@ -236,8 +272,11 @@ if __name__ == '__main__':
         elif opt == '--scan':
             # 获取待抓取的列表
             Stock_DB_Tool.clear_tbf()
+            # 扫行情，单独拎出来是因为将来可能改造成每日几次
             scan_price()
+            # 扫估值和st,daily
             scan_valuation()
+            scan_st()
         elif opt == '--fetch':
             # 抓取行情
             fetch_all()

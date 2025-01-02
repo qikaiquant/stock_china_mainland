@@ -1,4 +1,5 @@
 import pymysql as pms
+from pandas.core.dtypes.inference import is_re
 
 from utils.common import *
 
@@ -55,7 +56,7 @@ class DBTool:
                 commit_count = 0
         self._conn.commit()
 
-    def get_valuation(self, stock_id, fields, start_dt=None, end_dt=None):
+    def get_valuation_st(self, stock_id, fields, start_dt=None, end_dt=None):
         fields_str = "*"
         if len(fields) != 0:
             fields_str = ",".join(fields)
@@ -71,20 +72,39 @@ class DBTool:
         res = self._cursor.fetchall()
         return res
 
-    def insert_valuation(self, stock_id, valuation):
+    def insert_valuation(self, stock_id, valuation=None):
         suffix = stockid2table(stock_id)
         table_name = "quant_stock.valuation_daily_r" + str(suffix)
         commit_count = 0
         for _, row in valuation.iterrows():
-            sql = ('replace into ' + table_name + " values(\'" + stock_id + "\',\'" + str(row['day']) + "\'," + str(
+            sql = 'insert into ' + table_name + " values(\'" + stock_id + "\',\'" + str(row['day']) + "\'," + str(
                 row["pe_ratio"]) + "," + str(row["turnover_ratio"]) + "," + str(row["pb_ratio"]) + "," + str(
                 row["ps_ratio"]) + "," + str(row["pcf_ratio"]) + "," + str(row["capitalization"]) + "," + str(
                 row["market_cap"]) + "," + str(row["circulating_cap"]) + "," + str(
                 row["circulating_market_cap"]) + "," + str(row["pe_ratio_lyr"]) + "," + str(
                 row["pcf_ratio2"]) + "," + str(row["dividend_ratio"]) + "," + str(row["free_cap"]) + "," + str(
-                row["free_market_cap"]) + "," + str(row["a_cap"]) + "," + str(row["a_market_cap"]) + ")")
+                row["free_market_cap"]) + "," + str(row["a_cap"]) + "," + str(row["a_market_cap"]) + ", NULL)"
             sql = sql.replace("nan", "NULL")
             sql = sql.replace("None", "NULL")
+            self._cursor.execute(sql)
+            commit_count += 1
+            if commit_count == 100:
+                self._conn.commit()
+                commit_count = 0
+        self._conn.commit()
+
+    def insert_st(self, stock_id, st=None):
+        suffix = stockid2table(stock_id)
+        table_name = "quant_stock.valuation_daily_r" + str(suffix)
+        commit_count = 0
+        for index, row in st.iterrows():
+            dt = str(index).split()[0]
+            if row[stock_id] is True:
+                is_st = 1
+            else:
+                is_st = 0
+            sql = 'insert into ' + table_name + "(sid, dt, st) values(\'" + stock_id + "\',\'" + dt + "\'," + str(
+                is_st) + ")"
             self._cursor.execute(sql)
             commit_count += 1
             if commit_count == 100:
