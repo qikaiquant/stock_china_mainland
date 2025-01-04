@@ -272,9 +272,9 @@ if __name__ == '__main__':
         elif opt == '--scan':
             # 获取待抓取的列表
             Stock_DB_Tool.clear_tbf()
-            # 扫行情，单独拎出来是因为将来可能改造成每日几次
+            # 扫行情，单独拎出来是因为将来可能改造成分钟级
             scan_price()
-            # 扫估值和st,daily
+            # 扫估值和st,天级
             scan_valuation()
             scan_st()
         elif opt == '--fetch':

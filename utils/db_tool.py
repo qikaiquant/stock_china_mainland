@@ -77,13 +77,27 @@ class DBTool:
         table_name = "quant_stock.valuation_daily_r" + str(suffix)
         commit_count = 0
         for _, row in valuation.iterrows():
-            sql = 'insert into ' + table_name + " values(\'" + stock_id + "\',\'" + str(row['day']) + "\'," + str(
-                row["pe_ratio"]) + "," + str(row["turnover_ratio"]) + "," + str(row["pb_ratio"]) + "," + str(
-                row["ps_ratio"]) + "," + str(row["pcf_ratio"]) + "," + str(row["capitalization"]) + "," + str(
-                row["market_cap"]) + "," + str(row["circulating_cap"]) + "," + str(
+            sql = ('insert into ' + table_name + ("(sid, dt, pe_ratio, turnover_ratio, pb_ratio, ps_ratio, pcf_ratio, "
+                                                  "capitalization, market_cap, circulating_cap, circulating_market_cap, "
+                                                  "pe_ratio_lyr, pcf_ratio2, dividend_ratio, free_cap, free_market_cap, "
+                                                  "a_cap, a_market_cap)") + " values(\'" + stock_id + "\',\'" + str(
+                row['day']) + "\'," + str(row["pe_ratio"]) + "," + str(row["turnover_ratio"]) + "," + str(
+                row["pb_ratio"]) + "," + str(row["ps_ratio"]) + "," + str(row["pcf_ratio"]) + "," + str(
+                row["capitalization"]) + "," + str(row["market_cap"]) + "," + str(row["circulating_cap"]) + "," + str(
                 row["circulating_market_cap"]) + "," + str(row["pe_ratio_lyr"]) + "," + str(
                 row["pcf_ratio2"]) + "," + str(row["dividend_ratio"]) + "," + str(row["free_cap"]) + "," + str(
-                row["free_market_cap"]) + "," + str(row["a_cap"]) + "," + str(row["a_market_cap"]) + ", NULL)"
+                row["free_market_cap"]) + "," + str(row["a_cap"]) + "," + str(
+                row["a_market_cap"]) + ")" + " ON  DUPLICATE  KEY update pe_ratio=" + str(row["pe_ratio"]) +
+                   ",turnover_ratio=" + str(row["turnover_ratio"]) + ",pb_ratio=" + str(
+                        row["pb_ratio"]) + ",ps_ratio=" + str(row["ps_ratio"]) + ",pcf_ratio=" + str(
+                        row["pcf_ratio"]) + ",capitalization=" + str(row["capitalization"]) + ",market_cap=" + str(
+                        row["market_cap"]) + ",circulating_cap=" + str(
+                        row["circulating_cap"]) + ",circulating_market_cap=" + str(
+                        row["circulating_market_cap"]) + ",pe_ratio_lyr=" + str(
+                        row["pe_ratio_lyr"]) + ",pcf_ratio2=" + str(row["pcf_ratio2"]) + ",dividend_ratio=" + str(
+                        row["dividend_ratio"]) + ",free_cap=" + str(row["free_cap"]) + ",free_market_cap=" + str(
+                        row["free_market_cap"]) + ",a_cap=" + str(row["a_cap"]) + ",a_market_cap=" + str(
+                        row["a_market_cap"]))
             sql = sql.replace("nan", "NULL")
             sql = sql.replace("None", "NULL")
             self._cursor.execute(sql)
@@ -104,7 +118,7 @@ class DBTool:
             else:
                 is_st = 0
             sql = 'insert into ' + table_name + "(sid, dt, st) values(\'" + stock_id + "\',\'" + dt + "\'," + str(
-                is_st) + ")"
+                is_st) + ") ON DUPLICATE KEY update st=" + str(is_st)
             self._cursor.execute(sql)
             commit_count += 1
             if commit_count == 100:
