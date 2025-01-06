@@ -95,6 +95,12 @@ def fetch_indicator():
     logging.info("Start Get Indicator")
     stocks = Stock_DB_Tool.get_stock_info(['stock_id', 'start_date', 'end_date'])
     for (stock_id, ipo_date, delist_date) in stocks:
+        # 获取已在库的quarter数据
+        fetched_quarter = set()
+        res = Stock_DB_Tool.get_indicator(stock_id, ['sid', 'quarter'])
+        for (_, q) in res:
+            fetched_quarter.add(q)
+        # 获取待抓取的quarter数据
         start_date = datetime.strptime('2013-01-01', '%Y-%m-%d').date()
         end_date = datetime.today().date()
         # 退市时间在2013年1月1日之前，不参考
@@ -107,24 +113,31 @@ def fetch_indicator():
         if ipo_date > start_date:
             start_date = ipo_date
         # 获取上市期间的季度数
-        fetch_quarter = []
+        tbf_quarter = []
         if start_date.year == end_date.year:
             for j in range(get_quarter(start_date), get_quarter(end_date)):
-                fetch_quarter.append(10 * start_date.year + j)
+                tbf_quarter.append((start_date.year, j))
         else:
             for i in range(start_date.year, end_date.year + 1):
                 if i == start_date.year:
                     q = get_quarter(start_date)
                     for j in range(q, 5):
-                        fetch_quarter.append(10 * i + j)
+                        tbf_quarter.append((i, j))
                 elif i == end_date.year:
                     q = get_quarter(end_date)
                     for j in range(1, q):
-                        fetch_quarter.append(10 * i + j)
+                        tbf_quarter.append((i, j))
                 else:
                     for j in range(1, 5):
-                        fetch_quarter.append(10 * i + j)
-        print(fetch_quarter)
+                        tbf_quarter.append((i, j))
+        # 抓取不在库的数据
+        for (year, quarter) in tbf_quarter:
+            if (10 * year + quarter) in fetched_quarter:
+                continue
+            q = query(indicator).filter(indicator.code == stock_id)
+            df = get_fundamentals(q, statDate=str(year) + "q" + str(quarter))
+            Stock_DB_Tool.insert_indicator(stock_id, df)
+            break
         break
     logging.info("End Get Indicator")
 
@@ -260,7 +273,7 @@ def scan_st():
     logging.info("End Scan ST")
 
 
-def fetch_regular():
+def fetch_daily():
     logging.info("Start Fetch All")
     # 获取待抓取列表
     tfb_list = Stock_DB_Tool.get_tbf()
@@ -321,7 +334,7 @@ if __name__ == '__main__':
             scan_st()
         elif opt == '--fetch_daily':
             # 日常抓取
-            fetch_regular()
+            fetch_daily()
         else:
             logging.error("Usage Error")
             sys.exit(1)

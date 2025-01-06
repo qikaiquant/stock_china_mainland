@@ -55,6 +55,9 @@ class DBTool:
                 commit_count = 0
         self._conn.commit()
 
+    def insert_indicator(self, stock_id, indicator):
+        pass
+
     def get_indicator(self, stock_id, fields, start_q=None, end_q=None):
         fields_str = "*"
         if len(fields) != 0:
@@ -65,8 +68,8 @@ class DBTool:
         if not end_q:
             now = datetime.today().date()
             end_q = now.year * 10 + get_quarter(now)
-        sql = "select " + fields_str + " from " + table_name + " where sid = \'" + stock_id + "\' and quart >= \'" + str(
-            start_q) + "\' and dt <= \'" + str(end_q) + "\' order by quart"
+        sql = "select " + fields_str + " from " + table_name + " where sid = \'" + stock_id + "\' and quarter >= \'" + str(
+            start_q) + "\' and quarter <= \'" + str(end_q) + "\' order by quarter"
         self._cursor.execute(sql)
         res = self._cursor.fetchall()
         return res
