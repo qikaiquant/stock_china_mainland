@@ -102,6 +102,17 @@ def stockid2table(stockid, base=10):
     return int(hc[-4:], 16) % base
 
 
+def get_quarter(dt):
+    if 1 <= dt.month <= 3:
+        return 1
+    elif 4 <= dt.month <= 6:
+        return 2
+    elif 7 <= dt.month <= 9:
+        return 3
+    else:
+        return 4
+
+
 def get_preN_tds(all_trade_days, cur_day, days):
     res = []
     for i in range(1, len(all_trade_days)):

@@ -1,5 +1,4 @@
 import pymysql as pms
-from pandas.core.dtypes.inference import is_re
 
 from utils.common import *
 
@@ -55,6 +54,22 @@ class DBTool:
                 self._conn.commit()
                 commit_count = 0
         self._conn.commit()
+
+    def get_indicator(self, stock_id, fields, start_q=None, end_q=None):
+        fields_str = "*"
+        if len(fields) != 0:
+            fields_str = ",".join(fields)
+        table_name = "quant_stock.indicator_quarterly"
+        if not start_q:
+            start_q = 20131
+        if not end_q:
+            now = datetime.today().date()
+            end_q = now.year * 10 + get_quarter(now)
+        sql = "select " + fields_str + " from " + table_name + " where sid = \'" + stock_id + "\' and quart >= \'" + str(
+            start_q) + "\' and dt <= \'" + str(end_q) + "\' order by quart"
+        self._cursor.execute(sql)
+        res = self._cursor.fetchall()
+        return res
 
     def get_valuation_st(self, stock_id, fields, start_dt=None, end_dt=None):
         fields_str = "*"

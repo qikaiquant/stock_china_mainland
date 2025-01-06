@@ -25,13 +25,13 @@ def check_spare():
     logout()
 
 
-def get_trade_days():
+def fetch_trade_days():
     auth(JK_User, JK_Token)
     Stock_DB_Tool.refresh_trade_days(get_all_trade_days())
     logout()
 
 
-def get_sw_class():
+def fetch_sw_class():
     f = xlrd.open_workbook(conf_dict["DataSource"]["SW_Industry_Code_File"])
     t = f.sheets()[0]
     res = []
@@ -74,7 +74,7 @@ def _attach_ext_info(stock_info):
             ext_dict["SW_Code"] = stock_industry_map[pure_id]
 
 
-def get_all_stock_info():
+def fetch_all_stock_info():
     logging.info("Start Get All Stock Info")
     auth(JK_User, JK_Token)
     stock_info = {}
@@ -89,6 +89,44 @@ def get_all_stock_info():
     Stock_DB_Tool.refresh_stock_info(stock_info)
     logout()
     logging.info("End Get All Stock Info")
+
+
+def fetch_indicator():
+    logging.info("Start Get Indicator")
+    stocks = Stock_DB_Tool.get_stock_info(['stock_id', 'start_date', 'end_date'])
+    for (stock_id, ipo_date, delist_date) in stocks:
+        start_date = datetime.strptime('2013-01-01', '%Y-%m-%d').date()
+        end_date = datetime.today().date()
+        # 退市时间在2013年1月1日之前，不参考
+        if delist_date < start_date:
+            continue
+        # 已退市股票，以退市时间为准
+        if delist_date < end_date:
+            end_date = delist_date
+        # 上市时间晚于2013年1月1日，以上市时间为准
+        if ipo_date > start_date:
+            start_date = ipo_date
+        # 获取上市期间的季度数
+        fetch_quarter = []
+        if start_date.year == end_date.year:
+            for j in range(get_quarter(start_date), get_quarter(end_date)):
+                fetch_quarter.append(10 * start_date.year + j)
+        else:
+            for i in range(start_date.year, end_date.year + 1):
+                if i == start_date.year:
+                    q = get_quarter(start_date)
+                    for j in range(q, 5):
+                        fetch_quarter.append(10 * i + j)
+                elif i == end_date.year:
+                    q = get_quarter(end_date)
+                    for j in range(1, q):
+                        fetch_quarter.append(10 * i + j)
+                else:
+                    for j in range(1, 5):
+                        fetch_quarter.append(10 * i + j)
+        print(fetch_quarter)
+        break
+    logging.info("End Get Indicator")
 
 
 def _check_fq(stock_id, fetched_dt):
@@ -222,7 +260,7 @@ def scan_st():
     logging.info("End Scan ST")
 
 
-def fetch_all():
+def fetch_regular():
     logging.info("Start Fetch All")
     # 获取待抓取列表
     tfb_list = Stock_DB_Tool.get_tbf()
@@ -256,20 +294,24 @@ if __name__ == '__main__':
     JK_Token = conf_dict['DataSource']['JK_Token']
     # 行情抓取相关配置
     opts, args = getopt.getopt(sys.argv[1:], "",
-                               longopts=["spare", "trade_days", "sw_class", "all_stock_info", "scan", "fetch"])
+                               longopts=["spare", "trade_days", "sw_class", "all_stock_info", "indicator", "scan_daily",
+                                         "fetch_daily"])
     for opt, _ in opts:
         if opt == '--spare':
             check_spare()
         elif opt == '--trade_days':
             # 获取所有交易日，基本不用跑
-            get_trade_days()
+            fetch_trade_days()
         elif opt == '--sw_class':
             # 获取申万分类，基本不用跑
-            get_sw_class()
+            fetch_sw_class()
         elif opt == '--all_stock_info':
             # 获取所有股票的基本信息
-            get_all_stock_info()
-        elif opt == '--scan':
+            fetch_all_stock_info()
+        elif opt == '--indicator':
+            # 获取季度财报信息，全量，基本不用跑
+            fetch_indicator()
+        elif opt == '--scan_daily':
             # 获取待抓取的列表
             Stock_DB_Tool.clear_tbf()
             # 扫行情，单独拎出来是因为将来可能改造成分钟级
@@ -277,9 +319,9 @@ if __name__ == '__main__':
             # 扫估值和st,天级
             scan_valuation()
             scan_st()
-        elif opt == '--fetch':
-            # 抓取行情
-            fetch_all()
+        elif opt == '--fetch_daily':
+            # 日常抓取
+            fetch_regular()
         else:
             logging.error("Usage Error")
             sys.exit(1)

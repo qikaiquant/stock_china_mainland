@@ -69,7 +69,7 @@ class SWCWarmer(BaseWarmer):
         self.cache_tool.set("SWC_MAP", swc_map, self.cache_no, serialize=True)
         logging.info("Load SW Class Mapping Successfully.")
         # 计算末级分类下的P1,P2和STD
-        trade_days = self.db_tool.get_trade_days(start_date=self.warm_start_date, end_date=self.warm_end_date)
+        trade_days = self.db_tool.fetch_trade_days(start_date=self.warm_start_date, end_date=self.warm_end_date)
         for swc, stock_ids in swc_map.items():
             res = self._build_cluster_data(stock_ids, trade_days)
             key = "SWC:" + swc

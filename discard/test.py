@@ -9,8 +9,7 @@ import mplfinance as mpf
 import numpy
 import pandas
 import xlrd
-from jqdatasdk import auth, logout, get_price, get_query_count, query, valuation, get_fundamentals, get_valuation, \
-    get_extras
+from jqdatasdk import auth, logout, get_price, get_query_count, query, indicator, get_fundamentals
 
 sys.path.append(os.path.dirname(sys.path[0]))
 
@@ -192,9 +191,9 @@ if __name__ == '__main__':
     # print(df.to_string())
     # db_tool.insert_valuation(stock_id, df)
     # 打印出总市值
-    df = get_extras('is_st', [stock_id], start_date="2024-12-01", end_date="2024-12-20")
-    for (index, row) in df.iterrows():
-        print(index)
-        print(row[stock_id])
+
+    q = query(indicator).filter(indicator.code == '688767.XSHG')
+    df = get_fundamentals(q, statDate="2023q4")
+    print(df.to_string())
     print(get_query_count())
     logout()
