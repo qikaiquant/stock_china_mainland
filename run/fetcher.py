@@ -134,7 +134,6 @@ def fetch_indicator():
         # 抓取不在库的数据
         for (year, quarter) in tbf_quarter:
             yq = 10 * year + quarter
-            logging.info(stock_id + ":" + str(yq))
             if yq in fetched_quarter:
                 continue
             q = query(indicator).filter(indicator.code == stock_id)
@@ -144,7 +143,7 @@ def fetch_indicator():
     logging.info("End Get Indicator")
 
 
-def fetch_daily():
+def fetch_price_valuation_st():
     logging.info("Start Fetch Daily")
     auth(JK_User, JK_Token)
     # 抓取行情、估值和st
@@ -332,7 +331,7 @@ if __name__ == '__main__':
             scan_st()
         elif opt == '--fetch_daily':
             # 抓取行情、估值和ST
-            fetch_daily()
+            fetch_price_valuation_st()
             # 抓取财务指标
             fetch_indicator()
         else:
