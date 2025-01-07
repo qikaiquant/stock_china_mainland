@@ -93,6 +93,7 @@ def fetch_all_stock_info():
 
 def fetch_indicator():
     logging.info("Start Get Indicator")
+    auth(JK_User, JK_Token)
     stocks = Stock_DB_Tool.get_stock_info(['stock_id', 'start_date', 'end_date'])
     for (stock_id, ipo_date, delist_date) in stocks:
         # 获取已在库的quarter数据
@@ -132,14 +133,39 @@ def fetch_indicator():
                         tbf_quarter.append((i, j))
         # 抓取不在库的数据
         for (year, quarter) in tbf_quarter:
-            if (10 * year + quarter) in fetched_quarter:
+            yq = 10 * year + quarter
+            logging.info(stock_id + ":" + str(yq))
+            if yq in fetched_quarter:
                 continue
             q = query(indicator).filter(indicator.code == stock_id)
             df = get_fundamentals(q, statDate=str(year) + "q" + str(quarter))
-            Stock_DB_Tool.insert_indicator(stock_id, df)
-            break
-        break
+            Stock_DB_Tool.insert_indicator(stock_id, df, yq)
+    logout()
     logging.info("End Get Indicator")
+
+
+def fetch_daily():
+    logging.info("Start Fetch Daily")
+    auth(JK_User, JK_Token)
+    # 抓取行情、估值和st
+    tfb_list = Stock_DB_Tool.get_tbf()
+    for (stock_id, start_date, end_data, tbf_type) in tfb_list:
+        logging.debug("Will fetch " + stock_id + ". Spare is " + str(get_query_count()))
+        if tbf_type == ToBeFetchType.PRICE.value:
+            pi = get_price(stock_id, end_date=end_data, start_date=start_date, frequency='daily',
+                           fields=['open', 'close', 'low', 'high', 'volume', 'money', 'factor', 'high_limit',
+                                   'low_limit', 'avg', 'pre_close', 'paused'])
+            Stock_DB_Tool.insert_price(stock_id, pandas.DataFrame(pi))
+        elif tbf_type == ToBeFetchType.VALUATION.value:
+            pi = get_valuation(stock_id, start_date=start_date, end_date=end_data, fields=[])
+            Stock_DB_Tool.insert_valuation(stock_id, pandas.DataFrame(pi))
+        elif tbf_type == ToBeFetchType.ST.value:
+            pi = get_extras('is_st', [stock_id], start_date=start_date, end_date=end_data)
+            Stock_DB_Tool.insert_st(stock_id, pandas.DataFrame(pi))
+        Stock_DB_Tool.remove_tbf((stock_id, start_date, end_data, tbf_type))
+        time.sleep(0.1)
+    logout()
+    logging.info("End Fetch Daily")
 
 
 def _check_fq(stock_id, fetched_dt):
@@ -273,31 +299,6 @@ def scan_st():
     logging.info("End Scan ST")
 
 
-def fetch_daily():
-    logging.info("Start Fetch All")
-    # 获取待抓取列表
-    tfb_list = Stock_DB_Tool.get_tbf()
-    # 抓取并入库、修改状态
-    auth(JK_User, JK_Token)
-    for (stock_id, start_date, end_data, tbf_type) in tfb_list:
-        logging.debug("Will fetch " + stock_id + ". Spare is " + str(get_query_count()))
-        if tbf_type == ToBeFetchType.PRICE.value:
-            pi = get_price(stock_id, end_date=end_data, start_date=start_date, frequency='daily',
-                           fields=['open', 'close', 'low', 'high', 'volume', 'money', 'factor', 'high_limit',
-                                   'low_limit', 'avg', 'pre_close', 'paused'])
-            Stock_DB_Tool.insert_price(stock_id, pandas.DataFrame(pi))
-        elif tbf_type == ToBeFetchType.VALUATION.value:
-            pi = get_valuation(stock_id, start_date=start_date, end_date=end_data, fields=[])
-            Stock_DB_Tool.insert_valuation(stock_id, pandas.DataFrame(pi))
-        elif tbf_type == ToBeFetchType.ST.value:
-            pi = get_extras('is_st', [stock_id], start_date=start_date, end_date=end_data)
-            Stock_DB_Tool.insert_st(stock_id, pandas.DataFrame(pi))
-        Stock_DB_Tool.remove_tbf((stock_id, start_date, end_data, tbf_type))
-        time.sleep(0.1)
-    logout()
-    logging.info("End Fetch All")
-
-
 if __name__ == '__main__':
     # 初始化数据库
     Stock_DB_Tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
@@ -307,7 +308,7 @@ if __name__ == '__main__':
     JK_Token = conf_dict['DataSource']['JK_Token']
     # 行情抓取相关配置
     opts, args = getopt.getopt(sys.argv[1:], "",
-                               longopts=["spare", "trade_days", "sw_class", "all_stock_info", "indicator", "scan_daily",
+                               longopts=["spare", "trade_days", "sw_class", "all_stock_info", "scan_daily",
                                          "fetch_daily"])
     for opt, _ in opts:
         if opt == '--spare':
@@ -321,9 +322,6 @@ if __name__ == '__main__':
         elif opt == '--all_stock_info':
             # 获取所有股票的基本信息
             fetch_all_stock_info()
-        elif opt == '--indicator':
-            # 获取季度财报信息，全量，基本不用跑
-            fetch_indicator()
         elif opt == '--scan_daily':
             # 获取待抓取的列表
             Stock_DB_Tool.clear_tbf()
@@ -333,8 +331,10 @@ if __name__ == '__main__':
             scan_valuation()
             scan_st()
         elif opt == '--fetch_daily':
-            # 日常抓取
+            # 抓取行情、估值和ST
             fetch_daily()
+            # 抓取财务指标
+            fetch_indicator()
         else:
             logging.error("Usage Error")
             sys.exit(1)

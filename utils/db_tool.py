@@ -1,4 +1,5 @@
 import pymysql as pms
+from sqlalchemy.testing.plugin.plugin_base import logging
 
 from utils.common import *
 
@@ -55,8 +56,39 @@ class DBTool:
                 commit_count = 0
         self._conn.commit()
 
-    def insert_indicator(self, stock_id, indicator):
-        pass
+    def insert_indicator(self, stock_id, indicator, quarter):
+        if indicator.shape[0] == 0:
+            return
+        logging.info(stock_id + " : New update of " + str(quarter))
+        row = indicator.loc[0]
+        sql = "replace into quant_stock.indicator_quarterly values(\'" + stock_id + "\'," + str(quarter) + ",\'" + str(
+            row["pubDate"]) + "\'," + str(row["eps"]) + "," + str(row["adjusted_profit"]) + "," + str(
+            row["operating_profit"]) + "," + str(
+            row["value_change_profit"]) + "," + str(row["roe"]) + "," + str(
+            row["inc_return"]) + "," + str(
+            row["roa"]) + "," + str(row["net_profit_margin"]) + "," + str(
+            row["gross_profit_margin"]) + "," + str(
+            row["expense_to_total_revenue"]) + "," + str(
+            row["operation_profit_to_total_revenue"]) + "," + str(
+            row["net_profit_to_total_revenue"]) + "," + str(
+            row["operating_expense_to_total_revenue"]) + "," + str(
+            row["ga_expense_to_total_revenue"]) + "," + str(
+            row["financing_expense_to_total_revenue"]) + "," + str(
+            row["operating_profit_to_profit"]) + "," + str(row["invesment_profit_to_profit"]) + "," + str(
+            row["adjusted_profit_to_profit"]) + "," + str(
+            row["goods_sale_and_service_to_revenue"]) + "," + str(row["ocf_to_revenue"]) + "," + str(
+            row["ocf_to_operating_profit"]) + "," + str(
+            row["inc_total_revenue_year_on_year"]) + "," + str(row["inc_total_revenue_annual"]) + "," + str(
+            row["inc_revenue_year_on_year"]) + "," + str(
+            row["inc_revenue_annual"]) + "," + str(row["inc_operation_profit_year_on_year"]) + "," + str(
+            row["inc_operation_profit_annual"]) + "," + str(
+            row["inc_net_profit_year_on_year"]) + "," + str(row["inc_net_profit_annual"]) + "," + str(
+            row["inc_net_profit_to_shareholders_year_on_year"]) + "," + str(
+            row["inc_net_profit_to_shareholders_annual"]) + ")"
+        sql = sql.replace("nan", "NULL")
+        sql = sql.replace("None", "NULL")
+        self._cursor.execute(sql)
+        self._conn.commit()
 
     def get_indicator(self, stock_id, fields, start_q=None, end_q=None):
         fields_str = "*"
