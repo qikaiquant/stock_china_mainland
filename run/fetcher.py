@@ -151,7 +151,7 @@ def fetch_price_valuation_st():
     for (stock_id, start_date, end_data, tbf_type) in tfb_list:
         logging.debug("Will fetch " + stock_id + ". Spare is " + str(get_query_count()))
         if tbf_type == ToBeFetchType.PRICE.value:
-            pi = get_price(stock_id, end_date=end_data, start_date=start_date, frequency='daily',
+            pi = get_price(stock_id, start_date=start_date, end_date=end_data, frequency='daily',
                            fields=['open', 'close', 'low', 'high', 'volume', 'money', 'factor', 'high_limit',
                                    'low_limit', 'avg', 'pre_close', 'paused'])
             Stock_DB_Tool.insert_price(stock_id, pandas.DataFrame(pi))
@@ -236,6 +236,8 @@ def scan_valuation():
     logging.info("Start Scan Valuation")
     stocks = Stock_DB_Tool.get_stock_info(['stock_id', 'start_date', 'end_date'])
     for (stock_id, ipo_date, delist_date) in stocks:
+        if stock_id == "000300.XSHG":
+            continue
         start_date = datetime.strptime('2013-01-01', '%Y-%m-%d').date()
         end_date = datetime.today().date()
         # 退市时间在2013年1月1日之前，不参考
@@ -269,6 +271,8 @@ def scan_st():
     logging.info("Start Scan ST")
     stocks = Stock_DB_Tool.get_stock_info(['stock_id', 'start_date', 'end_date'])
     for (stock_id, ipo_date, delist_date) in stocks:
+        if stock_id == "000300.XSHG":
+            continue
         start_date = datetime.strptime('2013-01-01', '%Y-%m-%d').date()
         end_date = datetime.today().date()
         # 退市时间在2013年1月1日之前，不参考

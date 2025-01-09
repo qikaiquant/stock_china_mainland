@@ -15,6 +15,13 @@ class DBTool:
         self._cursor.execute(sql)
         self._conn.commit()
 
+    def run_raw_sql(self, sql, has_return=True):
+        self._cursor.execute(sql)
+        if has_return:
+            return self._cursor.fetchall()
+        else:
+            self._conn.commit()
+
     def get_price(self, stock_id, fields, start_dt=None, end_dt=None):
         fields_str = "*"
         if len(fields) != 0:

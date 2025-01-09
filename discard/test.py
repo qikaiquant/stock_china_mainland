@@ -9,7 +9,8 @@ import mplfinance as mpf
 import numpy
 import pandas
 import xlrd
-from jqdatasdk import auth, logout, get_price, get_query_count, query, indicator, get_fundamentals
+from jqdatasdk import auth, logout, get_price, get_query_count, get_index_stocks, get_valuation, query, indicator, \
+    get_fundamentals
 
 sys.path.append(os.path.dirname(sys.path[0]))
 
@@ -180,20 +181,37 @@ class Son(Father):
         print("Son:" + bb)
 
 
-if __name__ == '__main__':
-    auth(conf_dict['DataSource']['JK_User'], conf_dict['DataSource']['JK_Token'])
+def mysql_float2double():
     db_tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
                      conf_dict['Mysql']['Passwd'])
-    stock_id = '000001.XSHE'
-    # q = query(valuation).filter(valuation.code == stock_id)
-    # df = get_fundamentals(q, '2024-12-23')
-    # df = get_valuation(stock_id, "2024-12-25", "2024-12-25", [])
-    # print(df.to_string())
-    # db_tool.insert_valuation(stock_id, df)
-    # 打印出总市值
+    sql = "select TABLE_NAME from information_schema.TABLES where table_schema=\'quant_stock\'"
+    res = db_tool.run_raw_sql(sql)
+    tables = []
+    for (atn) in res:
+        name = atn[0]
+        if name.startswith("price") or name.startswith("valuation"):
+            tables.append(name)
+    for t in tables:
+        print(t)
+        sql = ("select column_name, data_type from information_schema.columns where table_schema='quant_stock' "
+               "and table_name=\'") + t + "\'"
+        res = db_tool.run_raw_sql(sql)
+        for (column, dtype) in res:
+            if dtype == "float":
+                modify_sql = 'alter table quant_stock.' + t + " modify " + column + ' double'
+                db_tool.run_raw_sql(modify_sql, False)
 
-    q = query(indicator).filter(indicator.code == '688767.XSHG')
-    df = get_fundamentals(q, statDate="2023q4")
-    print(df.to_string())
-    print(get_query_count())
+
+def fetch_jq_data():
+    db_tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
+                     conf_dict['Mysql']['Passwd'])
+    auth(conf_dict['DataSource']['JK_User'], conf_dict['DataSource']['JK_Token'])
+    # q = query(indicator).filter(indicator.code == "002269.XSHE")
+    # df = get_fundamentals(q, statDate="2024q2")
+    df = get_valuation("000300.XSHG", start_date="2024-12-04", end_date="2024-12-04", fields=[])
+    print(df)
     logout()
+
+
+if __name__ == '__main__':
+    fetch_jq_data()
