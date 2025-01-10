@@ -39,14 +39,13 @@ class ToBeFetchType(Enum):
 RES_KEY_PREFIX = "RES_KEY:"
 # 退市日期前缀
 DELIST_PRE = "DELIST:"
-# 基准结果Key
-BENCHMARK_KEY = "BENCHMARK_KEY"
 # 调研用的随机Stock ID
 RAND_STOCK = 'RAND_STOCK'
-
-
-class BenchMark(Enum):
-    HS300 = "000300.XSHG"  # 沪深300
+# BenchMark
+# 基准结果Key
+BENCHMARK_KEY = "BENCHMARK_KEY"
+##000300.XSHG：沪深300
+BENCH_MARK = ["000300.XSHG"]
 
 
 def _init_logger():

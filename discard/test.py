@@ -214,4 +214,4 @@ def fetch_jq_data():
 
 
 if __name__ == '__main__':
-    fetch_jq_data()
+    pass

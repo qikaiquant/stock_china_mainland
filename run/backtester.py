@@ -5,7 +5,6 @@ import signal
 import sys
 
 import pandas
-from sqlalchemy.testing.plugin.plugin_base import logging
 
 sys.path.append(os.path.dirname(sys.path[0]))
 
@@ -93,12 +92,12 @@ def backtest(pid=""):
     stg = init_strategy(pid)
     # 设置benchmark
     daily_benchmark = pandas.DataFrame()
-    for bm in BenchMark:
-        res = stg.db_tool.get_price(bm.value, ['dt', 'close'], bt_start_date, bt_end_date)
+    for bm in BENCH_MARK:
+        res = stg.db_tool.get_price(bm, ['dt', 'close'], bt_start_date, bt_end_date)
         factor = float(conf_dict['STG']['Base']['TotalBudget'] / res[0][1])
         bmdf = pandas.DataFrame(res, columns=['dt', 'jiage'])
         daily_benchmark['dt'] = bmdf['dt']
-        daily_benchmark[bm.name] = bmdf['jiage'] * factor
+        daily_benchmark[bm] = bmdf['jiage'] * factor
     daily_benchmark.set_index('dt', inplace=True)
     stg.cache_tool.set(BENCHMARK_KEY, daily_benchmark, COMMON_CACHE_ID, serialize=True)
     # 遍历所有回测交易日

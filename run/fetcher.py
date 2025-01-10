@@ -236,7 +236,7 @@ def scan_valuation():
     logging.info("Start Scan Valuation")
     stocks = Stock_DB_Tool.get_stock_info(['stock_id', 'start_date', 'end_date'])
     for (stock_id, ipo_date, delist_date) in stocks:
-        if stock_id == "000300.XSHG":
+        if stock_id in BENCH_MARK:
             continue
         start_date = datetime.strptime('2013-01-01', '%Y-%m-%d').date()
         end_date = datetime.today().date()
@@ -271,7 +271,7 @@ def scan_st():
     logging.info("Start Scan ST")
     stocks = Stock_DB_Tool.get_stock_info(['stock_id', 'start_date', 'end_date'])
     for (stock_id, ipo_date, delist_date) in stocks:
-        if stock_id == "000300.XSHG":
+        if stock_id in BENCH_MARK:
             continue
         start_date = datetime.strptime('2013-01-01', '%Y-%m-%d').date()
         end_date = datetime.today().date()
