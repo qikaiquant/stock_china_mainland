@@ -1,4 +1,5 @@
 import getopt
+import math
 import os
 import random
 import sys
@@ -186,7 +187,7 @@ def _check_fq(stock_id, fetched_dt):
         jk_res = get_price(stock_id, end_date=dt, count=1, frequency='daily', fields=['close'])
         db_close = db_res[0][0]
         jk_close = jk_res.loc[str(dt), "close"]
-        if db_close != jk_close:
+        if not math.isclose(db_close, jk_close, rel_tol=1e-04):
             logging.info(
                 stock_id + "[" + str(dt) + "]Close Price DIFF:[DB]" + str(db_close) + " vs. [JK]" + str(jk_close))
             need_refresh = True

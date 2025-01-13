@@ -1,4 +1,5 @@
 import abc
+import math
 import os
 import sys
 import time
@@ -9,8 +10,7 @@ import mplfinance as mpf
 import numpy
 import pandas
 import xlrd
-from jqdatasdk import auth, logout, get_price, get_query_count, get_index_stocks, get_valuation, query, indicator, \
-    get_fundamentals
+from jqdatasdk import auth, logout, get_price, get_query_count, get_extras
 
 sys.path.append(os.path.dirname(sys.path[0]))
 
@@ -208,10 +208,40 @@ def fetch_jq_data():
     auth(conf_dict['DataSource']['JK_User'], conf_dict['DataSource']['JK_Token'])
     # q = query(indicator).filter(indicator.code == "002269.XSHE")
     # df = get_fundamentals(q, statDate="2024q2")
-    df = get_valuation("000300.XSHG", start_date="2024-12-04", end_date="2024-12-04", fields=[])
-    print(df)
+    pi = get_extras('is_st', ["000005.XSHE"], start_date="2021-04-20", end_date="2021-05-25")
+    print(pi.to_string())
+    db_tool.insert_st("000005.XSHE", pi)
+    print(get_query_count())
     logout()
 
 
+def add_dict(d, key, value):
+    if key not in d:
+        d[key] = [value]
+    else:
+        d[key].append(value)
+
+
+def diff_scan_result():
+    db_tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
+                     conf_dict['Mysql']['Passwd'])
+    sql = "select * from quant_stock_status.tbf_daily"
+    res = db_tool.run_raw_sql(sql, True)
+    price_dict = {}
+    valuation_dict = {}
+    st_dict = {}
+    for (sid, sdt, edt, t) in res:
+        if t == ToBeFetchType.PRICE.value:
+            add_dict(price_dict, sid, (sdt, edt))
+        elif t == ToBeFetchType.VALUATION.value:
+            add_dict(valuation_dict, sid, (sdt, edt))
+        else:
+            add_dict(st_dict, sid, (sdt, edt))
+    # diff price和valuation
+    for (k, v) in st_dict.items():
+        if k not in valuation_dict.keys():
+            print(k, v)
+
+
 if __name__ == '__main__':
-    pass
+    diff_scan_result()

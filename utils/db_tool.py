@@ -170,7 +170,7 @@ class DBTool:
         commit_count = 0
         for index, row in st.iterrows():
             dt = str(index).split()[0]
-            if row[stock_id] is True:
+            if bool(row[stock_id]) is True:
                 is_st = 1
             else:
                 is_st = 0
