@@ -42,10 +42,17 @@
       "DB_NO": 0,
       "Adhesion_Period": 12,
       "Adhesion_Cross_Num": 3
+    },
+    "TJMG": {
+      "Module_Path": "strategy.tjmg_strategy",
+      "Class_Name": "TJMGStrategy",
+      "Warm_Module_Path": "warm.warmup",
+      "Warm_Class_Name": "TJMGWarmer",
+      "DB_NO": 1
     }
   },
   "Backtest": {
-    "STG": "MACD",
+    "STG": "TJMG",
     "Start_Date": "2020-06-10",
     "End_Date": "2024-12-10",
     "Risk_Free_Rate": 0.026,
