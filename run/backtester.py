@@ -102,7 +102,7 @@ def backtest(pid=""):
     stg.cache_tool.set(BENCHMARK_KEY, daily_benchmark, COMMON_CACHE_ID, serialize=True)
     # 遍历所有回测交易日
     daily_snapshot = pandas.DataFrame(columns=['Spare', 'stg_nw'])
-    bt_tds = stg.db_tool.fetch_trade_days(bt_start_date, bt_end_date)
+    bt_tds = stg.db_tool.get_trade_days(bt_start_date, bt_end_date)
     for dt in bt_tds:
         logging.info("+++++++++++++++++++" + str(dt) + "++++++++++++++++++++")
         # 调整仓位

@@ -1,4 +1,5 @@
 import getopt
+import json
 import math
 import os
 import random
@@ -22,7 +23,12 @@ Stock_DB_Tool = None
 
 def check_spare():
     auth(JK_User, JK_Token)
-    logging.info(get_query_count())
+    json_res = get_query_count()
+    formatted_res = json.dumps(json_res, indent=4)
+    logging.info(formatted_res)
+    json_res = get_account_info()
+    formatted_res = json.dumps(json_res, indent=4)
+    logging.info(formatted_res)
     logout()
 
 
