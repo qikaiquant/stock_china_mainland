@@ -55,6 +55,9 @@ class TJMGStrategy(BaseStrategy):
             stock_id = stock[0]
             listed_day = stock[1]
             delisted_day = stock[2]
+            # 滤除指数
+            if stock_id in BENCH_MARK:
+                continue
             # 滤除已退市股票
             if delisted_day < dt:
                 continue
@@ -65,7 +68,7 @@ class TJMGStrategy(BaseStrategy):
             if stock_id.startswith(('68', '4', '8', '3')):
                 continue
             # 滤除st股票
-            is_st = self.db_tool.get_valuation_st(stock_id, ['st'], start_dt=dt, end_dt=dt)[0][0]
+            is_st, market_cap = self.db_tool.get_valuation_st(stock_id, ['st', "market_cap"], start_dt=dt, end_dt=dt)[0]
             if is_st == 1:
                 continue
             # 滤除股价超过10块的股票
@@ -88,17 +91,26 @@ class TJMGStrategy(BaseStrategy):
                 continue
             if cur_roe < 0.15 or cur_roa < 0.1:
                 continue
-            pool.append(stock_id)
+            pool.append((stock_id, market_cap))
+        pool.sort(key=lambda x: x[1], reverse=False)
         return pool
 
     def adjust_position(self, dt):
         if self.td_status == TDStatus.MG:
-            pass
+            if self.check_TJ(dt):
+                # TODO 偷鸡状态开仓
+                self.td_status = TDStatus.TJ
+                self.tj_start_day = dt
+        elif self.td_status == TDStatus.TJ:
+            if (dt - self.tj_start_day).days >= 30:
+                # TODO 清仓所有股票
+                self.td_status = TDStatus.MG
+                self.tj_start_day = None
 
     def survey(self):
         start_dt = datetime.strptime('2023-04-11', '%Y-%m-%d').date()
         # end_dt = datetime.strptime('2024-03-31', '%Y-%m-%d').date()
-        self.build_stock_bool(start_dt)
+        print(self.build_stock_bool(start_dt))
 
     def build_param_space(self):
         pass

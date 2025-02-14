@@ -6,7 +6,7 @@ import pandas
 
 sys.path.append(os.path.dirname(sys.path[0]))
 from strategy.base_strategy import RES_KEY_PREFIX, COMMON_CACHE_ID
-from strategy.macd_strategy import MacdStrategy
+from discard.macd_strategy import MacdStrategy
 from utils.common import pid2param
 
 
