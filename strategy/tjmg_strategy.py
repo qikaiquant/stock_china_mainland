@@ -1,7 +1,6 @@
 import numpy as np
 
 from strategy.base_strategy import BaseStrategy
-from trade.trader import Position
 from utils.common import *
 
 
@@ -11,8 +10,8 @@ class TDStatus(Enum):
 
 
 class TJMGStrategy(BaseStrategy):
-    def __init__(self, stg_id, pid):
-        super().__init__(stg_id, pid)
+    def __init__(self, stg_id, trader):
+        super().__init__(stg_id, trader)
         # 偷鸡/摸狗标志
         self.td_status = TDStatus.MG
         self.tj_start_day = None
@@ -98,7 +97,8 @@ class TJMGStrategy(BaseStrategy):
 
     def adjust_position(self, dt):
         pre_dt = get_preN_tds(self.all_trade_days, dt, 1)[0]
-        position = self.position
+        trader = self.trader
+        position = trader.position
         # 取到前一天涨停列表
         limit_up_list = []
         for (stock_id, ipo_dt, delist_dt) in self.all_stocks:
@@ -118,9 +118,9 @@ class TJMGStrategy(BaseStrategy):
                 self.tj_start_day = dt
         elif self.td_status == TDStatus.TJ:
             if (dt - self.tj_start_day).days >= 30:
-                # TODO 清仓所有股票
+                # 清仓所有股票
                 for slot in position.hold:
-                    stock_id = slot[0]
+                    trader.sell(slot[0], dt=dt)
                 self.td_status = TDStatus.MG
                 self.tj_start_day = None
         # TODO 处理涨停
@@ -129,6 +129,3 @@ class TJMGStrategy(BaseStrategy):
         start_dt = datetime.strptime('2023-04-11', '%Y-%m-%d').date()
         # end_dt = datetime.strptime('2024-03-31', '%Y-%m-%d').date()
         self.adjust_position(start_dt)
-
-    def build_param_space(self):
-        pass

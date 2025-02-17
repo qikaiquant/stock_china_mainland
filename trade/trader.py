@@ -50,7 +50,7 @@ class Trader(abc.ABC):
         pass
 
 
-class Backtest_Trader(Trader):
+class BacktestTrader(Trader):
     def __init__(self, total_budget, max_hold):
         super().__init__(total_budget, max_hold)
         self.backtest_db_no = conf_dict['Backtest']['Backtest_DB_NO']
@@ -86,7 +86,7 @@ class Backtest_Trader(Trader):
             logging.info("Too Expensive because of PRICE, Fail to Buy")
             return
         money = exp_price * volume
-        cost = Backtest_Trader.trade_cost(TradeSide.BUY, money)
+        cost = BacktestTrader.trade_cost(TradeSide.BUY, money)
         if money + cost > position.spare:
             logging.info("Too Expensive because of COST, Fail to Buy")
             return
@@ -118,7 +118,7 @@ class Backtest_Trader(Trader):
                 return
             exp_price = price.loc[dt, 'open']
         money = exp_price * volume
-        cost = Backtest_Trader.trade_cost(TradeSide.SELL, money)
+        cost = BacktestTrader.trade_cost(TradeSide.SELL, money)
         slot[0] = None
         slot[1] = None
         slot[2] = None
