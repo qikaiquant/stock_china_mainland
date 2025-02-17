@@ -6,6 +6,17 @@ import matplotlib.pyplot as plt
 from strategy.base_strategy import *
 
 
+class PositionStatus(Enum):
+    INIT = auto()
+    NEED_CHECK = auto()
+    EMPTY = auto()
+    WAIT_SELL = auto()
+    WAIT_BUY = auto()
+    SELL_FAIL = auto()
+    BUY_FAIL = auto()
+    KEEP = auto()
+
+
 def _draw_survey(stock_id, price, pots, is_draw):
     fig, ax1 = plt.subplots(figsize=(10, 6), dpi=100)
     plt.title(stock_id)
@@ -54,19 +65,19 @@ class MacdStrategy(BaseStrategy):
         [pre_dt] = get_preN_tds(self.all_trade_days, cur_dt, days=1)
         price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
         if (price is None) or (pre_dt not in price.index):
-            return [Signal.KEEP, None, "Price Or Dt NULL", None]
+            return [TradeSide.KEEP, None, "Price Or Dt NULL", None]
         # 今日退市，卖出
         delist_dt = self.cache_tool.get(DELIST_PRE + stock_id, self.cache_no, serialize=True)
         if delist_dt <= cur_dt:
-            return [Signal.SELL, None, "Delist", None]
+            return [TradeSide.SELL, None, "Delist", None]
         # check止盈止损
         cur_jiage = price.loc[pre_dt, 'close']
         if self.stop_loss_surplus(stock_id, cur_jiage):
-            return [Signal.SELL, None, "StopLossSurplus", None]
+            return [TradeSide.SELL, None, "StopLossSurplus", None]
         # macd信号
         d1, d0 = get_preN_tds(self.all_trade_days, cur_dt, 2)
         if (d1 not in price.index) or (d0 not in price.index):
-            return [Signal.KEEP, None, "d0/d1 NULL", None]
+            return [TradeSide.KEEP, None, "d0/d1 NULL", None]
         # 过去A天出现了超过B个x，说明黏着，不做交易
         cross_num = 0
         pre10_tds = get_preN_tds(self.all_trade_days, cur_dt, self.adhesion_period)
@@ -82,7 +93,7 @@ class MacdStrategy(BaseStrategy):
             if dif1 * dif2 < 0:
                 cross_num += 1
         if cross_num >= self.adhesion_cross_num:
-            return [Signal.KEEP, None, "Too Many Crossed", None]
+            return [TradeSide.KEEP, None, "Too Many Crossed", None]
         # 寻找交易信号，简单的金叉死叉
         day0_fast = price.loc[d0, 'dif']
         day0_slow = price.loc[d0, 'dea']
@@ -90,17 +101,17 @@ class MacdStrategy(BaseStrategy):
         day1_slow = price.loc[d1, 'dea']
 
         if (day0_slow > day0_fast) and (day1_slow < day1_fast):
-            return [Signal.BUY, None, "Corss", price.loc[pre_dt, 'money']]
+            return [TradeSide.BUY, None, "Corss", price.loc[pre_dt, 'money']]
         if (day0_slow < day0_fast) and (day1_slow > day1_fast):
-            return [Signal.SELL, None, "Cross", None]
-        return [Signal.KEEP, None, "Nothing", None]
+            return [TradeSide.SELL, None, "Cross", None]
+        return [TradeSide.KEEP, None, "Nothing", None]
 
     def pick_candidate(self, dt):
         logging.info("Start Pick....")
         candidates = []
         for stockid in self.all_stocks:
             [sig, jiage, _, rank_score] = self.signal(stockid, dt)
-            if sig == Signal.BUY:
+            if sig == TradeSide.BUY:
                 candidates.append((stockid, jiage, rank_score))
         candidates.sort(key=lambda x: x[2], reverse=False)
         return candidates
@@ -126,7 +137,7 @@ class MacdStrategy(BaseStrategy):
                         logging.info("Slot " + str(i) + " Status Change From Init to " + slot[3].name)
                     case PositionStatus.NEED_CHECK:
                         [sig, jiage, info, _] = self.signal(stock_id, dt)
-                        if sig == Signal.SELL:
+                        if sig == TradeSide.SELL:
                             slot[3] = PositionStatus.WAIT_SELL
                             trader.sell(position, slot, dt, jiage)
                         else:
@@ -195,9 +206,9 @@ class MacdStrategy(BaseStrategy):
                     continue
                 [sig, _, info, _] = self.signal(stock_id, dt)
                 # 寻找交易信号
-                if sig == Signal.BUY:
+                if sig == TradeSide.BUY:
                     trade_pots.append((dt, "B"))
-                elif sig == Signal.SELL:
+                elif sig == TradeSide.SELL:
                     trade_pots.append((dt, "S"))
                 logging.info("[%s][%s][%s]" % (str(dt), sig.name, info))
             _draw_survey(stock_id, price, trade_pots, False)

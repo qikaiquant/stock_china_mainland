@@ -37,8 +37,6 @@
     "TJMG": {
       "Module_Path": "strategy.tjmg_strategy",
       "Class_Name": "TJMGStrategy",
-      "Warm_Module_Path": "warm.warmup",
-      "Warm_Class_Name": "TJMGWarmer",
       "DB_NO": 1
     }
   },

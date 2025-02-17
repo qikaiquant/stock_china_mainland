@@ -64,24 +64,24 @@ class KdjStrategy(BaseStrategy):
     def _signal(self, stock_id, dt, price):
         # check止盈止损
         if (price is None) or (dt not in price.index):
-            return Signal.KEEP
+            return TradeSide.KEEP
         cur_jiage = price.loc[dt, 'close']
         if self.stop_loss_surplus(stock_id, cur_jiage):
-            return Signal.SELL
+            return TradeSide.SELL
         d1, d0 = get_preN_tds(self.all_trade_days, dt, 2)
         if (d1 not in price.index) or (d0 not in price.index):
-            return Signal.KEEP
+            return TradeSide.KEEP
         # 超卖区金叉
         if (price.loc[d0, 'D'] > price.loc[d0, 'K']) and (price.loc[d1, "D"] < price.loc[d1, "K"]):
             cross_point = (price.loc[d0, 'D'] + price.loc[d1, 'D']) / 2
             if cross_point < 20:
-                return Signal.BUY
+                return TradeSide.BUY
         # 超买区死叉
         if (price.loc[d0, 'D'] < price.loc[d0, 'K']) and (price.loc[d1, "D"] > price.loc[d1, "K"]):
             cross_point = (price.loc[d0, 'D'] + price.loc[d1, 'D']) / 2
             if cross_point > 80:
-                return Signal.SELL
-        return Signal.KEEP
+                return TradeSide.SELL
+        return TradeSide.KEEP
 
     def _survey(self, stocks):
         # 如果不显式传入股票代码，则随机选择30支股票做调研
@@ -99,11 +99,11 @@ class KdjStrategy(BaseStrategy):
                 signal = self._signal(stock_id, dt, price)
                 cur_price = price.loc[dt, 'avg']
                 # 寻找交易信号
-                if (status == 1) and signal == Signal.BUY:
+                if (status == 1) and signal == TradeSide.BUY:
                     trade_pots.append((dt, cur_price, "B"))
                     logging.info("Buy at Price [" + str(cur_price) + "] At Day [" + str(dt) + ']')
                     status = 2
-                if (status == 2) and signal == Signal.SELL:
+                if (status == 2) and signal == TradeSide.SELL:
                     trade_pots.append((dt, cur_price, "S"))
                     logging.info("Sell at Price [" + str(cur_price) + "] At Day [" + str(dt) + ']')
                     status = 1
@@ -120,7 +120,7 @@ class KdjStrategy(BaseStrategy):
             # Check当前Hold是否需要卖出
             for stock_id in list(position.hold.keys()):
                 price = self.cache_tool.get(stock_id, self.cache_no, serialize=True)
-                if self._signal(stock_id, i, price) == Signal.SELL:
+                if self._signal(stock_id, i, price) == TradeSide.SELL:
                     position.sell(stock_id, price.loc[i, 'avg'], sell_all=True)
                     action_log['Sell'].append((stock_id, price.loc[i, 'avg']))
             # 不满仓，补足
@@ -129,7 +129,7 @@ class KdjStrategy(BaseStrategy):
                 candidate = []
                 for stock in self.all_stocks:
                     price = self.cache_tool.get(stock, self.cache_no, serialize=True)
-                    if self._signal(stock, i, price) == Signal.BUY:
+                    if self._signal(stock, i, price) == TradeSide.BUY:
                         candidate.append((stock, price.loc[i, 'money'], price.loc[i, 'avg']))
                 candidate.sort(key=lambda x: x[1], reverse=True)
                 for can in candidate:

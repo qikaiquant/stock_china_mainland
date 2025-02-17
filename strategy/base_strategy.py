@@ -1,9 +1,4 @@
-import abc
-from abc import abstractmethod
-
-from sqlalchemy.testing.plugin.plugin_base import logging
-
-from trade.trader import Position
+from trade.trader import *
 from utils.common import *
 from utils.db_tool import DBTool
 from utils.redis_tool import RedisTool
@@ -14,7 +9,7 @@ class BaseStrategy(abc.ABC):
     当策略由于仿真/实盘时，运行时间必须在交易日的零点之后，因为具体策略里的dt，和当前时间紧密相关
     """
 
-    def __init__(self, stg_id, stg_param_dict):
+    def __init__(self, stg_id, stg_param_dict, trader):
         self.stg_id = stg_id
         # 存储定义
         self.db_tool = DBTool(conf_dict['Mysql']['Host'], conf_dict['Mysql']['Port'], conf_dict['Mysql']['User'],
@@ -36,8 +31,8 @@ class BaseStrategy(abc.ABC):
             self.max_hold = conf_dict['STG']["Base"]['MaxHold']
         else:
             self.max_hold = stg_param_dict["max_hold"]
-        # 持仓状况
-        self.position = Position(self.total_budget, self.max_hold)  # 持仓变化
+        # 交易器
+        self.trader = trader
         # 股票/交易日全量信息
         self.all_trade_days = self.db_tool.get_trade_days()
         self.all_stocks = []
@@ -46,7 +41,7 @@ class BaseStrategy(abc.ABC):
             self.all_stocks.append(sid)
 
     def stop_loss_surplus(self, stock_id, jiage):
-        slot = self.position.get_slot(stock_id)
+        slot = self.trader.position.get_slot(stock_id)
         if slot is None:
             return False
         buy_jiage = slot[1]

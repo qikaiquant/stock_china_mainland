@@ -12,21 +12,9 @@ _Msg_Base_Url = 'http://www.pushplus.plus/send?token=dbe8cc80aa704ae88e48e8769b7
 OS_TYPE = platform.system()
 
 
-class Signal(Enum):
+class TradeSide(Enum):
     BUY = 0
     SELL = 1
-    KEEP = 2
-
-
-class PositionStatus(Enum):
-    INIT = auto()
-    NEED_CHECK = auto()
-    EMPTY = auto()
-    WAIT_SELL = auto()
-    WAIT_BUY = auto()
-    SELL_FAIL = auto()
-    BUY_FAIL = auto()
-    KEEP = auto()
 
 
 class ToBeFetchType(Enum):

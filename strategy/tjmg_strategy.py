@@ -1,6 +1,7 @@
 import numpy as np
 
 from strategy.base_strategy import BaseStrategy
+from trade.trader import Position
 from utils.common import *
 
 
@@ -96,6 +97,20 @@ class TJMGStrategy(BaseStrategy):
         return pool
 
     def adjust_position(self, dt):
+        pre_dt = get_preN_tds(self.all_trade_days, dt, 1)[0]
+        position = self.position
+        # 取到前一天涨停列表
+        limit_up_list = []
+        for (stock_id, ipo_dt, delist_dt) in self.all_stocks:
+            if pre_dt < ipo_dt or pre_dt > delist_dt:
+                continue
+            close_p, limit_p_p, is_paused = self.db_tool.get_price(stock_id, ["close", 'high_limit', "paused"],
+                                                                   start_dt=pre_dt, end_dt=pre_dt)[0]
+            if is_paused == 1:
+                continue
+            if 100 * (limit_p_p - close_p) / close_p < 0.1:
+                limit_up_list.append(stock_id)
+        # 状态机
         if self.td_status == TDStatus.MG:
             if self.check_TJ(dt):
                 # TODO 偷鸡状态开仓
@@ -104,13 +119,16 @@ class TJMGStrategy(BaseStrategy):
         elif self.td_status == TDStatus.TJ:
             if (dt - self.tj_start_day).days >= 30:
                 # TODO 清仓所有股票
+                for slot in position.hold:
+                    stock_id = slot[0]
                 self.td_status = TDStatus.MG
                 self.tj_start_day = None
+        # TODO 处理涨停
 
     def survey(self):
         start_dt = datetime.strptime('2023-04-11', '%Y-%m-%d').date()
         # end_dt = datetime.strptime('2024-03-31', '%Y-%m-%d').date()
-        print(self.build_stock_bool(start_dt))
+        self.adjust_position(start_dt)
 
     def build_param_space(self):
         pass
