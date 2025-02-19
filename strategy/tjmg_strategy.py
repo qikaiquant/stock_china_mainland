@@ -49,6 +49,7 @@ class TJMGStrategy(BaseStrategy):
 
     def build_stock_bool(self, dt):
         pool = []
+        stocks_set = set()
         # 回溯250个交易日，上市日期必须在该日期之前
         list_ddl = get_preN_tds(self.all_trade_days, dt, 250)[-1]
         for stock in self.all_stocks:
@@ -92,8 +93,9 @@ class TJMGStrategy(BaseStrategy):
             if cur_roe < 0.15 or cur_roa < 0.1:
                 continue
             pool.append((stock_id, market_cap))
+            stocks_set.add(stock_id)
         pool.sort(key=lambda x: x[1], reverse=False)
-        return pool
+        return pool, stocks_set
 
     def adjust_position(self, dt):
         pre_dt = get_preN_tds(self.all_trade_days, dt, 1)[0]
@@ -101,6 +103,7 @@ class TJMGStrategy(BaseStrategy):
         position = trader.position
         # 取到前一天涨停列表
         limit_up_list = []
+        print("Start Prepare Limit up List")
         for (stock_id, ipo_dt, delist_dt) in self.all_stocks:
             if pre_dt < ipo_dt or pre_dt > delist_dt:
                 continue
@@ -110,22 +113,69 @@ class TJMGStrategy(BaseStrategy):
                 continue
             if 100 * (limit_p_p - close_p) / close_p < 0.1:
                 limit_up_list.append(stock_id)
+        print(len(limit_up_list))
         # 状态机
         if self.td_status == TDStatus.MG:
+            print("Status MG")
             if self.check_TJ(dt):
-                # TODO 偷鸡状态开仓
+                print("Transfer to TJ")
+                # 偷鸡状态
+                # 建池子
+                pool, stocks_set = self.build_stock_bool(dt)
+                # 卖
+                for slot in position.hold:
+                    stock_id = slot[0]
+                    if stock_id is None:
+                        continue
+                    if stock_id not in stocks_set:
+                        print("Sell " + stock_id)
+                        trader.sell(stock_id, dt=dt)
+                # 买
+                empty_count = position.max_hold - position.get_hold_count()
+                budget = position.spare / empty_count
+                while True:
+                    (stock_id, _) = pool.pop(0)
+                    print("Buy " + stock_id)
+                    trader.buy(stock_id, budget=budget, dt=dt)
+                    if position.get_hold_count() == position.max_hold:
+                        break
                 self.td_status = TDStatus.TJ
                 self.tj_start_day = dt
+                return  # 偷鸡日第一天，建好仓就完事了
         elif self.td_status == TDStatus.TJ:
+            print("Status TJ")
             if (dt - self.tj_start_day).days >= 30:
                 # 清仓所有股票
                 for slot in position.hold:
-                    trader.sell(slot[0], dt=dt)
+                    stock_id = slot[0]
+                    if stock_id is None:
+                        continue
+                    print("Sell " + stock_id)
+                    trader.sell(stock_id, dt=dt)
                 self.td_status = TDStatus.MG
                 self.tj_start_day = None
-        # TODO 处理涨停
+                return
+        # 处理涨停
+        # 卖
+        print("Daily Handle")
+        for slot in position.hold:
+            stock_id = slot[0]
+            if stock_id is None:
+                continue
+            cur_price = trader.get_current_price(stock_id, dt=dt)
+            if stock_id in limit_up_list:
+                print("Sell 1 " + stock_id)
+                trader.sell(stock_id, dt=dt)
+            if self.stop_loss_surplus(stock_id, cur_price):
+                print("Sell 2 " + stock_id)
+                trader.sell(stock_id, dt=dt)
+            print("Keep " + stock_id)
+        # 买 TODO 这条策略值得怀疑，先空置，后续check下合理性
 
     def survey(self):
-        start_dt = datetime.strptime('2023-04-11', '%Y-%m-%d').date()
-        # end_dt = datetime.strptime('2024-03-31', '%Y-%m-%d').date()
-        self.adjust_position(start_dt)
+        start_dt = datetime.strptime('2023-06-28', '%Y-%m-%d').date()
+        end_dt = datetime.strptime('2023-08-01', '%Y-%m-%d').date()
+        for dt in self.all_trade_days:
+            if start_dt <= dt <= end_dt:
+                print(str(dt))
+                self.adjust_position(dt)

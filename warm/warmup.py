@@ -62,7 +62,7 @@ class BacktestWarmer(BaseWarmer):
     def warm(self):
         self.cache_tool.clear(int(self.cache_no))
         stocks = self.db_tool.get_stock_info(['stock_id'])
-        cols = ['dt', 'close', 'open', 'low', 'high']
+        cols = ['dt', 'close', 'open', 'low', 'high', 'avg']
         for (stock_id,) in stocks:
             try:
                 # 预热全量股票行情

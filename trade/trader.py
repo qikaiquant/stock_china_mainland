@@ -32,6 +32,13 @@ class Position:
                 return slot
         return None
 
+    def get_hold_count(self):
+        count = 0
+        for slot in self.hold:
+            if slot[0] is not None:
+                count += 1
+        return count
+
 
 class Trader(abc.ABC):
     """
@@ -47,6 +54,10 @@ class Trader(abc.ABC):
 
     @abstractmethod
     def sell(self, stock_id, exp_price=None, dt=None):
+        pass
+
+    @abstractmethod
+    def get_current_price(self, stock_id, dt=None):
         pass
 
 
@@ -128,3 +139,13 @@ class BacktestTrader(Trader):
                 money))
         logging.info("Trade Cost is :[" + str(cost) + "]")
         logging.info("Spare is :[" + str(position.spare) + "]")
+
+    def get_current_price(self, stock_id, dt=None):
+        if dt is None:
+            logging.info("Dt is None, Get Nothing")
+            return
+        price = self.cache_tool.get(stock_id, self.backtest_db_no, True)
+        if (price is None) or (dt not in price.index):
+            logging.error("No price in date[" + str(dt) + "] for stock[" + stock_id + "]")
+            return
+        return price.loc[dt, 'avg']

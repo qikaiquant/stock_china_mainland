@@ -32,7 +32,7 @@
       "Warm_Start_Date": "2020-03-01",
       "Warm_End_Date": "2024-12-12",
       "TotalBudget": 200000,
-      "MaxHold": 2
+      "MaxHold": 10
     },
     "TJMG": {
       "Module_Path": "strategy.tjmg_strategy",
