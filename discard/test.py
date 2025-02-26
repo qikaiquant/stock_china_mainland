@@ -243,4 +243,4 @@ def diff_scan_result():
 
 
 if __name__ == '__main__':
-    diff_scan_result()
+    print(time.time())

@@ -225,11 +225,14 @@ class DBTool:
         self._cursor.execute(sql)
         self._conn.commit()
 
-    def get_stock_info(self, fileds):
+    def get_stock_info(self, fileds, ex_benchmark=False):
         if fileds is None:
             print("Fields is NECESSARY.")
             return
         sql = "select " + ','.join(fileds) + " from quant_stock.stock_info"
+        if ex_benchmark:
+            ex_benchmark_str = "(\'" + "\',\'".join(BENCH_MARK) + "\')"
+            sql += " where stock_id not in " + ex_benchmark_str
         self._cursor.execute(sql)
         res = self._cursor.fetchall()
         return res

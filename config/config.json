@@ -29,7 +29,7 @@
     "Base": {
       "StopLossPoint": 15,
       "StopSurplusPoint": -1,
-      "Warm_Start_Date": "2020-03-01",
+      "Warm_Start_Date": "2023-03-01",
       "Warm_End_Date": "2024-12-12",
       "TotalBudget": 200000,
       "MaxHold": 10
@@ -37,12 +37,14 @@
     "TJMG": {
       "Module_Path": "strategy.tjmg_strategy",
       "Class_Name": "TJMGStrategy",
+      "Warm_Module_Path": "warm.warmup",
+      "Warm_Class_Name": "TJMGWarmer",
       "DB_NO": 1
     }
   },
   "Backtest": {
     "STG": "TJMG",
-    "Start_Date": "2020-06-10",
+    "Start_Date": "2023-06-10",
     "End_Date": "2024-12-10",
     "Risk_Free_Rate": 0.026,
     "Backtest_DB_NO": 14,
