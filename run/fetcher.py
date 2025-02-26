@@ -1,5 +1,4 @@
 import getopt
-import json
 import math
 import os
 import random

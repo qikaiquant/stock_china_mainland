@@ -137,11 +137,11 @@ class TJMGStrategy(BaseStrategy):
         # 状态机
         if self.td_status == TDStatus.MG:
             logging.info("Status MG")
-            if self.check_TJ(dt):
+            if self.check_TJ(pre_dt):
                 logging.info("Transfer to TJ")
                 # 偷鸡状态
                 # 建池子
-                pool, stocks_set = self.build_stock_bool(dt)
+                pool, stocks_set = self.build_stock_bool(pre_dt)
                 # 卖
                 for slot in position.hold:
                     stock_id = slot[0]
