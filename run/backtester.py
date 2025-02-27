@@ -26,9 +26,10 @@ def init_strategy():
 
 def add_snapshot(snapshot, stg, dt):
     snapshot.loc[dt] = None
+    position = stg.trader.position
     try:
-        nw = stg.position.spare
-        for slot in stg.position.hold:
+        nw = position.spare
+        for slot in position.hold:
             stock_id = slot[0]
             if stock_id is None:
                 continue
@@ -38,7 +39,7 @@ def add_snapshot(snapshot, stg, dt):
                 snapshot[stock_id] = ""
             snapshot.at[dt, stock_id] = (dt_jiage, slot[2])
             nw += (dt_jiage * slot[2])
-        snapshot.at[dt, 'Spare'] = stg.position.spare
+        snapshot.at[dt, 'Spare'] = position.spare
         snapshot.at[dt, 'stg_nw'] = nw
     except Exception as e:
         logging.info("Add SnapShot Error")

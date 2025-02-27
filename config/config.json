@@ -27,7 +27,7 @@
   },
   "STG": {
     "Base": {
-      "StopLossPoint": 15,
+      "StopLossPoint": 10,
       "StopSurplusPoint": -1,
       "Warm_Start_Date": "2023-03-01",
       "Warm_End_Date": "2024-12-12",
@@ -44,8 +44,8 @@
   },
   "Backtest": {
     "STG": "TJMG",
-    "Start_Date": "2023-06-10",
-    "End_Date": "2024-12-10",
+    "Start_Date": "2023-06-28",
+    "End_Date": "2024-12-01",
     "Risk_Free_Rate": 0.026,
     "Backtest_DB_NO": 14,
     "Analyze_Res_Dir": "D:\\test\\",

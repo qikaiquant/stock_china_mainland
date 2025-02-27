@@ -17,7 +17,7 @@ def _draw_res(df, id_dict, output_dir, title):
     # 左侧折线图
     left, bottom, width, height = 0.07, 0.2, 0.7, 0.6
     ax1 = fig.add_axes([left, bottom, width, height])
-    ax1.plot(df.index, df['HS300'], color='slategrey', label="基线")
+    ax1.plot(df.index, df['000300.XSHG'], color='slategrey', label="基线")
     ax1.plot(df.index, df['stg_nw'], color='darkred', label="策略")
     ax1.grid(linestyle='--')
     ax1.set_facecolor('whitesmoke')
@@ -126,10 +126,10 @@ def _get_index(result):
     index_dict = {"基准": {}, "策略": {}}
     # 基准策略，只计算收益率和年化收益率
     base_index_dict = {}
-    base_rr = (result.loc[day_last, 'HS300'] - result.loc[day_first, 'HS300']) / result.loc[day_first, 'HS300']
+    base_rr = (result.loc[day_last, '000300.XSHG'] - result.loc[day_first, '000300.XSHG']) / result.loc[day_first, '000300.XSHG']
     base_index_dict['收益率'] = base_rr
-    base_rr_year = ((result.loc[day_last, 'HS300'] - result.loc[day_first, 'HS300']) * 365 / days_delta.days) / \
-                   result.loc[day_first, 'HS300']
+    base_rr_year = ((result.loc[day_last, '000300.XSHG'] - result.loc[day_first, '000300.XSHG']) * 365 / days_delta.days) / \
+                   result.loc[day_first, '000300.XSHG']
     base_index_dict['年化收益率'] = base_rr_year
     index_dict['基准'] = base_index_dict
     # 测试策略，计算收益率、年化收益率、最大回撤和夏普比率
@@ -155,7 +155,6 @@ def batch_analyze():
     stg_id = conf_dict["Backtest"]['STG']
     pattern = RES_KEY_PREFIX + stg_id + ":*"
     keys = cachetool.get_keys(COMMON_CACHE_ID, pattern)
-    print(len(keys))
     files = os.listdir(conf_dict["Backtest"]["Analyze_Res_Dir"])
     for key in keys:
         str_key = key.decode()
@@ -183,7 +182,7 @@ def single_analyze():
     cachetool = RedisTool(conf_dict['Redis']['Host'], conf_dict['Redis']['Port'],
                           conf_dict['Redis']['Passwd'])
     benchmark_res = pandas.DataFrame(cachetool.get(BENCHMARK_KEY, COMMON_CACHE_ID, serialize=True))
-    res_key = "RES_KEY:MACD:10_16_-1_29_2"
+    res_key = "RES_KEY:TJMG"
     stg_res = cachetool.get(res_key, COMMON_CACHE_ID, serialize=True)
     if len(stg_res) != len(benchmark_res):
         logging.error("Key[" + res_key + "] Error.PLS Check.")
