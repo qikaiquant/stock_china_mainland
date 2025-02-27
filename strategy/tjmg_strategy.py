@@ -129,6 +129,9 @@ class TJMGStrategy(BaseStrategy):
             close_p = self._get_cache(stock_id, pre_dt, "close")
             limit_p_p = self._get_cache(stock_id, pre_dt, "high_limit")
             is_paused = self._get_cache(stock_id, pre_dt, "paused")
+            if close_p is None or limit_p_p is None or is_paused is None:
+                logging.info("Stock_id " + stock_id + " is None at " + str(pre_dt))
+                continue
             if is_paused == 1:
                 continue
             if 100 * (limit_p_p - close_p) / close_p < 0.1:
@@ -193,9 +196,6 @@ class TJMGStrategy(BaseStrategy):
         # 买 TODO 这条策略值得怀疑，先空置，后续check下合理性
 
     def survey(self):
-        start_dt = datetime.strptime('2023-06-28', '%Y-%m-%d').date()
-        end_dt = datetime.strptime('2023-08-01', '%Y-%m-%d').date()
-        for dt in self.all_trade_days:
-            if start_dt <= dt <= end_dt:
-                logging.info(str(dt))
-                self.adjust_position(dt)
+        dt = datetime.strptime('2025-02-05', '%Y-%m-%d').date()
+        pre_dt = get_preN_tds(self.all_trade_days, dt, 1)[0]
+        print(pre_dt)
