@@ -32,9 +32,11 @@ def check_spare():
 
 
 def fetch_trade_days():
+    logging.info("Start Fetch Trade Days")
     auth(JK_User, JK_Token)
     Stock_DB_Tool.refresh_trade_days(get_all_trade_days())
     logout()
+    logging.info("End Fetch Trade Days")
 
 
 def fetch_sw_class():

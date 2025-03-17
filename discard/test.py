@@ -242,5 +242,9 @@ def diff_scan_result():
             print(k, v)
 
 
+def test_msg():
+    send_wechat_message("测试下小程序怎么样", "发了一堆垃圾消息")
+
+
 if __name__ == '__main__':
-    print(time.time())
+    test_msg()
