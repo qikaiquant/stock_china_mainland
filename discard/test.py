@@ -3,6 +3,7 @@ import os
 import sys
 import time
 from abc import abstractmethod
+from datetime import date
 
 import matplotlib.pyplot as plt
 import mplfinance as mpf
@@ -247,4 +248,5 @@ def test_msg():
 
 
 if __name__ == '__main__':
-    test_msg()
+    td = date.today()
+    print(td)

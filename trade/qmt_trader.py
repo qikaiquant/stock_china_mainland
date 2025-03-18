@@ -35,9 +35,9 @@ class QMTTraderCallback(XtQuantTraderCallback):
 
 
 class QMTTrader(Trader):
-    def __init__(self, total_budget, max_hold, real_trade_flag):
+    def __init__(self, total_budget, max_hold, real_flag):
         super().__init__(total_budget, max_hold)
-        if real_trade_flag:
+        if real_flag:
             account = conf_dict["Trade"]["QMT"]["Trade_Account"]
             path = conf_dict["Trade"]["QMT"]["Trade_Path"]
         else:
