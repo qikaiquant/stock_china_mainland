@@ -50,5 +50,14 @@
     "Backtest_DB_NO": 14,
     "Analyze_Res_Dir": "D:\\test\\",
     "Process_Num": -1
+  },
+  "Trade": {
+    "QMT": {
+      "Test_Account": "39136468",
+      "Tes_Path": "D:\\国金QMT交易端模拟\\userdata_mini",
+      "Trade_Account": "8886001319",
+      "Trade_Path": "XXX"
+    },
+    "STG": "TJMG"
   }
 }

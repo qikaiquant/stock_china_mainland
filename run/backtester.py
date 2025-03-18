@@ -4,9 +4,10 @@ import os
 import sys
 import pandas
 
+from trade.backtest_trader import BacktestTrader
+
 sys.path.append(os.path.dirname(sys.path[0]))
 
-from trade.trader import BacktestTrader
 from utils.db_tool import *
 from utils.redis_tool import *
 
@@ -66,7 +67,8 @@ def backtest():
     for dt in bt_tds:
         logging.info("+++++++++++++++++++" + str(dt) + "++++++++++++++++++++")
         # 调整仓位
-        stg.adjust_position(dt)
+        stg.pre_market_action(dt)
+        stg.market_action(dt)
         # 记录持仓状态
         add_snapshot(daily_snapshot, stg, dt)
     stg.cache_tool.set(RES_KEY_PREFIX + stg.stg_id, daily_snapshot, COMMON_CACHE_ID, serialize=True)

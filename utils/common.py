@@ -3,7 +3,7 @@ import logging
 import platform
 import sys
 from datetime import datetime, timedelta
-from enum import Enum, auto
+from enum import Enum
 from hashlib import md5
 from urllib import request
 from urllib.parse import urlencode
@@ -113,7 +113,7 @@ def get_preN_tds(all_trade_days, cur_day, days):
 
 def _load_config(file):
     # 载入原始配置
-    with open(file) as config_file:
+    with open(file, "r", encoding="utf-8") as config_file:
         cd = json.load(config_file)
     # 整理操作系统
     if OS_TYPE == 'Linux':

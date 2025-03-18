@@ -52,11 +52,11 @@ class BaseStrategy(abc.ABC):
         return False
 
     @abstractmethod
-    def adjust_position(self, dt):
-        """
-        这个函数需要被子类重写
-        :return:
-        """
+    def pre_market_action(self, dt):
+        pass
+
+    @abstractmethod
+    def market_action(self, dt):
         pass
 
     @abstractmethod

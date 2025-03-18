@@ -23,6 +23,8 @@ class TJMGStrategy(BaseStrategy):
         for (stock_id, start_dt, end_dt) in self.all_stocks:
             if stock_id.startswith(("002", "003")):
                 self.middle_small_stocks[stock_id] = (start_dt, end_dt)
+        # 前一日涨停列表
+        self.limit_up_list = []
 
     def _get_cache(self, stock_id, dt, field):
         key = stock_id + ":" + str(dt)
@@ -116,12 +118,16 @@ class TJMGStrategy(BaseStrategy):
         pool.sort(key=lambda x: x[1], reverse=False)
         return pool, stocks_set
 
-    def adjust_position(self, dt):
+    def pre_market_action(self, dt):
         pre_dt = get_preN_tds(self.all_trade_days, dt, 1)[0]
-        trader = self.trader
-        position = trader.position
+        # 如果是持续偷鸡/摸狗状态，直接返回
+        if (self.td_status == TDStatus.TJ) and ((dt - self.tj_start_day).days < 30):
+            logging.info("Keep TJ")
+            return
+        if (self.td_status == TDStatus.MG) and (not self.check_TJ(pre_dt)):
+            logging.info("Keep MG")
+            return
         # 取到前一天涨停列表
-        limit_up_list = []
         logging.info("Start Prepare Limit up List")
         for (stock_id, ipo_dt, delist_dt) in self.all_stocks:
             if pre_dt < ipo_dt or pre_dt > delist_dt:
@@ -135,58 +141,60 @@ class TJMGStrategy(BaseStrategy):
             if is_paused == 1:
                 continue
             if 100 * (limit_p_p - close_p) / close_p < 0.1:
-                limit_up_list.append(stock_id)
-        logging.info(len(limit_up_list))
+                self.limit_up_list.append(stock_id)
+        logging.info(len(self.limit_up_list))
+
+    def market_action(self, dt):
+        pre_dt = get_preN_tds(self.all_trade_days, dt, 1)[0]
+        trader = self.trader
+        position = trader.position
         # 状态机
-        if self.td_status == TDStatus.MG:
-            logging.info("Status MG")
-            if self.check_TJ(pre_dt):
-                logging.info("Transfer to TJ")
-                # 偷鸡状态
-                # 建池子
-                pool, stocks_set = self.build_stock_bool(pre_dt)
-                # 卖
-                for slot in position.hold:
-                    stock_id = slot[0]
-                    if stock_id is None:
-                        continue
-                    if stock_id not in stocks_set:
-                        logging.info("Sell " + stock_id)
-                        trader.sell(stock_id, dt=dt)
-                # 买
-                empty_count = position.max_hold - position.get_hold_count()
-                budget = position.spare / empty_count
-                while True:
-                    (stock_id, _) = pool.pop(0)
-                    logging.info("Buy " + stock_id)
-                    trader.buy(stock_id, budget=budget, dt=dt)
-                    if position.get_hold_count() == position.max_hold:
-                        break
-                self.td_status = TDStatus.TJ
-                self.tj_start_day = dt
-                return  # 偷鸡日第一天，建好仓就完事了
-        elif self.td_status == TDStatus.TJ:
-            logging.info("Status TJ")
-            if (dt - self.tj_start_day).days >= 30:
-                # 清仓所有股票
-                for slot in position.hold:
-                    stock_id = slot[0]
-                    if stock_id is None:
-                        continue
+        if (self.td_status == TDStatus.MG) and self.check_TJ(pre_dt):
+            logging.info("MG Transfer to TJ")
+            # 偷鸡状态
+            # 建池子
+            pool, stocks_set = self.build_stock_bool(pre_dt)
+            # 卖
+            for slot in position.hold:
+                stock_id = slot[0]
+                if stock_id is None:
+                    continue
+                if stock_id not in stocks_set:
                     logging.info("Sell " + stock_id)
                     trader.sell(stock_id, dt=dt)
-                self.td_status = TDStatus.MG
-                self.tj_start_day = None
-                return
+            # 买
+            empty_count = position.max_hold - position.get_hold_count()
+            budget = position.spare / empty_count
+            while True:
+                (stock_id, _) = pool.pop(0)
+                logging.info("Buy " + stock_id)
+                trader.buy(stock_id, budget=budget, dt=dt)
+                if position.get_hold_count() == position.max_hold:
+                    break
+            self.td_status = TDStatus.TJ
+            self.tj_start_day = dt
+            return  # 偷鸡日第一天，建好仓就完事了
+        if (self.td_status == TDStatus.TJ) and ((dt - self.tj_start_day).days >= 30):
+            logging.info("TJ Transfer to MG")
+            # 清仓所有股票
+            for slot in position.hold:
+                stock_id = slot[0]
+                if stock_id is None:
+                    continue
+                logging.info("Sell " + stock_id)
+                trader.sell(stock_id, dt=dt)
+            self.td_status = TDStatus.MG
+            self.tj_start_day = None
+            return
         # 处理涨停
         # 卖
-        logging.info("Daily Handle")
+        logging.info("Daily Handle Limit Up")
         for slot in position.hold:
             stock_id = slot[0]
             if stock_id is None:
                 continue
             cur_price = trader.get_current_price(stock_id, dt=dt)
-            if stock_id in limit_up_list:
+            if stock_id in self.limit_up_list:
                 logging.info("Sell 1 " + stock_id)
                 trader.sell(stock_id, dt=dt)
             if self.stop_loss_surplus(stock_id, cur_price):
