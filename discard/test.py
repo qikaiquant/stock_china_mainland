@@ -247,6 +247,18 @@ def test_msg():
     send_wechat_message("测试下小程序怎么样", "发了一堆垃圾消息")
 
 
+class demoClass:
+    def __init__(self):
+        self.a = 4
+        a = 4
+        print("INIT")
+
+    def out(self):
+        print(self.a)
+
+    def __del__(self):
+        print("DEL")
+
+
 if __name__ == '__main__':
-    td = date.today()
-    print(td)
+    d = demoClass()

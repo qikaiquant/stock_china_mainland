@@ -1,38 +1,48 @@
 import abc
 from abc import abstractmethod
+from enum import auto
+
+from utils.common import *
+
+
+class SlotStatus(Enum):
+    Keep = auto,
+    Buying = auto,
+    Selling = auto
+
+
+class Slot:
+    def __init__(self, price, volume, status):
+        self.price = price
+        self.volume = volume
+        self.status = status
 
 
 class Position:
     def __init__(self, total_budget, max_hold):
-        # 每个槽位的4个元素表示：
-        ## 0-股票id
-        ## 1-购入价格
-        ## 2-购入数量
-        ## 3-自定义字段
-        self.hold = []
-        for i in range(0, max_hold):
-            self.hold.append([None, None, None, None])
+        self.hold = {}
         self.spare = total_budget
         self.max_hold = max_hold
 
+    def is_slot_full(self):
+        if len(self.hold.keys()) == self.max_hold:
+            return True
+        return False
+
+    def fill_slot(self, stock_id, price, volume, status):
+        if self.is_slot_full():
+            logging.error("Reach Max_Hold")
+            return
+        self.hold[stock_id] = Slot(price, volume, status)
+
     def get_slot(self, stock_id):
-        for slot in self.hold:
-            if stock_id == slot[0]:
-                return slot
-        return None
+        return self.hold[stock_id]
 
     def get_empty_slot(self):
-        for slot in self.hold:
-            if slot[0] is None:
-                return slot
-        return None
+        pass
 
     def get_hold_count(self):
-        count = 0
-        for slot in self.hold:
-            if slot[0] is not None:
-                count += 1
-        return count
+        pass
 
 
 class Trader(abc.ABC):
@@ -54,5 +64,3 @@ class Trader(abc.ABC):
     @abstractmethod
     def get_current_price(self, stock_id, dt=None):
         pass
-
-
