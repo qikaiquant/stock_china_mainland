@@ -1,39 +1,40 @@
 import time
 
+from xtquant import xtdata
 from xtquant.xttrader import XtQuantTraderCallback, XtQuantTrader
 from xtquant.xttype import StockAccount
 
-from trade.trader import Trader
+from trade.trader import Trader, SlotStatus
 from utils.common import *
 
 
 class QMTTraderCallback(XtQuantTraderCallback):
     def on_disconnected(self):
-        logging.fatal("Connection Lost")
+        print("Connection Lost")
 
     def on_stock_order(self, order):
-        logging.info("on order callback:")
-        logging.info(order.stock_code, order.order_status, order.order_sysid)
+        print("on order callback:")
+        print(order.stock_code, order.order_status, order.order_sysid)
 
     def on_stock_trade(self, trade):
-        logging.info("on trade callback")
-        logging.info(trade.account_id, trade.stock_code, trade.order_id)
+        print("on trade callback")
+        print(trade.account_id, trade.stock_code, trade.order_id)
 
     def on_order_error(self, order_error):
-        logging.info("on order_error callback")
-        logging.info(order_error.order_id, order_error.error_id, order_error.error_msg)
+        print("on order_error callback")
+        print(order_error.order_id, order_error.error_id, order_error.error_msg)
 
     def on_cancel_error(self, cancel_error):
-        logging.info("on cancel_error callback")
-        logging.info(cancel_error.order_id, cancel_error.error_id, cancel_error.error_msg)
+        print("on cancel_error callback")
+        print(cancel_error.order_id, cancel_error.error_id, cancel_error.error_msg)
 
     def on_order_stock_async_response(self, response):
-        logging.info("on_order_stock_async_response")
-        logging.info(response.account_id, response.order_id, response.seq)
+        print("on_order_stock_async_response")
+        print(response.account_id, response.order_id, response.seq)
 
     def on_account_status(self, status):
-        logging.info("on_account_status")
-        logging.info(status.account_id, status.account_type, status.status)
+        print("on_account_status")
+        print(status.account_id, status.account_type, status.status)
 
 
 class QMTTrader(Trader):
@@ -49,11 +50,11 @@ class QMTTrader(Trader):
         session_id = int(time.time())
         self.account = StockAccount(account_str)
         self.xt_trader = XtQuantTrader(path, session_id)
-        self.xt_trader.register_callback(QMTTraderCallback)
+        cb = QMTTraderCallback()
+        self.xt_trader.register_callback(cb)
         self.xt_trader.start()
         connect_result = self.xt_trader.connect()
         subscribe_result = self.xt_trader.subscribe(self.account)
-        print(connect_result, subscribe_result)
         if connect_result != 0 or subscribe_result != 0:
             logging.fatal("MUST Check.CANNOT connect/subscribe QMT")
             raise Exception("Connect/Subscribe QMT Error")
@@ -61,24 +62,34 @@ class QMTTrader(Trader):
         self._load_position()
 
     def _load_position(self):
-        pass
+        asset = self.xt_trader.query_stock_asset(self.account)
+        self.position.spare = asset.cash
+        positions = self.xt_trader.query_stock_positions(self.account)
+        for p in positions:
+            self.position.fill_slot(p.stock_code, p.avg_price, p.volume, p.can_use_volume, SlotStatus.Keep)
 
-    def buy(self, stock_id, budget, exp_price=None, dt=None):
-        pass
+    def buy(self, stock_id, volume, exp_price=None, dt=None):
+        position = self.position
+        if position.is_full() and not position.has_stock(stock_id):
+            logging.error("Hold is Full, CANNOT Buy.")
+            return
+        if exp_price is None:
+            # TODO 市价
+            pass
+        else:
+            # TODO 限价
+            pass
+        # self.xt_trader.order_stock_async(self.account, "000701.SZ", xtconstant.STOCK_BUY, 300, xtconstant.LATEST_PRICE,
+        #                                 -1, "stg1", 'order2')
 
     def sell(self, stock_id, exp_price=None, dt=None):
-        pass
+        data = xtdata.get_full_tick(["002614.SZ"])
+        print(data)
 
     def get_current_price(self, stock_id, dt=None):
         pass
 
-    def check(self):
-        asset = self.xt_trader.query_stock_asset(self.account)
-        print(asset.cash, asset.total_asset)
-        positions = self.xt_trader.query_stock_positions(self.account)
-        for position in positions:
-            print(position.stock_code, position.volume, position.open_price, position.market_value)
-
 
 if __name__ == '__main__':
     t = QMTTrader(200000, 10)
+    t.buy("000541.SZ", 7000)
